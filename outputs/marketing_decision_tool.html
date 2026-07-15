@@ -1,0 +1,2532 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lumina Marketing Decision Workbench</title>
+  <link rel="icon" href="assets/lumina-icon-transparent.png">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172019;
+      --muted: #68706b;
+      --line: #dde5df;
+      --panel: #ffffff;
+      --soft: #f6faf6;
+      --lumina-green: #39b54a;
+      --lumina-green-dark: #167a2d;
+      --lumina-forest: #0d2b18;
+      --lumina-charcoal: #111812;
+      --lumina-gray: #bdbec0;
+      --lumina-silver: #eef0ef;
+      --accent: var(--lumina-green);
+      --accent-2: #7d8580;
+      --accent-3: var(--lumina-green-dark);
+      --accent-4: #97a09a;
+      --good: #1f8f3b;
+      --warn: #987226;
+      --bad: #b84c43;
+      --shadow: 0 14px 36px rgba(13, 43, 24, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #eef6ef 0%, #f8fbf7 48%, #f0f2f1 100%);
+      color: var(--ink);
+      animation: pageFade 420ms ease-out both;
+    }
+
+    button, select, input {
+      font: inherit;
+    }
+
+    @keyframes pageFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes softPop {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes drawStroke {
+      from { stroke-dashoffset: 900; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes barGrow {
+      from { opacity: 0.45; transform: scaleY(0.18); }
+      to { opacity: 1; transform: scaleY(1); }
+    }
+
+    @keyframes heatIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      transition: grid-template-columns 220ms ease;
+    }
+
+    .app-shell.nav-collapsed {
+      grid-template-columns: 82px minmax(0, 1fr);
+    }
+
+    aside {
+      background: linear-gradient(180deg, var(--lumina-charcoal) 0%, #0f2515 58%, var(--lumina-forest) 100%);
+      color: #f9fbfd;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .brand {
+      display: grid;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 206px;
+      height: 86px;
+      display: grid;
+      align-items: center;
+      justify-items: start;
+    }
+
+    .brand-mark img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .brand-logo-icon {
+      display: none !important;
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      line-height: 1.08;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .brand span, .status-note {
+      color: #b9c4d3;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .status-note {
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .sign-in-panel {
+      display: grid;
+      gap: 8px;
+    }
+
+    .signed-in-as {
+      font-size: 12px;
+      color: #b9c4d3;
+    }
+
+    .side-toggle {
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: #f9fbfd;
+      width: 42px;
+      height: 38px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 170ms ease, transform 170ms ease;
+    }
+
+    .side-toggle:hover {
+      background: rgba(255,255,255,0.14);
+      transform: translateY(-1px);
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: transparent;
+      color: #dbe3ee;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: background 170ms ease, color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+    }
+
+    .nav button::before {
+      content: attr(data-short);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 28px;
+      background: rgba(255,255,255,0.1);
+      color: #f7fbff;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .nav button:hover {
+      transform: translateX(2px);
+    }
+
+    .nav button.active {
+      background: #f9fbfd;
+      color: var(--lumina-charcoal);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.16);
+    }
+
+    .nav button.active::before {
+      background: var(--lumina-green);
+      color: #09130d;
+    }
+
+    .object-mini {
+      display: grid;
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .object-mini strong {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #b9c4d3;
+    }
+
+    .object-mini code {
+      display: block;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      color: #ecf5f4;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    main {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .nav-collapsed aside {
+      padding-inline: 14px;
+      align-items: center;
+    }
+
+    .nav-collapsed .brand {
+      justify-items: center;
+    }
+
+    .nav-collapsed .brand-mark {
+      width: 42px;
+      height: 42px;
+      justify-items: center;
+    }
+
+    .nav-collapsed .brand-logo-full {
+      display: none !important;
+    }
+
+    .nav-collapsed .brand-logo-icon {
+      display: block !important;
+    }
+
+    .nav-collapsed .brand-copy,
+    .nav-collapsed .status-note,
+    .nav-collapsed .object-mini,
+    .nav-collapsed .nav button span {
+      display: none;
+    }
+
+    .nav-collapsed .nav button {
+      width: 46px;
+      justify-content: center;
+      padding: 9px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .page-title {
+      display: grid;
+      gap: 5px;
+    }
+
+    .page-title h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .page-title p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 980px;
+      line-height: 1.45;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .control {
+      display: grid;
+      gap: 5px;
+      min-width: 142px;
+    }
+
+    .control label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    select, input[type="range"] {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      transition: border-color 170ms ease, box-shadow 170ms ease;
+    }
+
+    select {
+      padding: 9px 10px;
+    }
+
+    select:focus {
+      border-color: rgba(11, 122, 117, 0.62);
+      box-shadow: 0 0 0 3px rgba(11, 122, 117, 0.12);
+      outline: none;
+    }
+
+    input[type="range"] {
+      width: 190px;
+      accent-color: var(--accent);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .metric, .panel, .decision-card, .object-row {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      animation: riseIn 460ms ease both;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .topbar, aside {
+      animation: riseIn 420ms ease both;
+    }
+
+    .metric:hover, .panel:hover, .decision-card:hover, .object-row:hover, .campaign-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(11, 122, 117, 0.28);
+      box-shadow: 0 16px 40px rgba(20, 31, 45, 0.12);
+    }
+
+    .metric:nth-child(2), .panel:nth-child(2), .decision-card:nth-child(2), .object-row:nth-child(2), .campaign-card:nth-child(2) {
+      animation-delay: 45ms;
+    }
+
+    .metric:nth-child(3), .panel:nth-child(3), .decision-card:nth-child(3), .object-row:nth-child(3), .campaign-card:nth-child(3) {
+      animation-delay: 90ms;
+    }
+
+    .metric:nth-child(4), .panel:nth-child(4), .decision-card:nth-child(4), .object-row:nth-child(4), .campaign-card:nth-child(4) {
+      animation-delay: 135ms;
+    }
+
+    .metric {
+      padding: 15px;
+      padding-right: 42px;
+      display: grid;
+      gap: 8px;
+      min-height: 116px;
+      position: relative;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      font-size: 27px;
+      letter-spacing: 0;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+
+    .delta {
+      font-size: 12px;
+      color: var(--good);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .delta.warn { color: var(--warn); }
+    .delta.bad { color: var(--bad); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .campaign-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .campaign-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 13px;
+      display: grid;
+      gap: 10px;
+      min-height: 168px;
+      animation: riseIn 430ms ease both;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .campaign-card h4 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    .campaign-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: 12px;
+    }
+
+    .campaign-card .campaign-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .campaign-stats span {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .campaign-stats strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .campaign-controls {
+      display: grid;
+      gap: 13px;
+    }
+
+    .budget-total {
+      display: grid;
+      grid-template-columns: minmax(170px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding-bottom: 4px;
+    }
+
+    .budget-total strong {
+      font-size: 24px;
+      color: var(--accent);
+    }
+
+    .heatmap {
+      display: grid;
+      grid-template-columns: 86px repeat(5, minmax(74px, 1fr));
+      gap: 6px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .heat-cell {
+      min-height: 48px;
+      border-radius: 8px;
+      border: 1px solid rgba(24, 33, 47, 0.08);
+      padding: 7px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+      color: #142018;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .heat-cell:not(.header) {
+      animation: heatIn 420ms ease both;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .heat-cell:not(.header):hover {
+      transform: translateY(-2px);
+      filter: saturate(1.14);
+    }
+
+    .heat-cell.header {
+      background: #edf3ee;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .heat-cell strong {
+      font-size: 13px;
+      color: #142018;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      padding-right: 26px;
+    }
+
+    .panel-head h3, .decision-card h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: 4px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .segmented button {
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      padding: 7px 9px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 170ms ease, color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+    }
+
+    .segmented button:hover {
+      transform: translateY(-1px);
+    }
+
+    .segmented button.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(20, 31, 45, 0.08);
+    }
+
+    .chart {
+      width: 100%;
+      height: 280px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfb;
+    }
+
+    .chart path {
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: drawStroke 900ms ease-out forwards;
+    }
+
+    .chart rect:not(:first-child) {
+      animation: barGrow 520ms ease-out both;
+      transform-box: fill-box;
+      transform-origin: bottom;
+    }
+
+    .chart circle {
+      animation: softPop 420ms ease-out both;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .short-chart { height: 220px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+
+    .decision-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .decision-card {
+      padding: 14px;
+      display: grid;
+      gap: 9px;
+      box-shadow: none;
+    }
+
+    .decision-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: 13px;
+    }
+
+    .decision-card .impact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 12px;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .pill:hover {
+      transform: translateY(-1px);
+      filter: saturate(1.08);
+    }
+
+    .pill.good { color: var(--good); border-color: rgba(31,143,77,0.32); background: rgba(31,143,77,0.08); }
+    .pill.warn { color: var(--warn); border-color: rgba(176,105,0,0.32); background: rgba(176,105,0,0.08); }
+    .pill.bad { color: var(--bad); border-color: rgba(189,63,50,0.32); background: rgba(189,63,50,0.08); }
+
+    .help-chip {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(57, 181, 74, 0.26);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.7);
+      color: var(--lumina-green-dark);
+      display: inline-grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: help;
+      opacity: 0.58;
+      box-shadow: 0 4px 12px rgba(13, 43, 24, 0.08);
+      transition: opacity 140ms ease, transform 140ms ease, background 140ms ease;
+      z-index: 2;
+    }
+
+    .help-chip:hover,
+    .help-chip:focus-visible {
+      opacity: 1;
+      background: #fff;
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .object-table {
+      display: grid;
+      gap: 8px;
+    }
+
+    .object-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.1fr) minmax(180px, 0.8fr) minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      box-shadow: none;
+    }
+
+    .object-row code {
+      color: #1b4f29;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+    }
+
+    .object-row span, .object-row p {
+      color: var(--muted);
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .scorebar {
+      height: 8px;
+      border-radius: 999px;
+      background: #e6edf3;
+      overflow: hidden;
+      min-width: 86px;
+    }
+
+    .scorebar div {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .hidden { display: none !important; }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .table th, .table td {
+      text-align: left;
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .table th {
+      color: var(--muted);
+      font-weight: 650;
+      background: #f7f9fb;
+    }
+
+    .scenario {
+      display: grid;
+      gap: 16px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 150px minmax(160px, 1fr) 58px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .slider-row output {
+      color: var(--accent);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 20;
+      background: var(--lumina-charcoal);
+      color: #fff;
+      padding: 8px 9px;
+      border-radius: 7px;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+      max-width: 220px;
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .app-shell { grid-template-columns: 1fr; }
+      aside { position: static; }
+      .object-mini { margin-top: 0; }
+      .topbar, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .filters { justify-content: flex-start; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .campaign-card-grid { grid-template-columns: 1fr; }
+      .object-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      main { padding: 14px; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .page-title h2 { font-size: 24px; }
+      .slider-row { grid-template-columns: 1fr; }
+      input[type="range"] { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark">
+          <img class="brand-logo-full" src="assets/lumina-horizontal-transparent.png" alt="Lumina">
+          <img class="brand-logo-icon" src="assets/lumina-icon-transparent.png" alt="Lumina">
+        </div>
+        <div class="brand-copy">
+          <h1>Marketing Decision Workbench</h1>
+          <span>Lakehouse-backed demo surface for budget, source, and operational fit decisions.</span>
+        </div>
+      </div>
+      <button class="side-toggle" id="sideToggle" type="button" aria-label="Collapse navigation" aria-expanded="true">☰</button>
+      <nav class="nav" aria-label="Workbench views">
+        <button class="active" data-view="overview" data-short="OV"><span>Overview</span></button>
+        <button data-view="cohorts" data-short="CO"><span>Cohorts</span></button>
+        <button data-view="campaigns" data-short="CP"><span>Campaign Planner</span></button>
+        <button data-view="scenario" data-short="SC"><span>Scenario</span></button>
+        <button data-view="objects" data-short="BQ"><span>BQ Objects</span></button>
+      </nav>
+      <div class="status-note">
+        Data mode: local lakehouse catalog plus demo time series. Live BQ query was blocked by expired `gcloud` auth on 2026-07-13.
+      </div>
+      <div class="sign-in-panel" id="signInPanel">
+        <div id="googleSignInButton"></div>
+        <div class="signed-in-as hidden" id="signedInAs"></div>
+      </div>
+      <div class="object-mini">
+        <strong>Primary decision layer</strong>
+        <code>analytics_rpt.rpt_marketing_lead_cohort_performance</code>
+        <code>analytics_rpt.rpt_marketing_period_projection</code>
+        <code>analytics_rpt.rpt_marketing_campaign_ahj_performance</code>
+      </div>
+    </aside>
+
+    <main>
+      <section class="topbar">
+        <div class="page-title">
+          <h2 id="viewTitle">Marketing performance command center</h2>
+          <p id="viewSubtitle">See where demand is working, whether downstream capacity can absorb it, and which source mix changes are likely worth taking to the marketing team.</p>
+        </div>
+        <div class="filters" aria-label="Global filters">
+          <div class="control">
+            <label for="regionSelect">Market</label>
+            <select id="regionSelect">
+              <option>All markets</option>
+              <option>DC Metro</option>
+              <option>Northern Virginia</option>
+              <option>Maryland Suburbs</option>
+              <option>Baltimore</option>
+              <option>Central PA</option>
+              <option>Southeast PA</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="sourceSelect">Source</label>
+            <select id="sourceSelect">
+              <option>All sources</option>
+              <option>Paid Search</option>
+              <option>Referral</option>
+              <option>Partner</option>
+              <option>Events</option>
+              <option>Direct Mail</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="rangeSelect">Window</label>
+            <select id="rangeSelect">
+              <option value="12">12 months</option>
+              <option value="9">9 months</option>
+              <option value="6">6 months</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section id="overview" class="view">
+        <div class="metric-grid" id="metrics"></div>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Demand and yield trend</h3>
+                <p>Lead volume, expected wins, and projected revenue by month.</p>
+              </div>
+              <div class="segmented" id="trendMetric">
+                <button class="active" data-metric="revenue">Revenue</button>
+                <button data-metric="wins">Wins</button>
+                <button data-metric="leads">Leads</button>
+              </div>
+            </div>
+            <svg class="chart" id="trendChart" role="img" aria-label="Demand and yield trend chart"></svg>
+            <div class="legend">
+              <span><i style="background:#39b54a"></i>Actual</span>
+              <span><i style="background:#7d8580"></i>Projected</span>
+              <span><i style="background:#167a2d"></i>Capacity risk</span>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Decision queue</h3>
+                <p>Ranked moves based on yield, cost, and operational absorption.</p>
+              </div>
+            </div>
+            <div class="decision-list" id="decisionList"></div>
+          </article>
+        </div>
+
+        <div class="grid-3">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Source efficiency</h3>
+                <p>Cost per win and revenue per spend.</p>
+              </div>
+            </div>
+            <svg class="chart short-chart" id="efficiencyChart" role="img" aria-label="Source efficiency chart"></svg>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Survey absorption</h3>
+                <p>Closed-won inflow versus scheduled survey capacity.</p>
+              </div>
+            </div>
+            <svg class="chart short-chart" id="capacityChart" role="img" aria-label="Survey absorption chart"></svg>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Product mix signal</h3>
+                <p>Contribution mix from battery, panel, and adders.</p>
+              </div>
+            </div>
+            <svg class="chart short-chart" id="mixChart" role="img" aria-label="Product mix chart"></svg>
+          </article>
+        </div>
+      </section>
+
+      <section id="cohorts" class="view hidden">
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Cohort quality by source</h3>
+                <p>Lead to set, run, and win rates from the marketing cohort layer.</p>
+              </div>
+            </div>
+            <svg class="chart" id="funnelChart" role="img" aria-label="Cohort funnel chart"></svg>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Expected yield table</h3>
+                <p>Modeled from the identified report-ready marketing objects.</p>
+              </div>
+            </div>
+            <table class="table" id="cohortTable"></table>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>AHJ and campaign readiness</h3>
+              <p>Highlights markets where a good campaign still needs operational guardrails.</p>
+            </div>
+          </div>
+          <svg class="chart" id="ahjChart" role="img" aria-label="AHJ campaign readiness chart"></svg>
+        </article>
+      </section>
+
+      <section id="campaigns" class="view hidden">
+        <div class="metric-grid" id="campaignMetrics"></div>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Decision metric suite</h3>
+              <p>Derived from cohort yield, campaign/AHJ performance, project economics, and capacity planning objects.</p>
+            </div>
+          </div>
+          <div class="decision-list" id="decisionMetricSuite"></div>
+        </article>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Campaign budget allocator</h3>
+                <p>Choose an objective, set total dollars, and tune channel allocation for the selected market/window.</p>
+              </div>
+            </div>
+            <div class="campaign-controls">
+              <div class="budget-total">
+                <div class="control">
+                  <label for="campaignBudget">Total budget</label>
+                  <input id="campaignBudget" type="range" min="50000" max="750000" step="25000" value="250000">
+                </div>
+                <strong id="campaignBudgetOut">$250K</strong>
+              </div>
+              <div class="control">
+                <label for="campaignObjective">Decision objective</label>
+                <select id="campaignObjective">
+                  <option>Balanced growth</option>
+                  <option>Max revenue</option>
+                  <option>Lowest cost per win</option>
+                  <option>Capacity safe</option>
+                </select>
+              </div>
+              <div class="control">
+                <label for="campaignGrain">Campaign grain</label>
+                <select id="campaignGrain">
+                  <option value="Detail">Named campaign detail</option>
+                  <option value="Source">Source roll-up</option>
+                </select>
+              </div>
+              <div class="control">
+                <label for="campaignDetailSelect">Campaign detail</label>
+                <select id="campaignDetailSelect"></select>
+              </div>
+              <div id="campaignAllocationControls"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Recommended campaign buys</h3>
+                <p>Ranked next-dollar decisions, with economics and operational fit together.</p>
+              </div>
+            </div>
+            <div class="decision-list" id="campaignRecommendations"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Campaign cards</h3>
+              <p>Named spend packages the team can compare and defend.</p>
+            </div>
+          </div>
+          <div class="campaign-card-grid" id="campaignCards"></div>
+        </article>
+
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Selected campaign trend</h3>
+                <p>Monthly lead, win, and revenue movement for the best or selected campaign detail.</p>
+              </div>
+            </div>
+            <svg class="chart" id="campaignTrendChart" role="img" aria-label="Selected campaign trend chart"></svg>
+            <div class="legend">
+              <span><i style="background:#39b54a"></i>Revenue</span>
+              <span><i style="background:#7d8580"></i>Wins</span>
+              <span><i style="background:#167a2d"></i>Cost per win</span>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Budget transfer assistant</h3>
+                <p>Concrete reallocations from weaker campaigns into stronger ones.</p>
+              </div>
+            </div>
+            <div class="decision-list" id="campaignMoves"></div>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Spend frontier</h3>
+                <p>Expected revenue and capacity stress by campaign detail.</p>
+              </div>
+            </div>
+            <svg class="chart" id="campaignSpendChart" role="img" aria-label="Campaign spend frontier chart"></svg>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Where to spend</h3>
+                <p>Market and campaign heatmap based on expected yield, cost, AHJ fit, and capacity readiness.</p>
+              </div>
+            </div>
+            <div class="heatmap" id="campaignHeatmap"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Campaign decision table</h3>
+              <p>Use this to explain the why behind each spend recommendation.</p>
+            </div>
+          </div>
+          <table class="table" id="campaignTable"></table>
+        </article>
+      </section>
+
+      <section id="scenario" class="view hidden">
+        <div class="grid-2">
+          <article class="panel scenario">
+            <div class="panel-head">
+              <div>
+                <h3>Budget shift scenario</h3>
+                <p>Adjust the mix and watch projected wins, revenue, and capacity risk move together.</p>
+              </div>
+            </div>
+            <div class="slider-row">
+              <label for="paidSearchShift">Paid Search</label>
+              <input id="paidSearchShift" type="range" min="-25" max="35" value="10">
+              <output id="paidSearchShiftOut">+10%</output>
+            </div>
+            <div class="slider-row">
+              <label for="referralShift">Referral</label>
+              <input id="referralShift" type="range" min="-25" max="35" value="18">
+              <output id="referralShiftOut">+18%</output>
+            </div>
+            <div class="slider-row">
+              <label for="eventsShift">Events</label>
+              <input id="eventsShift" type="range" min="-25" max="35" value="-8">
+              <output id="eventsShiftOut">-8%</output>
+            </div>
+            <div class="slider-row">
+              <label for="capacityBuffer">Survey buffer</label>
+              <input id="capacityBuffer" type="range" min="0" max="25" value="8">
+              <output id="capacityBufferOut">8%</output>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Scenario impact</h3>
+                <p>Delta to baseline for the selected market/source/window.</p>
+              </div>
+            </div>
+            <div class="metric-grid" id="scenarioMetrics"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Decision frontier</h3>
+              <p>Higher expected yield is better; lower capacity stress is better.</p>
+            </div>
+          </div>
+          <svg class="chart" id="frontierChart" role="img" aria-label="Decision frontier chart"></svg>
+        </article>
+      </section>
+
+      <section id="objects" class="view hidden">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Identified report-ready BigQuery objects</h3>
+              <p>Objects surfaced from the local lakehouse discovery catalog and prior report definitions.</p>
+              <p>Workbook variance is expected: the legacy report is event-date based and includes manual payout-style costs, while these BQ objects add cohort, AHJ/market, expected-yield, and capacity enrichment. For workbook parity, use event-date actuals and derived PPI/Co-op spend rules; use the BQ layer for the expanded decision signals.</p>
+            </div>
+            <div class="segmented" id="objectFilter">
+              <button class="active" data-domain="All">All</button>
+              <button data-domain="Marketing">Marketing</button>
+              <button data-domain="Performance">Performance</button>
+              <button data-domain="Capacity">Capacity</button>
+              <button data-domain="Forecast">Forecast</button>
+            </div>
+          </div>
+          <div class="object-table" id="objectTable"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const months = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+    const sources = ["Paid Search", "Referral", "Partner", "Events", "Direct Mail"];
+    const regions = ["DC Metro", "Northern Virginia", "Maryland Suburbs", "Baltimore", "Central PA", "Southeast PA"];
+    const heatmapRegions = regions;
+    const palette = ["#39b54a", "#7d8580", "#167a2d", "#bdbec0", "#0d2b18"];
+    const regionProfiles = {
+      "DC Metro": { lift: 1.04, readiness: 6, permit: 74, utility: 68, crew: 72, survey: 70, cancel: 47, systemKw: 8.9, marginAdj: 0.006, capacityOffset: 4 },
+      "Northern Virginia": { lift: 1.12, readiness: 10, permit: 79, utility: 73, crew: 76, survey: 75, cancel: 42, systemKw: 9.5, marginAdj: 0.012, capacityOffset: 7 },
+      "Maryland Suburbs": { lift: 1.08, readiness: 8, permit: 76, utility: 70, crew: 78, survey: 74, cancel: 44, systemKw: 9.2, marginAdj: 0.01, capacityOffset: 8 },
+      "Baltimore": { lift: 0.95, readiness: 2, permit: 64, utility: 62, crew: 69, survey: 66, cancel: 55, systemKw: 8.6, marginAdj: 0.002, capacityOffset: 1 },
+      "Central PA": { lift: 0.88, readiness: -1, permit: 61, utility: 66, crew: 63, survey: 62, cancel: 53, systemKw: 9.7, marginAdj: 0.004, capacityOffset: -2 },
+      "Southeast PA": { lift: 1.02, readiness: 5, permit: 71, utility: 69, crew: 70, survey: 72, cancel: 48, systemKw: 9.1, marginAdj: 0.008, capacityOffset: 3 }
+    };
+    const regionReadiness = Object.fromEntries(regions.map(region => [region, regionProfiles[region].readiness]));
+    const sourceRegionFit = {
+      "Paid Search": { "DC Metro": 5, "Northern Virginia": 8, "Maryland Suburbs": 7, "Baltimore": 2, "Central PA": -2, "Southeast PA": 4 },
+      "Referral": { "DC Metro": 6, "Northern Virginia": 9, "Maryland Suburbs": 8, "Baltimore": 3, "Central PA": 2, "Southeast PA": 6 },
+      "Partner": { "DC Metro": 3, "Northern Virginia": 7, "Maryland Suburbs": 6, "Baltimore": 5, "Central PA": 4, "Southeast PA": 7 },
+      "Events": { "DC Metro": 1, "Northern Virginia": 5, "Maryland Suburbs": 4, "Baltimore": 6, "Central PA": 2, "Southeast PA": 5 },
+      "Direct Mail": { "DC Metro": 4, "Northern Virginia": 5, "Maryland Suburbs": 7, "Baltimore": 3, "Central PA": 6, "Southeast PA": 8 }
+    };
+    const campaignTactics = {
+      "Paid Search": {
+        name: "High-intent capture",
+        tactic: "Concentrate bids on serviceable AHJs and high-margin battery attach keywords.",
+        guardrail: "Pause if survey stress exceeds 18%."
+      },
+      "Referral": {
+        name: "Customer referral acceleration",
+        tactic: "Fund referral boosts in markets with strong first-pass survey performance.",
+        guardrail: "Keep incentive cost below blended cost per set."
+      },
+      "Partner": {
+        name: "Partner channel expansion",
+        tactic: "Shift co-op dollars to partners producing larger systems and clean handoffs.",
+        guardrail: "Require source-level quote coverage."
+      },
+      "Events": {
+        name: "Local event selectivity",
+        tactic: "Run fewer events, only where AHJ readiness and install coverage are favorable.",
+        guardrail: "Cap spend unless run rate improves."
+      },
+      "Direct Mail": {
+        name: "Neighborhood reactivation",
+        tactic: "Use targeted mail for prior-interest ZIPs with low sales follow-up friction.",
+        guardrail: "Suppress low win-rate territories."
+      }
+    };
+    const campaignSegments = [
+      { source: "Paid Search", campaign: "Google Nonbrand Search", mix: 0.33, leadLift: 1.04, costIndex: 1.10, winLift: 1.05, revenueLift: 1.02, stressLift: 1.04, tactic: "Fund nonbrand solar intent terms only in AHJs with fast cycle time.", guardrail: "Cap when cost per set rises two weeks in a row." },
+      { source: "Paid Search", campaign: "Google Brand Defense", mix: 0.16, leadLift: 0.92, costIndex: 0.72, winLift: 1.18, revenueLift: 1.00, stressLift: 0.86, tactic: "Protect branded demand and competitor conquest leakage.", guardrail: "Maintain floor spend; do not over-scale low-incrementality clicks." },
+      { source: "Paid Search", campaign: "Solar Reviews", mix: 0.29, leadLift: 1.16, costIndex: 0.94, winLift: 1.12, revenueLift: 1.04, stressLift: 0.95, tactic: "Scale Solar Reviews where lead quality and survey conversion stay above blended average.", guardrail: "Hold out AHJs with poor first-pass survey performance." },
+      { source: "Paid Search", campaign: "Local Services Ads", mix: 0.22, leadLift: 0.98, costIndex: 1.06, winLift: 0.96, revenueLift: 0.98, stressLift: 1.08, tactic: "Use local service capture for near-term appointment volume.", guardrail: "Throttle if same-week appointment capacity is constrained." },
+      { source: "Referral", campaign: "Customer Referral Bonus", mix: 0.48, leadLift: 0.84, costIndex: 0.58, winLift: 1.28, revenueLift: 1.04, stressLift: 0.78, tactic: "Increase referral bonus in markets with strong install experience.", guardrail: "Keep incentive below marginal commission savings." },
+      { source: "Referral", campaign: "Ambassador Program", mix: 0.30, leadLift: 0.74, costIndex: 0.67, winLift: 1.18, revenueLift: 1.01, stressLift: 0.82, tactic: "Recruit top advocates around high-density neighborhoods.", guardrail: "Review partner attribution overlap before payout." },
+      { source: "Referral", campaign: "Employee Referral", mix: 0.22, leadLift: 0.52, costIndex: 0.42, winLift: 1.09, revenueLift: 0.98, stressLift: 0.75, tactic: "Run low-cost employee referral pushes during capacity-friendly weeks.", guardrail: "Keep campaign lightweight and time boxed." },
+      { source: "Partner", campaign: "EnergySage", mix: 0.31, leadLift: 1.08, costIndex: 0.88, winLift: 1.08, revenueLift: 1.02, stressLift: 0.98, tactic: "Scale marketplace bids on larger-system segments.", guardrail: "Require quote margin coverage before increasing bids." },
+      { source: "Partner", campaign: "Builder Partner", mix: 0.28, leadLift: 0.70, costIndex: 0.76, winLift: 1.22, revenueLift: 1.10, stressLift: 0.88, tactic: "Fund co-marketing with builders producing clean handoffs.", guardrail: "Pause partners with high cancelled-project share." },
+      { source: "Partner", campaign: "Retail Dealer Co-op", mix: 0.22, leadLift: 0.82, costIndex: 0.91, winLift: 0.96, revenueLift: 0.98, stressLift: 1.02, tactic: "Use co-op dollars for stores with proven appointment show rate.", guardrail: "Require weekly lead disposition coverage." },
+      { source: "Partner", campaign: "Affiliate Marketplace", mix: 0.19, leadLift: 1.18, costIndex: 1.18, winLift: 0.86, revenueLift: 0.96, stressLift: 1.10, tactic: "Treat as volume filler only when capacity is available.", guardrail: "Cut if lead-to-run rate falls below baseline." },
+      { source: "Events", campaign: "Home Shows", mix: 0.44, leadLift: 1.04, costIndex: 1.22, winLift: 0.92, revenueLift: 1.01, stressLift: 1.15, tactic: "Select fewer shows in AHJs with strong permit throughput.", guardrail: "No expansion without post-show run-rate proof." },
+      { source: "Events", campaign: "Community Events", mix: 0.32, leadLift: 0.78, costIndex: 0.96, winLift: 0.88, revenueLift: 0.96, stressLift: 1.04, tactic: "Use for local awareness, not primary win volume.", guardrail: "Bundle with referral capture to justify spend." },
+      { source: "Events", campaign: "Webinar / Education", mix: 0.24, leadLift: 0.62, costIndex: 0.70, winLift: 1.02, revenueLift: 0.99, stressLift: 0.84, tactic: "Use low-cost education for nurture and battery attach messaging.", guardrail: "Score success on assisted pipeline, not raw lead count." },
+      { source: "Direct Mail", campaign: "Neighborhood Reactivation", mix: 0.42, leadLift: 0.86, costIndex: 0.93, winLift: 0.94, revenueLift: 1.01, stressLift: 0.92, tactic: "Mail prior-interest neighborhoods near active crews.", guardrail: "Suppress territories with weak set rate." },
+      { source: "Direct Mail", campaign: "Permit-AHJ Mailer", mix: 0.30, leadLift: 0.72, costIndex: 0.86, winLift: 1.06, revenueLift: 0.98, stressLift: 0.80, tactic: "Target AHJs with simpler permitting and faster install flow.", guardrail: "Refresh AHJ list monthly." },
+      { source: "Direct Mail", campaign: "Battery Upgrade Mailer", mix: 0.28, leadLift: 0.58, costIndex: 0.82, winLift: 0.92, revenueLift: 1.16, stressLift: 0.76, tactic: "Target homeowners likely to add battery value.", guardrail: "Track attach-rate and margin, not lead count alone." }
+    ];
+    const titleMap = {
+      overview: ["Marketing performance command center", "See where demand is working, whether downstream capacity can absorb it, and which source mix changes are likely worth taking to the marketing team."],
+      cohorts: ["Cohort and campaign quality", "Compare source quality from lead through win, with AHJ readiness so growth decisions stay grounded."],
+      campaigns: ["Campaign spend planner", "Decide where and how to spend marketing dollars by source, market, expected yield, cost, and downstream capacity."],
+      scenario: ["Scenario planner", "Use budget and capacity assumptions to turn report-ready metrics into clear decisions."],
+      objects: ["Lakehouse object map", "Identified report-ready BQ objects that can support the marketing decision demo."]
+    };
+
+    const objectInventory = [
+      ["Marketing", "analytics_rpt.rpt_marketing_lead_cohort_performance", "Core marketing cohort performance", "Lead, set, run, win rates by cohort/source/campaign.", 96],
+      ["Marketing", "analytics_rpt.rpt_marketing_cohort_expected_yield", "Expected yield model", "Expected wins and revenue from campaign/source cohorts.", 94],
+      ["Marketing", "analytics_rpt.rpt_marketing_period_projection", "Pacing projection", "Actual to date, recommended projection, confidence, and gap to quota.", 93],
+      ["Marketing", "analytics_rpt.rpt_marketing_campaign_ahj_performance", "Campaign by AHJ", "Campaign yield, cost, and territory/AHJ performance.", 90],
+      ["Marketing", "analytics_rpt.rpt_campaign_ahj_performance", "Legacy campaign AHJ rollup", "Lead, set, run, win, spend, CPL, CPW, and revenue efficiency.", 87],
+      ["Performance", "analytics_rpt.rpt_pipeline_funnel", "Pipeline funnel", "Marketing to sales conversion spine.", 84],
+      ["Performance", "analytics_rpt.rpt_sales_growth_summary", "Sales growth summary", "Periodized sales trend and growth measures.", 82],
+      ["Performance", "analytics_rpt.rpt_project_product_mix_summary", "Project product mix", "Battery, panel, racking, inverter, adder mix and line amounts.", 81],
+      ["Performance", "analytics_rpt.rpt_opportunity_product_mix_summary", "Opportunity product mix", "Product mix before project conversion.", 80],
+      ["Performance", "analytics_rpt.rpt_current_performance_bq_columns_v1", "Current performance columns", "Campaign source, region, ASP, cost per watt, margin, labor, commission.", 78],
+      ["Performance", "analytics_rpt.rpt_residential_cost_project_detail", "Residential project economics", "Project level cost, ASP, dates, campaign source, region.", 76],
+      ["Capacity", "analytics_rpt.rpt_sales_to_survey_capacity", "Sales to survey capacity", "Closed-won inflow, survey backlog, schedule, completion, and capacity gap.", 92],
+      ["Capacity", "analytics_rpt.rpt_survey_performance_by_surveyor", "Survey performance", "Weekly throughput, first-pass return rate, misses, churn, cycle time.", 83],
+      ["Capacity", "analytics_rpt.rpt_survey_return_reason_trend", "Survey return reasons", "Rework reason categories and issue trend.", 79],
+      ["Forecast", "analytics_rpt.rpt_forecast_capacity_plan_v1", "Forecast capacity plan", "Future workload, confidence bands, FTE need, and capacity pressure.", 88],
+      ["Forecast", "analytics_rpt.rpt_forecast_leadership_simulation_v1", "Leadership simulation", "Scenario-ready capacity and revenue risk analysis.", 89],
+      ["Forecast", "analytics_rpt.rpt_forecast_priority_queue_v1", "Forecast priority queue", "High-impact project and desk priority queue.", 82],
+      ["Forecast", "analytics_rpt.rpt_forecast_model_decision_recommendation_v1", "Model decision recommendation", "Champion/challenger model decision gates.", 73]
+    ];
+
+    function generateData() {
+      const rows = [];
+      months.forEach((month, monthIndex) => {
+        sources.forEach((source, sourceIndex) => {
+          regions.forEach((region, regionIndex) => {
+            const profile = regionProfiles[region];
+            const seasonal = 1 + Math.sin((monthIndex + 1) / 12 * Math.PI * 2) * 0.09;
+            const sourceLift = [1.1, 0.76, 0.88, 0.68, 0.54][sourceIndex];
+            const regionLift = profile.lift;
+            const baseLeads = Math.round((105 + monthIndex * 7 + sourceIndex * 13) * seasonal * sourceLift * regionLift);
+            const spend = Math.round(baseLeads * [82, 34, 51, 96, 69][sourceIndex] * (0.95 + regionIndex * 0.025));
+            const setRate = [0.34, 0.42, 0.37, 0.28, 0.25][sourceIndex] + regionIndex * 0.004;
+            const runRate = [0.61, 0.69, 0.64, 0.56, 0.52][sourceIndex];
+            const winRate = [0.24, 0.31, 0.27, 0.19, 0.16][sourceIndex] + Math.max(0, monthIndex - 5) * 0.002;
+            const sets = Math.round(baseLeads * setRate);
+            const runs = Math.round(sets * runRate);
+            const wins = Math.round(runs * winRate);
+            const avgSystemKw = profile.systemKw + sourceIndex * 0.12;
+            const revenue = Math.round(wins * avgSystemKw * 1000 * [3.24, 3.11, 3.18, 3.04, 3.22][sourceIndex]);
+            const marginPct = 0.245 + [0.005, 0.041, 0.028, -0.011, -0.017][sourceIndex] + profile.marginAdj;
+            const capacity = Math.round((runs * 0.82) + profile.capacityOffset + Math.cos(monthIndex / 2) * 7);
+            rows.push({ month, monthIndex, source, region, leads: baseLeads, spend, sets, runs, wins, revenue, marginPct, capacity, avgSystemKw });
+          });
+        });
+      });
+      return rows;
+    }
+
+    const rawData = generateData();
+
+    const GOOGLE_OAUTH_CLIENT_ID = (typeof window !== "undefined" && window.LUMINA_GOOGLE_CLIENT_ID) || "502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com";
+    let currentIdToken = null;
+    let currentUserName = null;
+
+    function getIdToken() {
+      return currentIdToken;
+    }
+
+    function isSignedIn() {
+      return Boolean(currentIdToken);
+    }
+
+    function decodeJwtPayload(token) {
+      try {
+        const payload = token.split(".")[1];
+        return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function renderSignInState() {
+      const signedInAs = document.getElementById("signedInAs");
+      const button = document.getElementById("googleSignInButton");
+      if (isSignedIn()) {
+        signedInAs.textContent = `Signed in as ${currentUserName}`;
+        signedInAs.classList.remove("hidden");
+        button.classList.add("hidden");
+      } else {
+        signedInAs.classList.add("hidden");
+        button.classList.remove("hidden");
+      }
+    }
+
+    function handleGoogleCredential(response) {
+      currentIdToken = response.credential;
+      const payload = decodeJwtPayload(currentIdToken);
+      currentUserName = payload.name || payload.email || "Signed in";
+      renderSignInState();
+      fetchNotes().then(() => {
+        refreshPanelNoteBadges();
+        render();
+      });
+    }
+
+    function initGoogleSignIn() {
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        callback: handleGoogleCredential
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleSignInButton"),
+        { theme: "outline", size: "medium", text: "signin_with" }
+      );
+      renderSignInState();
+    }
+
+    let state = {
+      view: "overview",
+      region: "All markets",
+      source: "All sources",
+      range: 12,
+      trendMetric: "revenue",
+      objectDomain: "All",
+      campaignBudget: 250000,
+      campaignObjective: "Balanced growth",
+      campaignGrain: "Detail",
+      campaignDetail: "All campaign details",
+      campaignAllocations: { "Paid Search": 32, "Referral": 24, "Partner": 20, "Events": 12, "Direct Mail": 12 },
+      campaignDetailAllocations: {},
+      shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
+    };
+
+    function filteredRows() {
+      const start = months.length - state.range;
+      return rawData.filter(row =>
+        row.monthIndex >= start &&
+        (state.region === "All markets" || row.region === state.region) &&
+        (state.source === "All sources" || row.source === state.source)
+      );
+    }
+
+    function aggregate(rows, key) {
+      return rows.reduce((sum, row) => sum + row[key], 0);
+    }
+
+    function fmtCurrency(value) {
+      if (Math.abs(value) >= 1000000) return "$" + (value / 1000000).toFixed(1) + "M";
+      if (Math.abs(value) >= 1000) return "$" + Math.round(value / 1000) + "K";
+      return "$" + Math.round(value).toLocaleString();
+    }
+
+    function fmtNum(value) {
+      return Math.round(value).toLocaleString();
+    }
+
+    function pct(value, digits = 1) {
+      return (value * 100).toFixed(digits) + "%";
+    }
+
+    const helpCopy = {
+      "Projected revenue": "Projected revenue for the current market, source, and time window. Use it to size the opportunity before changing spend.",
+      "Expected wins": "Expected closed-won projects from the selected marketing cut. Use this with capacity stress before scaling a channel.",
+      "Cost per win": "Marketing spend divided by expected wins. Lower is better, but compare it with margin and product mix before cutting.",
+      "Capacity stress": "Shows whether projected survey runs exceed available survey capacity. High stress means growth may create operational drag.",
+      "Contribution margin": "Weighted gross margin from the projected project mix. Use it to avoid optimizing only for top-line revenue.",
+      "Lead volume": "Lead count in the selected window. Useful for pacing, but it should be read with conversion and win quality.",
+      "Spend": "Marketing spend represented in the reporting layer. Use it as the denominator for ROI and cost-per-win decisions.",
+      "Survey capacity": "Available downstream survey capacity linked to marketing demand. Use it to time campaigns around operational bandwidth.",
+      "Budget": "Total campaign dollars in the allocator. Move this slider to test how spend level changes expected wins and revenue.",
+      "Weighted stress": "Expected capacity stress after weighting each campaign by its planned win contribution.",
+      "Market readiness": "Composite DMV/PA market score using permit speed, utility fit, crew coverage, survey access, and cancellation risk.",
+      "Capacity-adj CPW": "Cost per win adjusted for market readiness and survey/install pressure. This is the safer CPW for campaign decisions.",
+      "Gross margin / $": "Expected gross margin generated for each marketing dollar. Use it to compare campaign quality beyond revenue.",
+      "Next $10K yield": "Projected wins and revenue from the next incremental $10K placed into the best current campaigns.",
+      "Top campaign": "The highest ranked campaign under the current objective, market, source, and allocation settings.",
+      "Decision coverage": "How many campaign options are being ranked in the current view.",
+      "Best next dollar": "Adjusted return on the current best incremental spend opportunity.",
+      "Hold/Cut count": "Number of campaigns that should be reviewed before adding more budget.",
+      "Revenue delta": "Scenario revenue change versus the current baseline after applying the budget mix sliders.",
+      "Win delta": "Scenario closed-won movement versus baseline. Use this to quantify whether a spend shift is worth the disruption.",
+      "Spend delta": "Scenario investment change versus baseline.",
+      "Stress delta": "Scenario capacity pressure change versus baseline. Negative is usually better if revenue is preserved.",
+      "Demand and yield trend": "Monthly trend of demand, projected yield, and capacity risk. Use the segmented buttons to switch revenue, wins, and leads.",
+      "Decision queue": "Plain-English recommendations created from yield, cost, capacity, and projection signals.",
+      "Source efficiency": "Compares revenue per marketing dollar by source. Use this to find high-yield channels before checking capacity.",
+      "Survey absorption": "Compares survey demand against available capacity. Use it to avoid launching campaigns into a bottleneck.",
+      "Product mix signal": "Shows contribution mix from panels, batteries, racking, inverters, and adders. Use it to spot richer demand.",
+      "Cohort quality by source": "Shows lead-to-set, lead-to-run, and lead-to-win conversion by source.",
+      "Expected yield table": "Tabular source view of leads, wins, revenue, conversion, and cost per win.",
+      "AHJ and campaign readiness": "Operational readiness view for the selected DMV/PA market, including utility, permitting, crew, survey, and cancellation signals.",
+      "Decision metric suite": "Explains the derived decision metrics used in campaign ranking: readiness, adjusted CPW, margin, product lift, and saturation.",
+      "Campaign budget allocator": "Use the budget, objective, grain, campaign selector, and sliders to simulate where marketing dollars should go.",
+      "Recommended campaign buys": "Ranked campaign recommendations with planned spend, adjusted economics, expected wins, and stress.",
+      "Campaign cards": "Compact campaign packages for comparison. Use them to talk through spend, wins, and next-$10K impact.",
+      "Selected campaign trend": "Monthly revenue, wins, and cost-per-win trend for the top or selected campaign.",
+      "Budget transfer assistant": "Concrete reallocations from weaker campaigns to stronger campaigns based on marginal yield.",
+      "Spend frontier": "Plots campaign yield against capacity stress. Favor upper-left opportunities with high yield and lower stress.",
+      "Where to spend": "Market-by-campaign heatmap. Higher scores indicate better economics and operational fit.",
+      "Campaign decision table": "Detailed campaign ranking table for defending why each campaign should scale, test, hold, or cut.",
+      "Budget shift scenario": "Use sliders to simulate source mix and capacity changes, then compare revenue, wins, spend, and stress.",
+      "Scenario frontier": "Scenario view of source yield versus capacity stress after slider changes.",
+      "Identified report-ready BigQuery objects": "Inventory of report-ready lakehouse objects behind the demo and their decision fit."
+    };
+
+    function escapeAttr(value) {
+      return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function helpTextFor(label) {
+      const text = String(label || "").replace(/\s+/g, " ").trim();
+      if (helpCopy[text]) return helpCopy[text];
+      if (text.startsWith("Expected revenue")) return "Expected revenue under the current campaign allocation. Use it with margin and stress before scaling.";
+      if (text.startsWith("Market readiness")) return helpCopy["Market readiness"];
+      if (text.startsWith("Capacity-adjusted CPW")) return helpCopy["Capacity-adj CPW"];
+      if (text.startsWith("Next $10K efficiency")) return helpCopy["Next $10K yield"];
+      if (text.startsWith("Gross margin per $")) return helpCopy["Gross margin / $"];
+      if (text.startsWith("Product mix lift")) return "Estimated lift from campaigns that tend to produce richer system size, partner/builder demand, or battery attach upside.";
+      return "Hover for context: this element summarizes a decision signal used to compare market, campaign, source, cost, yield, and capacity tradeoffs.";
+    }
+
+    function helpChip(label) {
+      return `<button type="button" class="help-chip" aria-label="About ${escapeAttr(label)}" data-tip="${escapeAttr(helpTextFor(label))}">?</button>`;
+    }
+
+    function activeMarketProfiles() {
+      return state.region === "All markets"
+        ? regions.map(region => regionProfiles[region])
+        : [regionProfiles[state.region]];
+    }
+
+    function marketReadinessScore() {
+      const profiles = activeMarketProfiles();
+      const total = profiles.reduce((sum, profile) => {
+        return sum + profile.utility * 0.18 + profile.permit * 0.24 + profile.crew * 0.22 + profile.survey * 0.2 + (100 - profile.cancel) * 0.16;
+      }, 0);
+      return Math.round(total / Math.max(1, profiles.length));
+    }
+
+    function marketReadinessTone(score) {
+      if (score >= 72) return "good";
+      if (score >= 64) return "warn";
+      return "bad";
+    }
+
+    function campaignProductLift(row) {
+      let lift = row.source === "Partner" ? 0.08 : row.source === "Referral" ? 0.06 : row.source === "Paid Search" ? 0.04 : row.source === "Direct Mail" ? 0.03 : 0.01;
+      if (row.campaign.includes("Battery")) lift += 0.14;
+      if (row.campaign.includes("Builder") || row.campaign.includes("EnergySage")) lift += 0.06;
+      if (row.campaign.includes("Home Shows") || row.campaign.includes("Community")) lift -= 0.02;
+      return Math.max(0, lift);
+    }
+
+    function groupedByMonth(rows) {
+      return months.slice(months.length - state.range).map((month) => {
+        const subset = rows.filter(row => row.month === month);
+        const leads = aggregate(subset, "leads");
+        const wins = aggregate(subset, "wins");
+        const revenue = aggregate(subset, "revenue");
+        const capacity = aggregate(subset, "capacity");
+        const runs = aggregate(subset, "runs");
+        const spend = aggregate(subset, "spend");
+        const margin = subset.length ? subset.reduce((s, r) => s + r.marginPct * r.revenue, 0) / Math.max(1, revenue) : 0;
+        return { month, leads, wins, revenue, capacity, runs, spend, margin, risk: Math.max(0, runs - capacity) };
+      });
+    }
+
+    function renderMetrics() {
+      const rows = filteredRows();
+      const revenue = aggregate(rows, "revenue");
+      const wins = aggregate(rows, "wins");
+      const leads = aggregate(rows, "leads");
+      const spend = aggregate(rows, "spend");
+      const runs = aggregate(rows, "runs");
+      const capacity = aggregate(rows, "capacity");
+      const margin = rows.reduce((sum, row) => sum + row.revenue * row.marginPct, 0) / Math.max(1, revenue);
+      const cpw = spend / Math.max(1, wins);
+      const data = [
+        ["Projected revenue", fmtCurrency(revenue), "+8.7% vs prior window", "good"],
+        ["Expected wins", fmtNum(wins), "+5.1% with current mix", "good"],
+        ["Cost per win", fmtCurrency(cpw), cpw > 6200 ? "Needs pressure" : "Healthy", cpw > 6200 ? "warn" : "good"],
+        ["Capacity stress", pct(Math.max(0, runs - capacity) / Math.max(1, runs)), runs > capacity ? "Schedule constraint" : "Absorbable", runs > capacity ? "bad" : "good"],
+        ["Contribution margin", pct(margin), "+2.2 pts from product mix", "good"],
+        ["Lead volume", fmtNum(leads), "Cohort coverage ready", "good"],
+        ["Spend", fmtCurrency(spend), "Marketing spend spine found", "good"],
+        ["Survey capacity", fmtNum(capacity), "Ops link included", "warn"]
+      ];
+      document.getElementById("metrics").innerHTML = data.map(([label, value, delta, tone]) => `
+        <div class="metric">
+          ${helpChip(label)}
+          <span>${label}</span>
+          <strong>${value}</strong>
+          <span class="delta ${tone}">${delta}</span>
+        </div>
+      `).join("");
+      wireTips(document.getElementById("metrics"));
+    }
+
+    function svgText(x, y, text, opts = {}) {
+      return `<text x="${x}" y="${y}" fill="${opts.fill || "#657083"}" font-size="${opts.size || 11}" text-anchor="${opts.anchor || "start"}">${text}</text>`;
+    }
+
+    function linePath(points) {
+      return points.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    }
+
+    function clearSvg(svg) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+    }
+
+    function drawLineChart(svgId, series, labels, options = {}) {
+      const svg = document.getElementById(svgId);
+      clearSvg(svg);
+      const w = svg.clientWidth || 600;
+      const h = svg.clientHeight || 260;
+      const pad = { top: 28, right: 22, bottom: 38, left: 48 };
+      const values = series.flatMap(s => s.values);
+      const max = Math.max(...values, 1) * 1.12;
+      const min = options.minZero === false ? Math.min(...values) * 0.92 : 0;
+      const x = i => pad.left + (i / Math.max(1, labels.length - 1)) * (w - pad.left - pad.right);
+      const y = v => h - pad.bottom - ((v - min) / (max - min || 1)) * (h - pad.top - pad.bottom);
+      let markup = `<rect width="${w}" height="${h}" fill="#fbfdfb"></rect>`;
+      for (let i = 0; i < 4; i++) {
+        const gy = pad.top + i * ((h - pad.top - pad.bottom) / 3);
+        markup += `<line x1="${pad.left}" y1="${gy}" x2="${w - pad.right}" y2="${gy}" stroke="#d9e0e8" stroke-width="1"></line>`;
+      }
+      labels.forEach((label, i) => {
+        if (i % Math.ceil(labels.length / 6) === 0 || i === labels.length - 1) {
+          markup += svgText(x(i), h - 14, label, { anchor: "middle" });
+        }
+      });
+      markup += svgText(10, pad.top + 4, options.yLabel || "", { size: 11 });
+      series.forEach((s, idx) => {
+        const points = s.values.map((value, i) => ({ x: x(i), y: y(value) }));
+        markup += `<path d="${linePath(points)}" fill="none" stroke="${s.color || palette[idx]}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>`;
+        points.forEach((p, i) => {
+          markup += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${s.color || palette[idx]}" data-tip="${labels[i]} ${s.name}: ${s.format ? s.format(s.values[i]) : fmtNum(s.values[i])}"></circle>`;
+        });
+      });
+      svg.innerHTML = markup;
+      wireTips(svg);
+    }
+
+    function drawBars(svgId, rows, options = {}) {
+      const svg = document.getElementById(svgId);
+      clearSvg(svg);
+      const w = svg.clientWidth || 600;
+      const h = svg.clientHeight || 240;
+      const pad = { top: 26, right: 18, bottom: 46, left: 44 };
+      const max = Math.max(...rows.flatMap(r => Array.isArray(r.value) ? r.value : [r.value]), 1) * 1.18;
+      const slot = (w - pad.left - pad.right) / rows.length;
+      let markup = `<rect width="${w}" height="${h}" fill="#fbfdfb"></rect>`;
+      for (let i = 0; i < 4; i++) {
+        const gy = pad.top + i * ((h - pad.top - pad.bottom) / 3);
+        markup += `<line x1="${pad.left}" y1="${gy}" x2="${w - pad.right}" y2="${gy}" stroke="#d9e0e8"></line>`;
+      }
+      rows.forEach((row, i) => {
+        const values = Array.isArray(row.value) ? row.value : [row.value];
+        const colors = row.colors || palette;
+        values.forEach((value, j) => {
+          const barW = Math.max(8, slot / (values.length + 1));
+          const x = pad.left + i * slot + (slot - barW * values.length) / 2 + j * barW;
+          const bh = (value / max) * (h - pad.top - pad.bottom);
+          const y = h - pad.bottom - bh;
+          markup += `<rect x="${x}" y="${y}" width="${barW - 3}" height="${bh}" rx="3" fill="${colors[j] || palette[j]}" data-tip="${row.label}: ${row.format ? row.format(value, j) : fmtNum(value)}"></rect>`;
+        });
+        markup += svgText(pad.left + i * slot + slot / 2, h - 16, row.label, { anchor: "middle", size: 10 });
+      });
+      markup += svgText(10, pad.top + 4, options.yLabel || "", { size: 11 });
+      svg.innerHTML = markup;
+      wireTips(svg);
+    }
+
+    function drawDonut(svgId, rows) {
+      const svg = document.getElementById(svgId);
+      clearSvg(svg);
+      const w = svg.clientWidth || 400;
+      const h = svg.clientHeight || 220;
+      const cx = w / 2;
+      const cy = h / 2 - 4;
+      const r = Math.min(w, h) * 0.31;
+      const total = rows.reduce((sum, row) => sum + row.value, 0);
+      let angle = -Math.PI / 2;
+      let markup = `<rect width="${w}" height="${h}" fill="#fbfdfb"></rect>`;
+      rows.forEach((row, i) => {
+        const next = angle + (row.value / total) * Math.PI * 2;
+        const large = next - angle > Math.PI ? 1 : 0;
+        const x1 = cx + Math.cos(angle) * r;
+        const y1 = cy + Math.sin(angle) * r;
+        const x2 = cx + Math.cos(next) * r;
+        const y2 = cy + Math.sin(next) * r;
+        markup += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${palette[i]}" data-tip="${row.label}: ${pct(row.value / total)}"></path>`;
+        angle = next;
+      });
+      markup += `<circle cx="${cx}" cy="${cy}" r="${r * 0.58}" fill="#fbfdfb"></circle>`;
+      markup += svgText(cx, cy - 4, "Mix", { anchor: "middle", fill: "#172019", size: 15 });
+      markup += svgText(cx, cy + 14, fmtCurrency(total), { anchor: "middle", size: 12 });
+      rows.forEach((row, i) => {
+        const lx = 18 + (i % 2) * (w / 2 - 12);
+        const ly = h - 48 + Math.floor(i / 2) * 18;
+        markup += `<rect x="${lx}" y="${ly - 9}" width="10" height="10" rx="2" fill="${palette[i]}"></rect>`;
+        markup += svgText(lx + 16, ly, row.label, { size: 11 });
+      });
+      svg.innerHTML = markup;
+      wireTips(svg);
+    }
+
+    function renderOverviewCharts() {
+      const grouped = groupedByMonth(filteredRows());
+      const key = state.trendMetric;
+      const projected = grouped.map((row, i) => row[key] * (i > grouped.length - 4 ? 1.08 + i * 0.004 : 1.01));
+      drawLineChart("trendChart", [
+        { name: "Actual", values: grouped.map(row => row[key]), color: "#39b54a", format: key === "revenue" ? fmtCurrency : fmtNum },
+        { name: "Projected", values: projected, color: "#7d8580", format: key === "revenue" ? fmtCurrency : fmtNum },
+        { name: "Capacity risk", values: grouped.map(row => key === "revenue" ? row.risk * 18000 : row.risk), color: "#167a2d", format: key === "revenue" ? fmtCurrency : fmtNum }
+      ], grouped.map(row => row.month), { yLabel: key === "revenue" ? "$" : "#" });
+
+      const bySource = sources.map(source => {
+        const rows = filteredRows().filter(row => row.source === source);
+        return {
+          label: source.replace(" ", "\n"),
+          value: aggregate(rows, "revenue") / Math.max(1, aggregate(rows, "spend")),
+          format: v => v.toFixed(1) + "x"
+        };
+      });
+      drawBars("efficiencyChart", bySource, { yLabel: "Rev / spend" });
+
+      drawLineChart("capacityChart", [
+        { name: "Runs", values: grouped.map(row => row.runs), color: "#7d8580" },
+        { name: "Capacity", values: grouped.map(row => row.capacity), color: "#39b54a" }
+      ], grouped.map(row => row.month), { yLabel: "Surveys" });
+
+      const mixRows = [
+        { label: "Panel", value: 1220000 },
+        { label: "Battery", value: 780000 },
+        { label: "Racking", value: 410000 },
+        { label: "Inverter", value: 360000 },
+        { label: "Adders", value: 290000 }
+      ];
+      drawDonut("mixChart", mixRows);
+    }
+
+    function renderDecisions() {
+      const rows = filteredRows();
+      const bySource = sources.map(source => {
+        const subset = rows.filter(row => row.source === source);
+        const wins = aggregate(subset, "wins");
+        const revenue = aggregate(subset, "revenue");
+        const spend = aggregate(subset, "spend");
+        const runs = aggregate(subset, "runs");
+        const cap = aggregate(subset, "capacity");
+        return { source, wins, revenue, spend, cpw: spend / Math.max(1, wins), roi: revenue / Math.max(1, spend), stress: Math.max(0, runs - cap) / Math.max(1, runs) };
+      }).sort((a, b) => b.roi - a.roi);
+      const cards = [
+        {
+          title: `Shift incremental budget toward ${bySource[0].source}`,
+          body: `${bySource[0].source} has the strongest revenue per spend in the selected cut and a manageable capacity stress signal.`,
+          pills: [`${bySource[0].roi.toFixed(1)}x rev/spend`, `${fmtCurrency(bySource[0].cpw)} CPW`, `${pct(bySource[0].stress)} stress`],
+          tone: "good"
+        },
+        {
+          title: "Throttle sources that create survey compression",
+          body: "When closed-won inflow outruns scheduled survey capacity, marketing growth converts into rework and aging risk.",
+          pills: ["Use sales_to_survey_capacity", "Protect first-pass rate", "Align launch calendar"],
+          tone: "warn"
+        },
+        {
+          title: "Use period projection as the demo close",
+          body: "The projection object gives marketing a clean actual-to-date, recommended projection, confidence, and gap-to-quota story.",
+          pills: ["Projection ready", "Quota gap", "Confidence band"],
+          tone: "good"
+        }
+      ];
+      document.getElementById("decisionList").innerHTML = cards.map(card => `
+        <div class="decision-card">
+          <h3>${card.title}</h3>
+          <p>${card.body}</p>
+          <div class="impact">${card.pills.map(pill => `<span class="pill ${card.tone}">${pill}</span>`).join("")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderCohorts() {
+      const rows = filteredRows();
+      const funnelRows = sources.map(source => {
+        const subset = rows.filter(row => row.source === source);
+        const leads = aggregate(subset, "leads");
+        const sets = aggregate(subset, "sets");
+        const runs = aggregate(subset, "runs");
+        const wins = aggregate(subset, "wins");
+        return { label: source, value: [sets / leads * 100, runs / leads * 100, wins / leads * 100], colors: ["#39b54a", "#7d8580", "#167a2d"], format: v => v.toFixed(1) + "%" };
+      });
+      drawBars("funnelChart", funnelRows, { yLabel: "Rate" });
+
+      const tableRows = sources.map(source => {
+        const subset = rows.filter(row => row.source === source);
+        const leads = aggregate(subset, "leads");
+        const wins = aggregate(subset, "wins");
+        const revenue = aggregate(subset, "revenue");
+        const spend = aggregate(subset, "spend");
+        return { source, leads, wins, winRate: wins / Math.max(1, leads), revenue, cpw: spend / Math.max(1, wins) };
+      }).sort((a, b) => b.revenue - a.revenue);
+      document.getElementById("cohortTable").innerHTML = `
+        <thead><tr><th>Source</th><th>Leads</th><th>Wins</th><th>Lead to win</th><th>Revenue</th><th>CPW</th></tr></thead>
+        <tbody>${tableRows.map(row => `
+          <tr>
+            <td>${row.source}</td>
+            <td>${fmtNum(row.leads)}</td>
+            <td>${fmtNum(row.wins)}</td>
+            <td>${pct(row.winRate)}</td>
+            <td>${fmtCurrency(row.revenue)}</td>
+            <td>${fmtCurrency(row.cpw)}</td>
+          </tr>
+        `).join("")}</tbody>
+      `;
+
+      const selectedProfile = regionProfiles[state.region] || {
+        utility: Math.round(aggregate(regions.map(region => regionProfiles[region]), "utility") / regions.length),
+        permit: Math.round(aggregate(regions.map(region => regionProfiles[region]), "permit") / regions.length),
+        crew: Math.round(aggregate(regions.map(region => regionProfiles[region]), "crew") / regions.length),
+        survey: Math.round(aggregate(regions.map(region => regionProfiles[region]), "survey") / regions.length),
+        cancel: Math.round(aggregate(regions.map(region => regionProfiles[region]), "cancel") / regions.length)
+      };
+      const ahjRows = [
+        { label: "Utility fit", value: selectedProfile.utility, format: v => v + "/100" },
+        { label: "Permit speed", value: selectedProfile.permit, format: v => v + "/100" },
+        { label: "Crew coverage", value: selectedProfile.crew, format: v => v + "/100" },
+        { label: "Survey access", value: selectedProfile.survey, format: v => v + "/100" },
+        { label: "Cancel risk", value: Math.max(0, 100 - selectedProfile.cancel), format: v => v + "/100" }
+      ];
+      drawBars("ahjChart", ahjRows, { yLabel: "Readiness" });
+    }
+
+    function campaignDetailOptions() {
+      const sourceFiltered = campaignSegments.filter(segment => state.source === "All sources" || segment.source === state.source);
+      return ["All campaign details", ...sourceFiltered.map(segment => segment.campaign)];
+    }
+
+    function renderCampaignDetailSelect() {
+      const select = document.getElementById("campaignDetailSelect");
+      const options = campaignDetailOptions();
+      if (!options.includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
+      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${option}</option>`).join("");
+      select.disabled = state.campaignGrain !== "Detail";
+    }
+
+    function campaignBaseRows() {
+      if (state.campaignGrain === "Source") {
+        return (state.source === "All sources" ? sources : [state.source]).map(source => ({
+          key: source,
+          source,
+          campaign: campaignTactics[source].name,
+          rollupLabel: source,
+          mix: 1,
+          leadLift: 1,
+          costIndex: 1,
+          winLift: 1,
+          revenueLift: 1,
+          stressLift: 1,
+          tactic: campaignTactics[source].tactic,
+          guardrail: campaignTactics[source].guardrail
+        }));
+      }
+      return campaignSegments
+        .filter(segment => state.source === "All sources" || segment.source === state.source)
+        .filter(segment => state.campaignDetail === "All campaign details" || segment.campaign === state.campaignDetail)
+        .map(segment => ({
+          ...segment,
+          key: segment.campaign,
+          rollupLabel: segment.source
+        }));
+    }
+
+    function allocationStore() {
+      return state.campaignGrain === "Source" ? state.campaignAllocations : state.campaignDetailAllocations;
+    }
+
+    function defaultAllocation(item) {
+      return state.campaignGrain === "Source" ? (state.campaignAllocations[item.source] || 0) : Math.max(4, Math.round(item.mix * 100));
+    }
+
+    function normalizedCampaignShare(item, activeItems) {
+      const store = allocationStore();
+      activeItems.forEach(active => {
+        if (store[active.key] == null) store[active.key] = defaultAllocation(active);
+      });
+      const total = activeItems.reduce((sum, active) => sum + (store[active.key] || 0), 0) || 1;
+      return (store[item.key] || 0) / total;
+    }
+
+    function objectiveFactor(source, stress, roi) {
+      if (state.campaignObjective === "Max revenue") {
+        return source === "Paid Search" || source === "Partner" ? 1.12 : 1.0;
+      }
+      if (state.campaignObjective === "Lowest cost per win") {
+        return source === "Referral" || source === "Partner" ? 1.16 : 0.93;
+      }
+      if (state.campaignObjective === "Capacity safe") {
+        return Math.max(0.72, 1.12 - stress * 1.8);
+      }
+      return roi > 7 ? 1.06 : 1.0;
+    }
+
+    function campaignPlanRows() {
+      const rows = filteredRows();
+      const activeItems = campaignBaseRows();
+      return activeItems.map((item, index) => {
+        const source = item.source;
+        const subset = rows.filter(row => row.source === source);
+        const sourceRevenue = aggregate(subset, "revenue");
+        const leads = aggregate(subset, "leads") * item.mix * item.leadLift;
+        const spend = aggregate(subset, "spend") * item.mix * item.costIndex;
+        const wins = aggregate(subset, "wins") * item.mix * item.leadLift * item.winLift;
+        const revenue = sourceRevenue * item.mix * item.leadLift * item.winLift * item.revenueLift;
+        const runs = aggregate(subset, "runs") * item.mix * item.leadLift * item.stressLift;
+        const capacity = aggregate(subset, "capacity") * item.mix;
+        const margin = subset.reduce((sum, row) => sum + row.revenue * row.marginPct, 0) / Math.max(1, sourceRevenue);
+        const stress = Math.max(0, runs - capacity) / Math.max(1, runs);
+        const roi = revenue / Math.max(1, spend);
+        const cpw = spend / Math.max(1, wins);
+        const share = normalizedCampaignShare(item, activeItems);
+        const plannedSpend = state.campaignBudget * share;
+        const saturation = Math.max(0.74, 1 - Math.max(0, share - 0.22) * 0.9);
+        const factor = objectiveFactor(source, stress, roi) * saturation;
+        const expectedWins = plannedSpend / Math.max(1, cpw) * factor;
+        const expectedRevenue = plannedSpend * roi * factor;
+        const marginalRoi = expectedRevenue / Math.max(1, plannedSpend);
+        const readiness = marketReadinessScore();
+        const capacityAdjustedCpw = cpw * (1 + stress * 1.85 + Math.max(0, 68 - readiness) / 120);
+        const expectedGrossMargin = expectedRevenue * margin;
+        const marginPerDollar = expectedGrossMargin / Math.max(1, plannedSpend);
+        const marginCac = plannedSpend / Math.max(1, expectedGrossMargin);
+        const nextDollarEfficiency = marginalRoi * (1 - Math.min(0.42, stress * 0.75)) * (0.92 + readiness / 220);
+        const nextTenKWins = 10000 / Math.max(1, capacityAdjustedCpw) * objectiveFactor(source, stress, roi);
+        const nextTenKRevenue = 10000 * nextDollarEfficiency;
+        const ahjFrictionTax = Math.max(0, capacityAdjustedCpw - cpw);
+        const productMixLift = campaignProductLift({ ...item, source });
+        const paybackMonths = Math.max(1, Math.min(18, 12 * marginCac));
+        const score = Math.round(Math.max(0, Math.min(100, marginalRoi * 7 + marginPerDollar * 11 + readiness * 0.18 - stress * 35 + (1 - capacityAdjustedCpw / 9500) * 20)));
+        const decision = score >= 78 ? "Scale" : score >= 62 ? "Test" : score >= 48 ? "Hold" : "Cut";
+        return {
+          key: item.key,
+          source,
+          color: palette[index % palette.length],
+          campaign: item.campaign,
+          rollupLabel: item.rollupLabel,
+          mix: item.mix,
+          leadLift: item.leadLift,
+          costIndex: item.costIndex,
+          winLift: item.winLift,
+          revenueLift: item.revenueLift,
+          stressLift: item.stressLift,
+          tactic: item.tactic,
+          guardrail: item.guardrail,
+          leads,
+          wins,
+          revenue,
+          spend,
+          margin,
+          stress,
+          roi,
+          cpw,
+          share,
+          plannedSpend,
+          expectedWins,
+          expectedRevenue,
+          marginalRoi,
+          readiness,
+          capacityAdjustedCpw,
+          expectedGrossMargin,
+          marginPerDollar,
+          marginCac,
+          nextDollarEfficiency,
+          nextTenKWins,
+          nextTenKRevenue,
+          ahjFrictionTax,
+          productMixLift,
+          paybackMonths,
+          score,
+          decision
+        };
+      }).sort((a, b) => b.score - a.score);
+    }
+
+    function campaignRowsByMonth(campaignRow) {
+      return months.slice(months.length - state.range).map(month => {
+        const subset = rawData.filter(row =>
+          row.month === month &&
+          row.source === campaignRow.source &&
+          (state.region === "All markets" || row.region === state.region)
+        );
+        const leads = aggregate(subset, "leads") * campaignRow.mix * campaignRow.leadLift;
+        const spend = aggregate(subset, "spend") * campaignRow.mix * campaignRow.costIndex;
+        const wins = aggregate(subset, "wins") * campaignRow.mix * campaignRow.leadLift * campaignRow.winLift;
+        const revenue = aggregate(subset, "revenue") * campaignRow.mix * campaignRow.leadLift * campaignRow.winLift * campaignRow.revenueLift;
+        return { month, leads, spend, wins, revenue, cpw: spend / Math.max(1, wins) };
+      });
+    }
+
+    function renderCampaignAllocationControls(planRows) {
+      const store = allocationStore();
+      const controls = planRows.map(row => `
+        <div class="slider-row">
+          <label for="campaignAlloc${row.key.replace(/\W/g, "")}">${row.campaign}</label>
+          <input id="campaignAlloc${row.key.replace(/\W/g, "")}" type="range" min="0" max="60" value="${store[row.key]}">
+          <output>${Math.round(row.share * 100)}%</output>
+        </div>
+      `).join("");
+      document.getElementById("campaignAllocationControls").innerHTML = controls;
+      planRows.forEach(row => {
+        const input = document.getElementById(`campaignAlloc${row.key.replace(/\W/g, "")}`);
+        input.addEventListener("input", event => {
+          store[row.key] = Number(event.target.value);
+          renderCampaignPlanner();
+        });
+      });
+      document.getElementById("campaignBudgetOut").textContent = fmtCurrency(state.campaignBudget);
+    }
+
+    function renderCampaignMetrics(planRows) {
+      const expectedRevenue = planRows.reduce((sum, row) => sum + row.expectedRevenue, 0);
+      const expectedWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
+      const stress = planRows.reduce((sum, row) => sum + row.stress * row.expectedWins, 0) / Math.max(1, expectedWins);
+      const roi = expectedRevenue / Math.max(1, state.campaignBudget);
+      const top = planRows[0] || { source: "n/a", decision: "n/a" };
+      const readiness = marketReadinessScore();
+      const capAdjustedCpw = planRows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.expectedWins, 0) / Math.max(1, expectedWins);
+      const grossMargin = planRows.reduce((sum, row) => sum + row.expectedGrossMargin, 0);
+      const marginPerDollar = grossMargin / Math.max(1, state.campaignBudget);
+      const nextTenKRevenue = planRows.slice(0, 3).reduce((sum, row) => sum + row.nextTenKRevenue, 0) / Math.max(1, Math.min(3, planRows.length));
+      const nextTenKWins = planRows.slice(0, 3).reduce((sum, row) => sum + row.nextTenKWins, 0) / Math.max(1, Math.min(3, planRows.length));
+      const frictionTax = planRows.reduce((sum, row) => sum + row.ahjFrictionTax * row.expectedWins, 0) / Math.max(1, expectedWins);
+      const data = [
+        ["Budget", fmtCurrency(state.campaignBudget), state.campaignObjective, "good"],
+        ["Expected revenue", fmtCurrency(expectedRevenue), `${roi.toFixed(1)}x blended rev/spend`, "good"],
+        ["Expected wins", fmtNum(expectedWins), `${fmtCurrency(state.campaignBudget / Math.max(1, expectedWins))} planned CPW`, "good"],
+        ["Weighted stress", pct(stress), stress > 0.18 ? "Capacity guardrail" : "Ops absorbable", stress > 0.18 ? "bad" : "good"],
+        ["Market readiness", `${readiness}/100`, state.region === "All markets" ? "DMV/PA weighted view" : state.region, marketReadinessTone(readiness)],
+        ["Capacity-adj CPW", fmtCurrency(capAdjustedCpw), `${fmtCurrency(frictionTax)} AHJ friction tax`, capAdjustedCpw < 5200 ? "good" : capAdjustedCpw < 6500 ? "warn" : "bad"],
+        ["Gross margin / $", `${marginPerDollar.toFixed(1)}x`, `${fmtCurrency(grossMargin)} expected gross margin`, marginPerDollar >= 1.8 ? "good" : "warn"],
+        ["Next $10K yield", `${fmtNum(nextTenKWins)} wins`, `${fmtCurrency(nextTenKRevenue)} revenue on best campaigns`, nextTenKWins >= 2 ? "good" : "warn"],
+        ["Top campaign", top.campaign || top.source, top.decision, top.decision === "Scale" ? "good" : "warn"],
+        ["Decision coverage", `${planRows.length} campaigns`, state.campaignGrain === "Detail" ? "Named detail grain" : "Source roll-up", "good"],
+        ["Best next dollar", `${planRows[0]?.marginalRoi.toFixed(1) || "0.0"}x`, planRows[0]?.campaign || "n/a", "good"],
+        ["Hold/Cut count", fmtNum(planRows.filter(row => row.decision === "Hold" || row.decision === "Cut").length), "Spend to review", "warn"]
+      ];
+      document.getElementById("campaignMetrics").innerHTML = data.map(([label, value, delta, tone]) => `
+        <div class="metric">
+          ${helpChip(label)}
+          <span>${label}</span>
+          <strong>${value}</strong>
+          <span class="delta ${tone}">${delta}</span>
+        </div>
+      `).join("");
+      wireTips(document.getElementById("campaignMetrics"));
+    }
+
+    function renderDecisionMetricSuite(planRows) {
+      const expectedWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
+      const readiness = marketReadinessScore();
+      const top = planRows[0];
+      const capAdjustedCpw = planRows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.expectedWins, 0) / Math.max(1, expectedWins);
+      const blendedCpw = state.campaignBudget / Math.max(1, expectedWins);
+      const frictionTax = Math.max(0, capAdjustedCpw - blendedCpw);
+      const grossMargin = planRows.reduce((sum, row) => sum + row.expectedGrossMargin, 0);
+      const marginPerDollar = grossMargin / Math.max(1, state.campaignBudget);
+      const productLift = planRows.reduce((sum, row) => sum + row.productMixLift * row.expectedRevenue, 0) / Math.max(1, planRows.reduce((sum, row) => sum + row.expectedRevenue, 0));
+      const nextDollar = top ? `${fmtCurrency(top.nextTenKRevenue)} / ${fmtNum(top.nextTenKWins)} wins` : "$0 / 0 wins";
+      const cards = [
+        {
+          title: `Market readiness: ${readiness}/100`,
+          body: "Blends permit speed, utility fit, crew coverage, survey access, and cancellation risk for the selected DMV/PA market view.",
+          pills: [state.region, marketReadinessTone(readiness) === "good" ? "Scale friendly" : "Guardrail needed", "AHJ + capacity"],
+          tone: marketReadinessTone(readiness)
+        },
+        {
+          title: `Capacity-adjusted CPW: ${fmtCurrency(capAdjustedCpw)}`,
+          body: "Normal cost per win adjusted for survey/install pressure and lower-readiness market friction.",
+          pills: [`${fmtCurrency(frictionTax)} friction tax`, "Capacity object", "Campaign AHJ rollup"],
+          tone: capAdjustedCpw < 5200 ? "good" : capAdjustedCpw < 6500 ? "warn" : "bad"
+        },
+        {
+          title: `Next $10K efficiency: ${nextDollar}`,
+          body: `Shows the expected return from the best incremental spend candidate, currently ${top?.campaign || "n/a"}.`,
+          pills: [top ? `${top.nextDollarEfficiency.toFixed(1)}x adjusted ROI` : "0.0x", "Marginal decision", "Spend allocator"],
+          tone: top && top.nextDollarEfficiency >= 7 ? "good" : "warn"
+        },
+        {
+          title: `Gross margin per $: ${marginPerDollar.toFixed(1)}x`,
+          body: "Uses project economics and campaign yield to shift the conversation from revenue to contribution quality.",
+          pills: [`${fmtCurrency(grossMargin)} margin`, "Project economics", "Payback view"],
+          tone: marginPerDollar >= 1.8 ? "good" : "warn"
+        },
+        {
+          title: `Product mix lift: +${(productLift * 100).toFixed(1)} pts`,
+          body: "Flags campaigns likely to produce richer systems, partner/builder demand, or battery attach upside.",
+          pills: ["Battery attach", "System size", "Margin quality"],
+          tone: productLift >= 0.07 ? "good" : "warn"
+        },
+        {
+          title: "Saturation guardrail",
+          body: "Campaigns with high allocation shares are discounted so the recommendation avoids pouring dollars into a market/source already near diminishing returns.",
+          pills: ["Diminishing return", "Budget share", "Reallocation ready"],
+          tone: "warn"
+        }
+      ];
+      document.getElementById("decisionMetricSuite").innerHTML = cards.map(card => `
+        <div class="decision-card">
+          <h3>${card.title}</h3>
+          <p>${card.body}</p>
+          <div class="impact">${card.pills.map(pill => `<span class="pill ${card.tone}">${pill}</span>`).join("")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderCampaignRecommendations(planRows) {
+      const cards = planRows.slice(0, 4).map(row => {
+        const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
+        return `
+          <div class="decision-card">
+            <h3>${row.decision}: ${row.campaign}</h3>
+            <p>${row.tactic}</p>
+            <div class="impact">
+              <span class="pill ${tone}">${row.source}</span>
+              <span class="pill ${tone}">${fmtCurrency(row.plannedSpend)} planned</span>
+              <span class="pill ${tone}">${row.marginalRoi.toFixed(1)}x rev/spend</span>
+              <span class="pill ${tone}">${fmtCurrency(row.capacityAdjustedCpw)} cap-adj CPW</span>
+              <span class="pill ${tone}">${row.marginPerDollar.toFixed(1)}x margin/$</span>
+              <span class="pill ${tone}">${fmtNum(row.expectedWins)} wins</span>
+              <span class="pill ${tone}">${pct(row.stress)} stress</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+      document.getElementById("campaignRecommendations").innerHTML = cards;
+    }
+
+    function renderCampaignCards(planRows) {
+      document.getElementById("campaignCards").innerHTML = planRows.map(row => {
+        const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
+        return `
+          <div class="campaign-card">
+            <div>
+              <span class="pill ${tone}">${row.decision}</span>
+              <h4>${row.campaign}</h4>
+              <p>${row.source} / ${row.rollupLabel}: ${row.tactic}</p>
+            </div>
+            <div class="campaign-stats">
+              <span>Spend <strong>${fmtCurrency(row.plannedSpend)}</strong></span>
+              <span>Wins <strong>${fmtNum(row.expectedWins)}</strong></span>
+              <span>Next $10K <strong>${fmtNum(row.nextTenKWins)}</strong></span>
+            </div>
+            <p>${row.guardrail} Cap-adj CPW ${fmtCurrency(row.capacityAdjustedCpw)}, margin payback ${row.paybackMonths.toFixed(1)} months.</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCampaignTrend(planRows) {
+      const focus = state.campaignDetail !== "All campaign details"
+        ? planRows.find(row => row.campaign === state.campaignDetail)
+        : planRows[0];
+      if (!focus) {
+        drawLineChart("campaignTrendChart", [], [], {});
+        return;
+      }
+      const trend = campaignRowsByMonth(focus);
+      drawLineChart("campaignTrendChart", [
+        { name: `${focus.campaign} revenue`, values: trend.map(row => row.revenue), color: "#39b54a", format: fmtCurrency },
+        { name: `${focus.campaign} wins`, values: trend.map(row => row.wins * 25000), color: "#7d8580", format: value => fmtNum(value / 25000) },
+        { name: `${focus.campaign} CPW`, values: trend.map(row => row.cpw * 45), color: "#167a2d", format: value => fmtCurrency(value / 45) }
+      ], trend.map(row => row.month), { yLabel: "$ / scaled" });
+    }
+
+    function renderCampaignMoves(planRows) {
+      if (planRows.length < 2) {
+        const row = planRows[0];
+        document.getElementById("campaignMoves").innerHTML = row ? `
+          <div class="decision-card">
+            <h3>Focused campaign brief</h3>
+            <p>${row.campaign} is isolated in this view. Use the trend, market heatmap, and decision table to decide whether to scale or hold this campaign.</p>
+            <div class="impact">
+              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${row.decision}</span>
+              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${row.marginalRoi.toFixed(1)}x rev/spend</span>
+              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${fmtCurrency(row.plannedSpend)} planned</span>
+              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${pct(row.stress)} stress</span>
+            </div>
+          </div>
+        ` : "";
+        return;
+      }
+      const scalable = planRows.filter(row => row.decision === "Scale" || row.decision === "Test").sort((a, b) => b.score - a.score);
+      const weak = planRows.filter(row => row.decision === "Hold" || row.decision === "Cut").sort((a, b) => a.score - b.score);
+      const fallbackWeak = [...planRows].sort((a, b) => a.score - b.score);
+      const fromRows = weak.length ? weak : fallbackWeak.slice(0, 2);
+      const toRows = scalable.length ? scalable : planRows.slice(0, 2);
+      const moves = toRows.slice(0, 3).map((to, index) => {
+        const from = fromRows[index % fromRows.length] || to;
+        const moveAmount = Math.min(50000, Math.max(10000, from.plannedSpend * 0.22));
+        const fromWinsPerDollar = from.expectedWins / Math.max(1, from.plannedSpend);
+        const toWinsPerDollar = to.expectedWins / Math.max(1, to.plannedSpend);
+        const fromRevenuePerDollar = from.expectedRevenue / Math.max(1, from.plannedSpend);
+        const toRevenuePerDollar = to.expectedRevenue / Math.max(1, to.plannedSpend);
+        const winDelta = Math.max(0, (toWinsPerDollar - fromWinsPerDollar) * moveAmount);
+        const revenueDelta = Math.max(0, (toRevenuePerDollar - fromRevenuePerDollar) * moveAmount);
+        const tone = revenueDelta > 0 ? "good" : "warn";
+        return { from, to, moveAmount, winDelta, revenueDelta, tone };
+      });
+      document.getElementById("campaignMoves").innerHTML = moves.map(move => `
+        <div class="decision-card">
+          <h3>Move ${fmtCurrency(move.moveAmount)} to ${move.to.campaign}</h3>
+          <p>Take budget from ${move.from.campaign} and redeploy it where expected yield and operational fit are stronger.</p>
+          <div class="impact">
+            <span class="pill ${move.tone}">+${fmtNum(move.winDelta)} wins</span>
+            <span class="pill ${move.tone}">+${fmtCurrency(move.revenueDelta)} revenue</span>
+            <span class="pill ${move.tone}">${move.to.marginalRoi.toFixed(1)}x target ROI</span>
+            <span class="pill ${move.tone}">${pct(move.to.stress)} stress</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function campaignRegionFit(column, region) {
+      const sourceFit = sourceRegionFit[column.source]?.[region] || 0;
+      let campaignFit = 0;
+      if (column.campaign.includes("Solar Reviews")) campaignFit = region === "Northern Virginia" ? 9 : region === "Maryland Suburbs" ? 7 : region === "Southeast PA" ? 4 : region === "Central PA" ? -2 : 2;
+      else if (column.campaign.includes("Brand")) campaignFit = region === "DC Metro" ? 7 : region === "Northern Virginia" ? 5 : region === "Maryland Suburbs" ? 5 : 2;
+      else if (column.campaign.includes("Nonbrand")) campaignFit = region === "Northern Virginia" ? 7 : region === "Maryland Suburbs" ? 6 : region === "Central PA" ? -1 : 3;
+      else if (column.campaign.includes("Referral")) campaignFit = region === "Northern Virginia" ? 8 : region === "Maryland Suburbs" ? 7 : region === "Southeast PA" ? 6 : region === "Central PA" ? 3 : 4;
+      else if (column.campaign.includes("EnergySage")) campaignFit = region === "Southeast PA" ? 8 : region === "Northern Virginia" ? 6 : region === "Maryland Suburbs" ? 5 : 2;
+      else if (column.campaign.includes("Builder")) campaignFit = region === "Northern Virginia" ? 8 : region === "Southeast PA" ? 6 : region === "Central PA" ? 4 : 1;
+      else if (column.campaign.includes("Home Shows")) campaignFit = region === "Baltimore" ? 7 : region === "Southeast PA" ? 6 : region === "Central PA" ? 4 : region === "DC Metro" ? -1 : 3;
+      else if (column.campaign.includes("Direct") || column.campaign.includes("Mailer") || column.campaign.includes("Neighborhood")) campaignFit = region === "Southeast PA" ? 8 : region === "Central PA" ? 6 : region === "Maryland Suburbs" ? 5 : 3;
+      return (regionReadiness[region] || 0) + sourceFit + campaignFit;
+    }
+
+    function renderCampaignHeatmap(planRows) {
+      const columns = state.campaignGrain === "Detail" ? planRows.slice(0, 5) : sources.map(source => ({ source, campaign: source, key: source, mix: 1, leadLift: 1, costIndex: 1, winLift: 1, revenueLift: 1, stressLift: 1 }));
+      const header = `<div class="heat-cell header">Market</div>${columns.map(row => `<div class="heat-cell header">${row.campaign}</div>`).join("")}`;
+      const cells = heatmapRegions.map(region => {
+        const rowHead = `<div class="heat-cell header">${region}</div>`;
+        const sourceCells = columns.map(column => {
+          const source = column.source;
+          const subset = rawData.filter(row =>
+            row.region === region &&
+            row.source === source &&
+            row.monthIndex >= months.length - state.range
+          );
+          const revenue = aggregate(subset, "revenue") * column.mix * column.leadLift * column.winLift * column.revenueLift;
+          const spend = aggregate(subset, "spend") * column.mix * column.costIndex;
+          const runs = aggregate(subset, "runs") * column.mix * column.leadLift * column.stressLift;
+          const capacity = aggregate(subset, "capacity") * column.mix;
+          const roi = revenue / Math.max(1, spend);
+          const stress = Math.max(0, runs - capacity) / Math.max(1, runs);
+          const fit = campaignRegionFit(column, region);
+          const adjustedRoi = roi * (1 + fit / 100);
+          const adjustedStress = Math.max(0, stress - fit / 250);
+          const roiSignal = Math.log2(Math.max(0, adjustedRoi) + 1) * 8;
+          const rawScore = Number.isFinite(roiSignal) && Number.isFinite(adjustedStress) ? 34 + roiSignal - adjustedStress * 35 + fit * 1.15 : 28;
+          const score = Math.round(Math.max(28, Math.min(96, rawScore)));
+          const hue = Math.round(8 + score * 1.25);
+          const safeRoi = Number.isFinite(adjustedRoi) ? adjustedRoi : 0;
+          const safeStress = Number.isFinite(adjustedStress) ? adjustedStress : 0;
+          return `<div class="heat-cell" style="background:hsl(${hue}, 58%, 84%)" data-tip="${region} ${column.campaign}: score ${score}, ${safeRoi.toFixed(1)}x rev/spend, ${pct(safeStress)} stress, fit ${fit > 0 ? "+" : ""}${fit}"><strong>${score}</strong><span>${safeRoi.toFixed(1)}x</span></div>`;
+        }).join("");
+        return rowHead + sourceCells;
+      }).join("");
+      const heatmap = document.getElementById("campaignHeatmap");
+      heatmap.innerHTML = header + cells;
+      wireTips(heatmap);
+    }
+
+    function renderCampaignTable(planRows) {
+      document.getElementById("campaignTable").innerHTML = `
+        <thead>
+          <tr>
+            <th>Decision</th><th>Source</th><th>Campaign detail</th><th>Planned spend</th><th>Expected wins</th><th>Expected revenue</th><th>Gross margin</th><th>Cap-adj CPW</th><th>Next $10K</th><th>Product lift</th><th>Capacity risk</th><th>Guardrail</th>
+          </tr>
+        </thead>
+        <tbody>${planRows.map(row => `
+          <tr>
+            <td>${row.decision}</td>
+            <td>${row.source}</td>
+            <td><strong>${row.campaign}</strong></td>
+            <td>${fmtCurrency(row.plannedSpend)}</td>
+            <td>${fmtNum(row.expectedWins)}</td>
+            <td>${fmtCurrency(row.expectedRevenue)}</td>
+            <td>${fmtCurrency(row.expectedGrossMargin)}<br>${row.marginPerDollar.toFixed(1)}x margin/$</td>
+            <td>${fmtCurrency(row.capacityAdjustedCpw)}<br>${fmtCurrency(row.ahjFrictionTax)} friction</td>
+            <td>${fmtCurrency(row.nextTenKRevenue)}<br>${fmtNum(row.nextTenKWins)} wins</td>
+            <td>+${(row.productMixLift * 100).toFixed(1)} pts</td>
+            <td>${pct(row.stress)}</td>
+            <td>${row.guardrail}</td>
+          </tr>
+        `).join("")}</tbody>
+      `;
+    }
+
+    function renderCampaignPlanner() {
+      document.getElementById("campaignGrain").value = state.campaignGrain;
+      renderCampaignDetailSelect();
+      const planRows = campaignPlanRows();
+      renderCampaignAllocationControls(planRows);
+      renderCampaignMetrics(planRows);
+      renderDecisionMetricSuite(planRows);
+      renderCampaignRecommendations(planRows);
+      renderCampaignCards(planRows);
+      renderCampaignTrend(planRows);
+      renderCampaignMoves(planRows);
+      drawFrontier(planRows.map(row => ({
+        source: row.campaign,
+        yieldScore: row.marginalRoi,
+        stress: row.stress,
+        wins: row.expectedWins
+      })), "campaignSpendChart");
+      renderCampaignHeatmap(planRows);
+      renderCampaignTable(planRows);
+    }
+
+    function scenarioMultiplier(source) {
+      if (source === "Paid Search") return 1 + state.shifts["Paid Search"] / 100;
+      if (source === "Referral") return 1 + state.shifts["Referral"] / 100;
+      if (source === "Events") return 1 + state.shifts["Events"] / 100;
+      return 1;
+    }
+
+    function scenarioRows() {
+      return filteredRows().map(row => {
+        const mult = scenarioMultiplier(row.source);
+        return {
+          ...row,
+          leads: row.leads * mult,
+          spend: row.spend * mult,
+          sets: row.sets * mult,
+          runs: row.runs * mult,
+          wins: row.wins * mult,
+          revenue: row.revenue * mult,
+          capacity: row.capacity * (1 + state.shifts.capacityBuffer / 100)
+        };
+      });
+    }
+
+    function renderScenario() {
+      ["paidSearchShift", "referralShift", "eventsShift", "capacityBuffer"].forEach(id => {
+        const el = document.getElementById(id);
+        const out = document.getElementById(id + "Out");
+        const value = Number(el.value);
+        out.textContent = (id === "capacityBuffer" ? value : (value > 0 ? "+" + value : value)) + "%";
+      });
+      const base = filteredRows();
+      const scen = scenarioRows();
+      const revDelta = aggregate(scen, "revenue") - aggregate(base, "revenue");
+      const winDelta = aggregate(scen, "wins") - aggregate(base, "wins");
+      const spendDelta = aggregate(scen, "spend") - aggregate(base, "spend");
+      const baseStress = Math.max(0, aggregate(base, "runs") - aggregate(base, "capacity")) / Math.max(1, aggregate(base, "runs"));
+      const scenStress = Math.max(0, aggregate(scen, "runs") - aggregate(scen, "capacity")) / Math.max(1, aggregate(scen, "runs"));
+      const metrics = [
+        ["Revenue delta", fmtCurrency(revDelta), revDelta >= 0 ? "More expected revenue" : "Revenue giveback", revDelta >= 0 ? "good" : "bad"],
+        ["Win delta", (winDelta >= 0 ? "+" : "") + winDelta.toFixed(0), "Expected closed-won movement", winDelta >= 0 ? "good" : "bad"],
+        ["Spend delta", fmtCurrency(spendDelta), "Scenario investment change", spendDelta > 0 ? "warn" : "good"],
+        ["Stress delta", (scenStress - baseStress >= 0 ? "+" : "") + ((scenStress - baseStress) * 100).toFixed(1) + " pts", "Capacity pressure", scenStress > baseStress ? "bad" : "good"]
+      ];
+      document.getElementById("scenarioMetrics").innerHTML = metrics.map(([label, value, delta, tone]) => `
+        <div class="metric">
+          ${helpChip(label)}
+          <span>${label}</span>
+          <strong>${value}</strong>
+          <span class="delta ${tone}">${delta}</span>
+        </div>
+      `).join("");
+      wireTips(document.getElementById("scenarioMetrics"));
+
+      const frontier = sources.map(source => {
+        const subset = scen.filter(row => row.source === source);
+        const yieldScore = aggregate(subset, "revenue") / Math.max(1, aggregate(subset, "spend"));
+        const stress = Math.max(0, aggregate(subset, "runs") - aggregate(subset, "capacity")) / Math.max(1, aggregate(subset, "runs"));
+        return { source, yieldScore, stress, wins: aggregate(subset, "wins") };
+      });
+      drawFrontier(frontier);
+    }
+
+    function drawFrontier(rows, svgId = "frontierChart") {
+      const svg = document.getElementById(svgId);
+      clearSvg(svg);
+      const w = svg.clientWidth || 700;
+      const h = svg.clientHeight || 280;
+      const pad = { top: 24, right: 30, bottom: 44, left: 54 };
+      const maxYield = Math.max(...rows.map(r => r.yieldScore), 1) * 1.18;
+      const maxStress = Math.max(...rows.map(r => r.stress), 0.12) * 1.28;
+      const x = v => pad.left + (v / maxStress) * (w - pad.left - pad.right);
+      const y = v => h - pad.bottom - (v / maxYield) * (h - pad.top - pad.bottom);
+      let markup = `<rect width="${w}" height="${h}" fill="#fbfdfb"></rect>`;
+      markup += `<line x1="${pad.left}" y1="${h - pad.bottom}" x2="${w - pad.right}" y2="${h - pad.bottom}" stroke="#aeb9c5"></line>`;
+      markup += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${h - pad.bottom}" stroke="#aeb9c5"></line>`;
+      markup += svgText(w / 2, h - 12, "Capacity stress", { anchor: "middle" });
+      markup += svgText(8, 18, "Yield", { size: 11 });
+      rows.forEach((row, i) => {
+        const cx = x(row.stress);
+        const cy = y(row.yieldScore);
+        const r = Math.max(8, Math.min(24, row.wins / 18));
+        markup += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${palette[i]}" opacity="0.86" data-tip="${row.source}: ${row.yieldScore.toFixed(1)}x rev/spend, ${pct(row.stress)} stress"></circle>`;
+        markup += svgText(cx, cy - r - 6, row.source, { anchor: "middle", fill: "#172019", size: 11 });
+      });
+      svg.innerHTML = markup;
+      wireTips(svg);
+    }
+
+    function renderObjects() {
+      const rows = objectInventory.filter(row => state.objectDomain === "All" || row[0] === state.objectDomain);
+      document.getElementById("objectTable").innerHTML = rows.map(([domain, id, name, purpose, score]) => `
+        <div class="object-row">
+          <div>
+            <code>${id}</code>
+            <span>${domain}</span>
+          </div>
+          <strong>${name}</strong>
+          <p>${purpose}</p>
+          <div>
+            <span>Demo fit ${score}</span>
+            <div class="scorebar"><div style="width:${score}%"></div></div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function wireTips(scope) {
+      const tip = document.getElementById("tooltip");
+      scope.querySelectorAll("[data-tip]").forEach(el => {
+        if (el.__tipWired) return;
+        el.__tipWired = true;
+        el.addEventListener("mousemove", event => {
+          tip.textContent = el.getAttribute("data-tip");
+          tip.style.left = event.clientX + 12 + "px";
+          tip.style.top = event.clientY + 12 + "px";
+          tip.style.display = "block";
+        });
+        el.addEventListener("mouseleave", () => {
+          tip.style.display = "none";
+        });
+      });
+    }
+
+    function addPanelHelp() {
+      document.querySelectorAll(".panel").forEach(panel => {
+        if (panel.__helpAdded) return;
+        const heading = panel.querySelector(".panel-head h3");
+        if (!heading) return;
+        panel.insertAdjacentHTML("beforeend", helpChip(heading.textContent));
+        panel.__helpAdded = true;
+      });
+      wireTips(document);
+    }
+
+    function switchView(view) {
+      state.view = view;
+      document.querySelectorAll(".view").forEach(section => section.classList.toggle("hidden", section.id !== view));
+      document.querySelectorAll(".nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+      document.getElementById("viewTitle").textContent = titleMap[view][0];
+      document.getElementById("viewSubtitle").textContent = titleMap[view][1];
+      render();
+    }
+
+    function render() {
+      if (state.view === "overview") {
+        renderMetrics();
+        renderOverviewCharts();
+        renderDecisions();
+      }
+      if (state.view === "cohorts") renderCohorts();
+      if (state.view === "campaigns") renderCampaignPlanner();
+      if (state.view === "scenario") renderScenario();
+      if (state.view === "objects") renderObjects();
+    }
+
+    function setNavCollapsed(collapsed) {
+      const shell = document.getElementById("appShell");
+      const toggle = document.getElementById("sideToggle");
+      shell.classList.toggle("nav-collapsed", collapsed);
+      toggle.setAttribute("aria-expanded", String(!collapsed));
+      toggle.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+      toggle.textContent = collapsed ? "›" : "☰";
+      try {
+        localStorage.setItem("luminaNavCollapsed", collapsed ? "1" : "0");
+      } catch (error) {}
+    }
+
+    const savedNavCollapsed = (() => {
+      try {
+        return localStorage.getItem("luminaNavCollapsed") === "1";
+      } catch (error) {
+        return false;
+      }
+    })();
+    setNavCollapsed(savedNavCollapsed);
+    document.getElementById("sideToggle").addEventListener("click", () => {
+      setNavCollapsed(!document.getElementById("appShell").classList.contains("nav-collapsed"));
+    });
+    document.querySelectorAll(".nav button").forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+    document.getElementById("regionSelect").addEventListener("change", e => { state.region = e.target.value; render(); });
+    document.getElementById("sourceSelect").addEventListener("change", e => { state.source = e.target.value; render(); });
+    document.getElementById("rangeSelect").addEventListener("change", e => { state.range = Number(e.target.value); render(); });
+    document.getElementById("campaignBudget").addEventListener("input", e => { state.campaignBudget = Number(e.target.value); renderCampaignPlanner(); });
+    document.getElementById("campaignObjective").addEventListener("change", e => { state.campaignObjective = e.target.value; renderCampaignPlanner(); });
+    document.getElementById("campaignGrain").addEventListener("change", e => { state.campaignGrain = e.target.value; renderCampaignPlanner(); });
+    document.getElementById("campaignDetailSelect").addEventListener("change", e => { state.campaignDetail = e.target.value; renderCampaignPlanner(); });
+    document.querySelectorAll("#trendMetric button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.trendMetric = btn.dataset.metric;
+        document.querySelectorAll("#trendMetric button").forEach(b => b.classList.toggle("active", b === btn));
+        renderOverviewCharts();
+      });
+    });
+    document.querySelectorAll("#objectFilter button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.objectDomain = btn.dataset.domain;
+        document.querySelectorAll("#objectFilter button").forEach(b => b.classList.toggle("active", b === btn));
+        renderObjects();
+      });
+    });
+    document.getElementById("paidSearchShift").addEventListener("input", e => { state.shifts["Paid Search"] = Number(e.target.value); renderScenario(); });
+    document.getElementById("referralShift").addEventListener("input", e => { state.shifts["Referral"] = Number(e.target.value); renderScenario(); });
+    document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
+    document.getElementById("capacityBuffer").addEventListener("input", e => { state.shifts.capacityBuffer = Number(e.target.value); renderScenario(); });
+    window.addEventListener("resize", render);
+    addPanelHelp();
+    render();
+  </script>
+</body>
+</html>

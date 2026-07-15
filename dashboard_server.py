@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -366,6 +367,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def _percent(self, value):
         return f"{self._num(value) * 100:.1f}%"
 
+    def _retry_delay(self, exc, attempt):
+        retry_after = exc.headers.get("retry-after") if exc.headers else None
+        try:
+            return min(5.0, max(0.5, float(retry_after)))
+        except (TypeError, ValueError):
+            return 0.8 * (attempt + 1)
+
+    def _is_retryable_claude_error(self, status, detail):
+        text = str(detail or "").lower()
+        return status in {429, 500, 502, 503, 529} or "overload" in text or "rate" in text
+
     def _ask_claude(self, payload):
         if not ANTHROPIC_API_KEY:
             return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
@@ -413,19 +425,51 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             },
             method="POST",
         )
-        try:
-            with urlrequest.urlopen(request, timeout=45) as response:
-                result = json.loads(response.read().decode("utf-8"))
-        except urlerror.HTTPError as exc:
-            detail = "Claude request failed. Check the configured Anthropic key and model."
+        result = None
+        for attempt in range(3):
             try:
-                error_payload = json.loads(exc.read().decode("utf-8"))
-                detail = error_payload.get("error", {}).get("message", detail)
+                with urlrequest.urlopen(request, timeout=45) as response:
+                    result = json.loads(response.read().decode("utf-8"))
+                break
+            except urlerror.HTTPError as exc:
+                detail = "Claude request failed. Check the configured Anthropic key and model."
+                try:
+                    error_payload = json.loads(exc.read().decode("utf-8"))
+                    detail = error_payload.get("error", {}).get("message", detail)
+                except Exception:
+                    pass
+                if self._is_retryable_claude_error(exc.code, detail):
+                    if attempt < 2:
+                        time.sleep(self._retry_delay(exc, attempt))
+                        continue
+                    insights = self._fallback_insights(question, context, f"Claude temporarily unavailable: {detail}")
+                    return HTTPStatus.OK, {
+                        "answer": insights["executive_summary"],
+                        "insights": insights,
+                        "model": ANTHROPIC_MODEL,
+                        "fallback": True,
+                    }
+                return HTTPStatus.BAD_GATEWAY, {"detail": detail, "status": exc.code}
             except Exception:
-                pass
-            return HTTPStatus.BAD_GATEWAY, {"detail": detail, "status": exc.code}
-        except Exception:
-            return HTTPStatus.BAD_GATEWAY, {"detail": "Claude request failed. Check the configured Anthropic key and service logs."}
+                if attempt < 2:
+                    time.sleep(0.8 * (attempt + 1))
+                    continue
+                insights = self._fallback_insights(question, context, "Claude request failed after retries")
+                return HTTPStatus.OK, {
+                    "answer": insights["executive_summary"],
+                    "insights": insights,
+                    "model": ANTHROPIC_MODEL,
+                    "fallback": True,
+                }
+
+        if result is None:
+            insights = self._fallback_insights(question, context, "Claude returned no response")
+            return HTTPStatus.OK, {
+                "answer": insights["executive_summary"],
+                "insights": insights,
+                "model": ANTHROPIC_MODEL,
+                "fallback": True,
+            }
 
         answer = self._extract_claude_answer(result)
         if not answer:

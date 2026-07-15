@@ -1360,6 +1360,80 @@
 
     const rawData = generateData();
 
+    const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "https://notes-api-502916414508.us-east1.run.app";
+    const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";
+    let allNotes = [];
+
+    function readQueuedNotes() {
+      try {
+        return JSON.parse(localStorage.getItem(NOTES_QUEUE_KEY) || "[]");
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function writeQueuedNotes(queue) {
+      try {
+        localStorage.setItem(NOTES_QUEUE_KEY, JSON.stringify(queue));
+      } catch (error) {}
+    }
+
+    function notesForKey(key) {
+      return allNotes.filter(note => note.element_key === key);
+    }
+
+    async function postNote(payload, options = {}) {
+      const queueOnFailure = options.queueOnFailure !== false;
+      if (!isSignedIn()) throw new Error("Not signed in");
+      const response = await fetch(`${NOTES_API_BASE}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getIdToken()}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        if (queueOnFailure) {
+          const queue = readQueuedNotes();
+          queue.push(payload);
+          writeQueuedNotes(queue);
+        }
+        throw new Error(`Note save failed: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function flushQueuedNotes() {
+      if (!isSignedIn()) return;
+      const queue = readQueuedNotes();
+      if (!queue.length) return;
+      const remaining = [];
+      for (const pending of queue) {
+        try {
+          const saved = await postNote(pending, { queueOnFailure: false });
+          allNotes.unshift(saved);
+        } catch (error) {
+          remaining.push(pending);
+        }
+      }
+      writeQueuedNotes(remaining);
+    }
+
+    async function fetchNotes() {
+      if (!isSignedIn()) return;
+      try {
+        const response = await fetch(`${NOTES_API_BASE}/notes`, {
+          headers: { "Authorization": `Bearer ${getIdToken()}` }
+        });
+        if (!response.ok) throw new Error(`Notes fetch failed: ${response.status}`);
+        allNotes = await response.json();
+      } catch (error) {
+        allNotes = allNotes || [];
+      }
+      await flushQueuedNotes();
+    }
+
     const GOOGLE_OAUTH_CLIENT_ID = (typeof window !== "undefined" && window.LUMINA_GOOGLE_CLIENT_ID) || "502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com";
     let currentIdToken = null;
     let currentUserName = null;

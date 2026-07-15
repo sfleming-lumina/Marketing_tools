@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from auth import VerifiedUser, require_google_user
 from bigquery_store import BigQueryNotesStore
 from models import Note, NoteIn
 from storage import NotesStore
@@ -38,13 +39,13 @@ def health() -> dict:
 
 
 @app.get("/notes", response_model=list[Note])
-def list_notes(view: Optional[str] = None, store: NotesStore = Depends(get_store)) -> list[Note]:
+def list_notes(view: Optional[str] = None, _user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> list[Note]:
     return store.list_notes(view)
 
 
 @app.post("/notes", response_model=Note, status_code=201)
-def create_note(note: NoteIn, store: NotesStore = Depends(get_store)) -> Note:
+def create_note(note: NoteIn, user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> Note:
     try:
-        return store.create_note(note)
+        return store.create_note(note, author_name=user.name)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

@@ -14,7 +14,7 @@ class NotesStore(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def create_note(self, note: NoteIn) -> Note:
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
         raise NotImplementedError
 
 
@@ -26,10 +26,11 @@ class InMemoryNotesStore(NotesStore):
         notes = [n for n in self._notes if view is None or n.view == view]
         return sorted(notes, key=lambda n: n.created_at, reverse=True)
 
-    def create_note(self, note: NoteIn) -> Note:
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
         created = Note(
             note_id=str(uuid.uuid4()),
             created_at=datetime.now(timezone.utc).isoformat(),
+            author_name=author_name,
             **note.model_dump(),
         )
         self._notes.append(created)

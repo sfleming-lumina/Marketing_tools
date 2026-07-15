@@ -39,10 +39,11 @@ class BigQueryNotesStore(NotesStore):
             for row in rows
         ]
 
-    def create_note(self, note: NoteIn) -> Note:
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
         created = Note(
             note_id=str(uuid.uuid4()),
             created_at=datetime.now(timezone.utc).isoformat(),
+            author_name=author_name,
             **note.model_dump(),
         )
         row = created.model_dump()

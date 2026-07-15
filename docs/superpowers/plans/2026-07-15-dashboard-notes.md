@@ -535,7 +535,7 @@ git commit -m "feat: containerize notes-api for Cloud Run"
 
 ---
 
-### Task 4 (SUPERSEDED — see Amendment 1 at the end of this document)
+### Superseded original Task 4 (see Amendment 1 at the end of this document)
 
 Mid-execution, deploying with `--allow-unauthenticated` was correctly flagged: it would make a public POST-to-BigQuery endpoint invokable by anyone on the internet. The user chose to restrict access to their Google Workspace org via app-level Google Sign-In verification rather than leaving the API open. This inserts a new Task 4 (backend auth) before deployment and changes several tasks after it. **Task 4's original text below is kept for history but must not be executed as written — jump to Amendment 1.**
 
@@ -636,7 +636,7 @@ git commit -m "feat: add BigQuery schema for dashboard notes"
 
 ## Part 2 — Frontend: `outputs/marketing_decision_tool.html`
 
-### Task 5: Notes API client (fetch, post, offline queue, author identity)
+### Original Task 5 (superseded by Amendment 1's Task 7): Notes API client (fetch, post, offline queue, author identity)
 
 **Files:**
 - Modify: `outputs/marketing_decision_tool.html`
@@ -749,7 +749,7 @@ git commit -m "feat: add notes-api client layer to dashboard"
 
 ---
 
-### Task 6: Note chips, stable entity keys, and the note drawer
+### Original Task 6 (referenced by Amendment 1's Task 8): Note chips, stable entity keys, and the note drawer
 
 **Files:**
 - Modify: `outputs/marketing_decision_tool.html`
@@ -1470,7 +1470,7 @@ git commit -m "feat: add note chips, stable entity keys, and the note drawer acr
 
 ---
 
-### Task 7: "Feedback" view
+### Original Task 7 (referenced by Amendment 1's Task 9): "Feedback" view
 
 **Files:**
 - Modify: `outputs/marketing_decision_tool.html`
@@ -1593,7 +1593,7 @@ git commit -m "feat: add Feedback view listing all dashboard notes"
 
 ---
 
-### Task 8: Load notes on page init
+### Original Task 8 (superseded by Amendment 1's Task 10): Load notes on page init
 
 **Files:**
 - Modify: `outputs/marketing_decision_tool.html`
@@ -1636,7 +1636,7 @@ git commit -m "feat: load dashboard notes on page init"
 
 ---
 
-### Task 9: Automated regression test for stable note keys
+### Original Task 9 (referenced by Amendment 1's Task 11): Automated regression test for stable note keys
 
 **Files:**
 - Create: `work/dom_fake.js`
@@ -1818,7 +1818,7 @@ git commit -m "test: add automated regression coverage for stable note-chip keys
 
 ---
 
-### Task 10: End-to-end verification against the deployed service
+### Original Task 10 (referenced by Amendment 1's Task 12): End-to-end verification against the deployed service
 
 **Files:** none (verification only)
 

@@ -1057,6 +1057,7 @@
         <button data-view="campaigns" data-short="CP"><span>Campaign Planner</span></button>
         <button data-view="scenario" data-short="SC"><span>Scenario</span></button>
         <button data-view="objects" data-short="BQ"><span>BQ Objects</span></button>
+        <button data-view="feedback" data-short="FB"><span>Feedback</span></button>
       </nav>
       <div class="status-note">
         Data mode: local lakehouse catalog plus demo time series. Live BQ query was blocked by expired `gcloud` auth on 2026-07-13.
@@ -1415,6 +1416,26 @@
           <div class="object-table" id="objectTable"></div>
         </article>
       </section>
+
+      <section id="feedback" class="view hidden">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Team feedback</h3>
+              <p>Every note left across the dashboard, in one place.</p>
+            </div>
+            <div class="segmented" id="feedbackFilter">
+              <button class="active" data-feedback-view="All">All</button>
+              <button data-feedback-view="overview">Overview</button>
+              <button data-feedback-view="cohorts">Cohorts</button>
+              <button data-feedback-view="campaigns">Campaigns</button>
+              <button data-feedback-view="scenario">Scenario</button>
+              <button data-feedback-view="objects">BQ Objects</button>
+            </div>
+          </div>
+          <table class="table" id="feedbackTable"></table>
+        </article>
+      </section>
     </main>
   </div>
   <div class="tooltip" id="tooltip"></div>
@@ -1512,7 +1533,8 @@
       cohorts: ["Cohort and campaign quality", "Compare source quality from lead through win, with AHJ readiness so growth decisions stay grounded."],
       campaigns: ["Campaign spend planner", "Decide where and how to spend marketing dollars by source, market, expected yield, cost, and downstream capacity."],
       scenario: ["Scenario planner", "Use budget and capacity assumptions to turn report-ready metrics into clear decisions."],
-      objects: ["Lakehouse object map", "Identified report-ready BQ objects that can support the marketing decision demo."]
+      objects: ["Lakehouse object map", "Identified report-ready BQ objects that can support the marketing decision demo."],
+      feedback: ["Team feedback", "Every note left on the dashboard, filterable by section, so the tool can be refined around real usage."]
     };
 
     const objectInventory = [
@@ -1705,6 +1727,7 @@
       range: 12,
       trendMetric: "revenue",
       objectDomain: "All",
+      feedbackFilter: "All",
       campaignBudget: 250000,
       campaignObjective: "Balanced growth",
       campaignGrain: "Detail",
@@ -2729,6 +2752,22 @@
       wireNoteChips(document.getElementById("objectTable"));
     }
 
+    function renderFeedback() {
+      const notes = state.feedbackFilter === "All" ? allNotes : allNotes.filter(note => note.view === state.feedbackFilter);
+      document.getElementById("feedbackTable").innerHTML = `
+        <thead><tr><th>When</th><th>Section</th><th>Element</th><th>Author</th><th>Note</th></tr></thead>
+        <tbody>${notes.length ? notes.map(note => `
+          <tr>
+            <td>${new Date(note.created_at).toLocaleString()}</td>
+            <td>${titleMap[note.view] ? titleMap[note.view][0] : note.view}</td>
+            <td>${escapeAttr(note.element_label)}</td>
+            <td>${escapeAttr(note.author_name)}</td>
+            <td>${escapeAttr(note.note_text)}</td>
+          </tr>
+        `).join("") : `<tr><td colspan="5">No feedback yet.</td></tr>`}</tbody>
+      `;
+    }
+
     function wireTips(scope) {
       const tip = document.getElementById("tooltip");
       scope.querySelectorAll("[data-tip]").forEach(el => {
@@ -2867,6 +2906,7 @@
       if (state.view === "campaigns") renderCampaignPlanner();
       if (state.view === "scenario") renderScenario();
       if (state.view === "objects") renderObjects();
+      if (state.view === "feedback") renderFeedback();
     }
 
     function setNavCollapsed(collapsed) {
@@ -2912,6 +2952,13 @@
         state.objectDomain = btn.dataset.domain;
         document.querySelectorAll("#objectFilter button").forEach(b => b.classList.toggle("active", b === btn));
         renderObjects();
+      });
+    });
+    document.querySelectorAll("#feedbackFilter button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.feedbackFilter = btn.dataset.feedbackView;
+        document.querySelectorAll("#feedbackFilter button").forEach(b => b.classList.toggle("active", b === btn));
+        renderFeedback();
       });
     });
     document.getElementById("paidSearchShift").addEventListener("input", e => { state.shifts["Paid Search"] = Number(e.target.value); renderScenario(); });

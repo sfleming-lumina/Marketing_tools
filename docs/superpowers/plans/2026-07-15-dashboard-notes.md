@@ -535,7 +535,9 @@ git commit -m "feat: containerize notes-api for Cloud Run"
 
 ---
 
-### Task 4: Provision BigQuery table and deploy to Cloud Run
+### Task 4 (SUPERSEDED — see Amendment 1 at the end of this document)
+
+Mid-execution, deploying with `--allow-unauthenticated` was correctly flagged: it would make a public POST-to-BigQuery endpoint invokable by anyone on the internet. The user chose to restrict access to their Google Workspace org via app-level Google Sign-In verification rather than leaving the API open. This inserts a new Task 4 (backend auth) before deployment and changes several tasks after it. **Task 4's original text below is kept for history but must not be executed as written — jump to Amendment 1.**
 
 **Files:**
 - Create: `notes-api/schema.sql`
@@ -1853,3 +1855,1014 @@ Temporarily set `NOTES_API_BASE` (via browser devtools console: `window.LUMINA_N
 Everything above verifies the local copy of `outputs/marketing_decision_tool.html`. The marketing team's actual dashboard is a separate, already-deployed Cloud Run service whose build/deploy pipeline is outside this plan (this project has no Dockerfile or deploy script for it — it was deployed some other way). Re-run whatever process currently publishes that static site (redeploy, re-run a build trigger, `gcloud run deploy` from wherever its source actually lives, etc.) so the live URL picks up this file's changes. Once redeployed, repeat Steps 2–3 against the live URL instead of the local server to confirm the feature actually reaches the team.
 
 This task has no code changes of its own — it's the acceptance gate confirming Tasks 1–10 work together as designed.
+
+---
+
+## Amendment 1 (2026-07-15): Restrict notes-api to the luminasolar.com Google Workspace org
+
+**Why:** Deploying `notes-api` with `--allow-unauthenticated` (original Task 4) was flagged mid-execution — it makes a public POST-to-BigQuery endpoint invokable by anyone on the internet with the URL, not just the marketing team. The user chose app-level Google Sign-In verification (their Workspace org's OAuth consent screen is configured as **Internal**, so only luminasolar.com accounts can even complete sign-in) over Identity-Aware Proxy, since it needs no load balancer/IAP infra. This also lets the backend derive `author_name` from a verified identity instead of trusting a client-supplied string.
+
+**This supersedes original Tasks 4–10.** Tasks 1–3 (already implemented and reviewed) are unaffected in shape, but Task 4 (new, below) modifies files Tasks 1–2 created. Renumbered sequence from here: **Task 4 (backend auth) → Task 5 (OAuth provisioning + deploy) → Task 6 (Google Sign-In frontend) → Task 7 (notes API client) → Task 8 (note chips + drawer) → Task 9 (Feedback view) → Task 10 (init wiring) → Task 11 (automated regression test) → Task 12 (end-to-end verification).**
+
+### Task 4: Google ID token verification in notes-api
+
+**Files:**
+- Create: `notes-api/auth.py`
+- Modify: `notes-api/models.py` (drop `author_name` from the client-supplied `NoteIn`; it becomes server-derived)
+- Modify: `notes-api/storage.py` (`create_note` takes `author_name` as a separate argument)
+- Modify: `notes-api/bigquery_store.py` (same signature change)
+- Modify: `notes-api/main.py` (add the auth dependency to both routes; derive `author_name` from the verified user)
+- Modify: `notes-api/requirements.txt` (add `google-auth`)
+- Modify: `notes-api/tests/test_api.py` (override the new auth dependency; drop `author_name` from POST payloads; add a test proving unauthenticated requests are rejected)
+- Modify: `notes-api/tests/test_bigquery_store.py` (pass `author_name` as the new separate argument)
+- Test: `notes-api/tests/test_auth.py`
+
+**Interfaces:**
+- Consumes: `NoteIn`, `Note`, `NotesStore`, `InMemoryNotesStore`, `BigQueryNotesStore` (Tasks 1–2).
+- Produces: `VerifiedUser(email, name)`, `require_google_user(authorization: str | None) -> VerifiedUser` (a FastAPI dependency raising 401/403). Consumed by Task 5 (env vars `GOOGLE_OAUTH_CLIENT_ID`/`ALLOWED_HOSTED_DOMAIN` it reads) and Task 7 (the frontend must now send a bearer token on every call).
+
+- [ ] **Step 1: Write the failing auth tests**
+
+Create `notes-api/tests/test_auth.py`:
+
+```python
+from unittest.mock import patch
+
+import pytest
+from fastapi import HTTPException
+
+from auth import require_google_user
+
+
+@patch("auth._verify_token")
+def test_valid_token_matching_hosted_domain_returns_user(mock_verify):
+    mock_verify.return_value = {"email": "jane@luminasolar.com", "name": "Jane Doe", "hd": "luminasolar.com"}
+    user = require_google_user(authorization="Bearer faketoken")
+    assert user.email == "jane@luminasolar.com"
+    assert user.name == "Jane Doe"
+
+
+@patch("auth._verify_token")
+def test_valid_token_wrong_domain_raises_403(mock_verify):
+    mock_verify.return_value = {"email": "someone@gmail.com", "name": "Someone", "hd": "gmail.com"}
+    with pytest.raises(HTTPException) as exc_info:
+        require_google_user(authorization="Bearer faketoken")
+    assert exc_info.value.status_code == 403
+
+
+def test_missing_header_raises_401():
+    with pytest.raises(HTTPException) as exc_info:
+        require_google_user(authorization=None)
+    assert exc_info.value.status_code == 401
+
+
+@patch("auth._verify_token")
+def test_invalid_token_raises_401(mock_verify):
+    mock_verify.side_effect = ValueError("Token expired")
+    with pytest.raises(HTTPException) as exc_info:
+        require_google_user(authorization="Bearer badtoken")
+    assert exc_info.value.status_code == 401
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `cd notes-api && python -m pytest tests/test_auth.py -v`
+Expected: FAIL with `ModuleNotFoundError: No module named 'auth'`
+
+- [ ] **Step 3: Write `notes-api/auth.py`**
+
+```python
+import os
+from typing import Optional
+
+from fastapi import Header, HTTPException
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+ALLOWED_HOSTED_DOMAIN = os.environ.get("ALLOWED_HOSTED_DOMAIN", "luminasolar.com")
+
+
+class VerifiedUser:
+    def __init__(self, email: str, name: str) -> None:
+        self.email = email
+        self.name = name
+
+
+def _verify_token(token: str) -> dict:
+    return id_token.verify_oauth2_token(token, google_requests.Request(), GOOGLE_OAUTH_CLIENT_ID)
+
+
+def require_google_user(authorization: Optional[str] = Header(default=None)) -> VerifiedUser:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    token = authorization.removeprefix("Bearer ")
+    try:
+        idinfo = _verify_token(token)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {exc}") from exc
+    email = idinfo.get("email", "")
+    if idinfo.get("hd") != ALLOWED_HOSTED_DOMAIN and not email.endswith(f"@{ALLOWED_HOSTED_DOMAIN}"):
+        raise HTTPException(status_code=403, detail="Account is not part of the allowed organization")
+    return VerifiedUser(email=email, name=idinfo.get("name", email))
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `cd notes-api && python -m pytest tests/test_auth.py -v`
+Expected: `4 passed`
+
+- [ ] **Step 5: Update `notes-api/models.py`**
+
+Remove `author_name` from `NoteIn` (the server now derives it from the verified token; the response model `Note` still carries it):
+
+```python
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+DashboardView = Literal["overview", "cohorts", "campaigns", "scenario", "objects"]
+
+
+class NoteIn(BaseModel):
+    view: DashboardView
+    element_key: str = Field(min_length=1, max_length=200)
+    element_label: str = Field(min_length=1, max_length=300)
+    note_text: str = Field(min_length=1, max_length=4000)
+    context: dict = Field(default_factory=dict)
+
+
+class Note(NoteIn):
+    note_id: str
+    created_at: str
+    author_name: str
+```
+
+- [ ] **Step 6: Update `notes-api/storage.py`**
+
+Change both the abstract method and `InMemoryNotesStore` to take `author_name` as a separate argument:
+
+```python
+from __future__ import annotations
+
+import abc
+import uuid
+from datetime import datetime, timezone
+from typing import Optional
+
+from models import Note, NoteIn
+
+
+class NotesStore(abc.ABC):
+    @abc.abstractmethod
+    def list_notes(self, view: Optional[str] = None) -> list[Note]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
+        raise NotImplementedError
+
+
+class InMemoryNotesStore(NotesStore):
+    def __init__(self) -> None:
+        self._notes: list[Note] = []
+
+    def list_notes(self, view: Optional[str] = None) -> list[Note]:
+        notes = [n for n in self._notes if view is None or n.view == view]
+        return sorted(notes, key=lambda n: n.created_at, reverse=True)
+
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
+        created = Note(
+            note_id=str(uuid.uuid4()),
+            created_at=datetime.now(timezone.utc).isoformat(),
+            author_name=author_name,
+            **note.model_dump(),
+        )
+        self._notes.append(created)
+        return created
+```
+
+- [ ] **Step 7: Update `notes-api/bigquery_store.py`**
+
+Only `create_note` changes (add the `author_name` parameter, pass it into `Note(...)` instead of unpacking it from `note.model_dump()`):
+
+```python
+import json
+import uuid
+from datetime import datetime, timezone
+from typing import Optional
+
+from google.cloud import bigquery
+
+from models import Note, NoteIn
+from storage import NotesStore
+
+
+class BigQueryNotesStore(NotesStore):
+    def __init__(self, project_id: str, dataset: str, table: str) -> None:
+        self._client = bigquery.Client(project=project_id)
+        self._table_ref = f"{project_id}.{dataset}.{table}"
+
+    def list_notes(self, view: Optional[str] = None) -> list[Note]:
+        query = f"""
+            SELECT note_id, created_at, author_name, view, element_key, element_label, note_text, context
+            FROM `{self._table_ref}`
+            {"WHERE view = @view" if view else ""}
+            ORDER BY created_at DESC
+        """
+        job_config = bigquery.QueryJobConfig()
+        if view:
+            job_config.query_parameters = [bigquery.ScalarQueryParameter("view", "STRING", view)]
+        rows = self._client.query(query, job_config=job_config).result()
+        return [
+            Note(
+                note_id=row["note_id"],
+                created_at=row["created_at"].isoformat(),
+                author_name=row["author_name"],
+                view=row["view"],
+                element_key=row["element_key"],
+                element_label=row["element_label"],
+                note_text=row["note_text"],
+                context=json.loads(row["context"]) if row["context"] else {},
+            )
+            for row in rows
+        ]
+
+    def create_note(self, note: NoteIn, author_name: str) -> Note:
+        created = Note(
+            note_id=str(uuid.uuid4()),
+            created_at=datetime.now(timezone.utc).isoformat(),
+            author_name=author_name,
+            **note.model_dump(),
+        )
+        row = created.model_dump()
+        row["context"] = json.dumps(row["context"])
+        errors = self._client.insert_rows_json(self._table_ref, [row])
+        if errors:
+            raise RuntimeError(f"BigQuery insert failed: {errors}")
+        return created
+```
+
+- [ ] **Step 8: Update `notes-api/tests/test_bigquery_store.py`**
+
+```python
+import json
+from unittest.mock import MagicMock, patch
+
+from bigquery_store import BigQueryNotesStore
+from models import NoteIn
+
+
+@patch("bigquery_store.bigquery.Client")
+def test_create_note_inserts_json_row_with_serialized_context(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client.insert_rows_json.return_value = []
+    mock_client_cls.return_value = mock_client
+
+    store = BigQueryNotesStore(project_id="proj", dataset="ds", table="tbl")
+    note_in = NoteIn(
+        view="overview",
+        element_key="metric:a",
+        element_label="A",
+        note_text="hello",
+        context={"region": "All markets"},
+    )
+    created = store.create_note(note_in, author_name="Jane")
+
+    assert created.note_id
+    assert created.author_name == "Jane"
+    mock_client.insert_rows_json.assert_called_once()
+    table_ref_arg, rows_arg = mock_client.insert_rows_json.call_args[0]
+    assert table_ref_arg == "proj.ds.tbl"
+    assert rows_arg[0]["note_id"] == created.note_id
+    assert json.loads(rows_arg[0]["context"]) == {"region": "All markets"}
+
+
+@patch("bigquery_store.bigquery.Client")
+def test_create_note_raises_on_bigquery_errors(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client.insert_rows_json.return_value = [{"index": 0, "errors": ["boom"]}]
+    mock_client_cls.return_value = mock_client
+
+    store = BigQueryNotesStore(project_id="proj", dataset="ds", table="tbl")
+    note_in = NoteIn(
+        view="overview", element_key="metric:a", element_label="A",
+        note_text="hello", context={},
+    )
+    try:
+        store.create_note(note_in, author_name="Jane")
+        assert False, "expected RuntimeError"
+    except RuntimeError as exc:
+        assert "boom" in str(exc)
+```
+
+- [ ] **Step 9: Update `notes-api/main.py`**
+
+Add the auth dependency to both routes and derive `author_name` from the verified user:
+
+```python
+import os
+from typing import Optional
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from auth import VerifiedUser, require_google_user
+from bigquery_store import BigQueryNotesStore
+from models import Note, NoteIn
+from storage import NotesStore
+
+ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "*").split(",")]
+
+app = FastAPI(title="Lumina Marketing Dashboard Notes API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+_store_instance: Optional[NotesStore] = None
+
+
+def get_store() -> NotesStore:
+    global _store_instance
+    if _store_instance is None:
+        _store_instance = BigQueryNotesStore(
+            project_id=os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse"),
+            dataset=os.environ.get("BQ_DATASET", "marketing_tool_ops"),
+            table=os.environ.get("BQ_TABLE", "dashboard_notes"),
+        )
+    return _store_instance
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
+@app.get("/notes", response_model=list[Note])
+def list_notes(view: Optional[str] = None, _user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> list[Note]:
+    return store.list_notes(view)
+
+
+@app.post("/notes", response_model=Note, status_code=201)
+def create_note(note: NoteIn, user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> Note:
+    try:
+        return store.create_note(note, author_name=user.name)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+```
+
+- [ ] **Step 10: Update `notes-api/tests/test_api.py`**
+
+```python
+from fastapi.testclient import TestClient
+
+from auth import VerifiedUser, require_google_user
+from main import app, get_store
+from storage import InMemoryNotesStore
+
+
+def make_client():
+    store = InMemoryNotesStore()
+    app.dependency_overrides[get_store] = lambda: store
+    app.dependency_overrides[require_google_user] = lambda: VerifiedUser(email="jane@luminasolar.com", name="Jane Doe")
+    return TestClient(app), store
+
+
+def test_create_note_returns_generated_id_and_timestamp():
+    client, _ = make_client()
+    payload = {
+        "view": "overview",
+        "element_key": "metric:projected-revenue",
+        "element_label": "Projected revenue",
+        "note_text": "This number confuses the team.",
+        "context": {"region": "All markets", "source": "All sources", "range": 12},
+    }
+    response = client.post("/notes", json=payload)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["note_id"]
+    assert body["created_at"]
+    assert body["element_key"] == "metric:projected-revenue"
+    assert body["author_name"] == "Jane Doe"
+    app.dependency_overrides.clear()
+
+
+def test_list_notes_filters_by_view():
+    client, _ = make_client()
+    client.post("/notes", json={
+        "view": "overview", "element_key": "metric:a", "element_label": "A",
+        "note_text": "note a", "context": {},
+    })
+    client.post("/notes", json={
+        "view": "campaigns", "element_key": "campaign:x", "element_label": "X",
+        "note_text": "note b", "context": {},
+    })
+    response = client.get("/notes", params={"view": "campaigns"})
+    assert response.status_code == 200
+    notes = response.json()
+    assert len(notes) == 1
+    assert notes[0]["view"] == "campaigns"
+    app.dependency_overrides.clear()
+
+
+def test_create_note_rejects_invalid_view():
+    client, _ = make_client()
+    response = client.post("/notes", json={
+        "view": "not-a-real-view", "element_key": "metric:a", "element_label": "A",
+        "note_text": "hello", "context": {},
+    })
+    assert response.status_code == 422
+    app.dependency_overrides.clear()
+
+
+def test_requests_without_valid_google_identity_are_rejected():
+    store = InMemoryNotesStore()
+    app.dependency_overrides[get_store] = lambda: store
+    client = TestClient(app)
+    response = client.get("/notes")
+    assert response.status_code == 401
+    app.dependency_overrides.clear()
+```
+
+- [ ] **Step 11: Add the dependency**
+
+Add to `notes-api/requirements.txt`:
+
+```
+google-auth>=2.35
+```
+
+- [ ] **Step 12: Run the full backend test suite**
+
+Run: `cd notes-api && python -m pip install -r requirements.txt && python -m pytest -v`
+Expected: all tests pass with zero failures and zero unexplained warnings (4 auth + 3 api + 2 bigquery_store tests currently in the tree, plus whatever else exists at execution time).
+
+- [ ] **Step 13: Commit**
+
+```bash
+git add notes-api/auth.py notes-api/models.py notes-api/storage.py notes-api/bigquery_store.py notes-api/main.py notes-api/requirements.txt notes-api/tests/test_auth.py notes-api/tests/test_api.py notes-api/tests/test_bigquery_store.py
+git commit -m "feat: require verified luminasolar.com Google identity on notes-api"
+```
+
+### Task 5: Provision OAuth client and deploy to Cloud Run
+
+**Files:** none from this task directly (infra + one already-created file to commit)
+
+**Interfaces:**
+- Consumes: `notes-api/auth.py`'s `GOOGLE_OAUTH_CLIENT_ID`/`ALLOWED_HOSTED_DOMAIN` env vars (Task 4).
+- Produces: a deployed Cloud Run service URL (`NOTES_API_BASE` for Part 2) and an OAuth Client ID (`GOOGLE_OAUTH_CLIENT_ID` for Task 6's frontend).
+
+- [ ] **Step 1: BigQuery table (already done)**
+
+The controller already ran this during execution: `notes-api/schema.sql` was created and applied via `bq query --use_legacy_sql=false < notes-api/schema.sql`, creating `lumina-lakehouse.marketing_tool_ops.dashboard_notes`. Confirm it still exists (`bq show lumina-lakehouse:marketing_tool_ops.dashboard_notes`) and commit the file if not already committed:
+
+```bash
+git add notes-api/schema.sql
+git commit -m "feat: add BigQuery schema for dashboard notes"
+```
+
+- [ ] **Step 2: Create the OAuth consent screen (manual, GCP Console)**
+
+This step cannot be done via `gcloud` — it requires the Google Cloud Console UI and Workspace admin rights (confirmed available). In the `lumina-lakehouse` project:
+1. Go to **APIs & Services → OAuth consent screen**.
+2. User Type: **Internal** (restricts sign-in to luminasolar.com accounts at the Google level, before any application code runs).
+3. App name: "Lumina Marketing Dashboard Notes" (or similar internal-only name); support email: your own.
+4. Save — no scopes beyond the default `openid`/`email`/`profile` are needed (Sign-In With Google only requires identity, not any Google API access).
+
+- [ ] **Step 3: Create the OAuth 2.0 Client ID (manual, GCP Console)**
+
+1. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+2. Application type: **Web application**.
+3. Name: "Lumina Marketing Dashboard".
+4. Authorized JavaScript origins: add `http://127.0.0.1:8795` and `http://localhost:8795` (for local testing via `outputs/start_lumina_marketing_server.ps1`) now; add the dashboard's real production origin once it's hosted somewhere (this can be edited on the same client later — it doesn't require a new client ID).
+5. Create, and copy the generated **Client ID** (looks like `123456-abc.apps.googleusercontent.com`). You'll need this value in both Step 4 below and Task 6.
+
+- [ ] **Step 4: Deploy notes-api to Cloud Run**
+
+Run (replace `$CLIENT_ID` with the value from Step 3):
+
+```bash
+cd notes-api
+gcloud run deploy notes-api \
+  --source=. \
+  --region=us-east1 \
+  --allow-unauthenticated \
+  --set-env-vars=BQ_PROJECT_ID=lumina-lakehouse,BQ_DATASET=marketing_tool_ops,BQ_TABLE=dashboard_notes,ALLOWED_ORIGINS=http://127.0.0.1:8795,GOOGLE_OAUTH_CLIENT_ID=$CLIENT_ID,ALLOWED_HOSTED_DOMAIN=luminasolar.com
+```
+
+`--allow-unauthenticated` is intentional here and no longer a bare public write: Cloud Run itself stays reachable, but `notes-api`'s own `require_google_user` dependency (Task 4) rejects every request without a valid `@luminasolar.com` Google ID token before it reaches BigQuery. Region `us-east1` matches the rest of the project's existing Cloud Run services (`lumen-leadership`, `lumen-leadership-slack`, `lumen-leadership-web`, `lumen-mcp-bq`, `lumina-field-ops-api`).
+
+Expected: deployment succeeds and prints a `Service URL`. Record this URL — it's `NOTES_API_BASE` for Task 7. Update `ALLOWED_ORIGINS` (redeploy with a new `--set-env-vars`) once the dashboard's real hosting origin is known — it currently only allows local testing.
+
+- [ ] **Step 5: Grant the service's runtime account BigQuery access**
+
+Run: `gcloud run services describe notes-api --region=us-east1 --format='value(spec.template.spec.serviceAccountName)'`
+
+If that prints a service account email, use it below. If it prints nothing, the service runs as the project's default compute service account (`gcloud iam service-accounts list` to find `PROJECT_NUMBER-compute@developer.gserviceaccount.com`).
+
+Run (replace `$RUNTIME_SA` with that email):
+```bash
+gcloud projects add-iam-policy-binding lumina-lakehouse \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/bigquery.dataEditor" \
+  --condition=None
+gcloud projects add-iam-policy-binding lumina-lakehouse \
+  --member="serviceAccount:$RUNTIME_SA" \
+  --role="roles/bigquery.jobUser" \
+  --condition=None
+```
+
+- [ ] **Step 6: Verify the deployed service end-to-end**
+
+Run (replace `$SERVICE_URL` with the URL from Step 4):
+```bash
+curl -s $SERVICE_URL/health
+curl -s $SERVICE_URL/notes
+curl -s -X POST $SERVICE_URL/notes -H "Content-Type: application/json" -d '{"view":"overview","element_key":"metric:test","element_label":"Test metric","note_text":"deployment smoke test","context":{}}'
+```
+Expected: `/health` returns `{"status":"ok"}`; the unauthenticated `GET /notes` returns `401` (proving the auth gate is live in production, not just in unit tests); the unauthenticated `POST /notes` also returns `401`. A real end-to-end check with a valid token happens in Task 12, once Task 6 exists to obtain one.
+
+### Task 6: Google Sign-In on the dashboard
+
+**Files:**
+- Modify: `outputs/marketing_decision_tool.html`
+
+**Interfaces:**
+- Consumes: the OAuth Client ID from Task 5, Step 3.
+- Produces: `getIdToken()`, `isSignedIn()`, `renderSignInState()`. Consumed by Task 7 (attaches the token to every fetch) and Task 8 (the drawer gates on sign-in state).
+
+- [ ] **Step 1: Load the Google Identity Services script**
+
+In `outputs/marketing_decision_tool.html`, add to `<head>`, immediately after the existing `<link rel="icon" ...>` line:
+
+```html
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+```
+
+- [ ] **Step 2: Add the sign-in UI to the sidebar**
+
+Immediately after the `<div class="status-note">...</div>` block in the `<aside>`, add:
+
+```html
+      <div class="sign-in-panel" id="signInPanel">
+        <div id="googleSignInButton"></div>
+        <div class="signed-in-as hidden" id="signedInAs"></div>
+      </div>
+```
+
+- [ ] **Step 3: Add the sign-in panel CSS**
+
+Immediately after the `.status-note { ... }` rule, add:
+
+```css
+    .sign-in-panel {
+      display: grid;
+      gap: 8px;
+    }
+
+    .signed-in-as {
+      font-size: 12px;
+      color: #b9c4d3;
+    }
+```
+
+- [ ] **Step 4: Add the Google Sign-In JS**
+
+Insert this block into the `<script>`, in the section Task 7 builds (immediately after the `const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";` line once Task 7 exists):
+
+```js
+    const GOOGLE_OAUTH_CLIENT_ID = (typeof window !== "undefined" && window.LUMINA_GOOGLE_CLIENT_ID) || "REPLACE_ME.apps.googleusercontent.com";
+    let currentIdToken = null;
+    let currentUserName = null;
+
+    function getIdToken() {
+      return currentIdToken;
+    }
+
+    function isSignedIn() {
+      return Boolean(currentIdToken);
+    }
+
+    function decodeJwtPayload(token) {
+      try {
+        const payload = token.split(".")[1];
+        return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function renderSignInState() {
+      const signedInAs = document.getElementById("signedInAs");
+      const button = document.getElementById("googleSignInButton");
+      if (isSignedIn()) {
+        signedInAs.textContent = `Signed in as ${currentUserName}`;
+        signedInAs.classList.remove("hidden");
+        button.classList.add("hidden");
+      } else {
+        signedInAs.classList.add("hidden");
+        button.classList.remove("hidden");
+      }
+    }
+
+    function handleGoogleCredential(response) {
+      currentIdToken = response.credential;
+      const payload = decodeJwtPayload(currentIdToken);
+      currentUserName = payload.name || payload.email || "Signed in";
+      renderSignInState();
+      fetchNotes().then(() => {
+        refreshPanelNoteBadges();
+        render();
+      });
+    }
+
+    function initGoogleSignIn() {
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        callback: handleGoogleCredential
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleSignInButton"),
+        { theme: "outline", size: "medium", text: "signin_with" }
+      );
+      renderSignInState();
+    }
+```
+
+`fetchNotes`, `refreshPanelNoteBadges`, and `render` referenced above are defined in Tasks 7/8 (in the same script) — function hoisting means the definition order doesn't matter, matching the existing codebase's convention (e.g. `wireTips` is called from functions defined earlier in the file than `wireTips` itself).
+
+- [ ] **Step 5: Call `initGoogleSignIn()` on load**
+
+This is wired in Task 10 (init wiring), alongside the other startup calls — see that task for the exact insertion point.
+
+- [ ] **Step 6: Manually verify in a browser**
+
+Once Task 5 has produced a real Client ID and it's substituted for `REPLACE_ME.apps.googleusercontent.com` (or set via `window.LUMINA_GOOGLE_CLIENT_ID` before the script loads), serve the dashboard locally and confirm the Google Sign-In button renders in the sidebar, and clicking it completes a real sign-in with a luminasolar.com account, after which the button is replaced by "Signed in as [name]".
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add outputs/marketing_decision_tool.html
+git commit -m "feat: add Google Sign-In restricted to the dashboard sidebar"
+```
+
+### Task 7: Notes API client (fetch, post, offline queue) — revised
+
+Same as original Task 5, with two changes: no `getAuthorName`/`setAuthorName`/`NOTES_AUTHOR_KEY` (identity now comes from the verified Google token, Task 6), and every request attaches `Authorization: Bearer <token>`.
+
+**Files:**
+- Modify: `outputs/marketing_decision_tool.html`
+
+**Interfaces:**
+- Consumes: `getIdToken()`, `isSignedIn()` (Task 6).
+- Produces: `allNotes`, `notesForKey(key)`, `fetchNotes()`, `postNote(payload, opts)`. Consumed by Tasks 8–10.
+
+- [ ] **Step 1: Add the notes client code**
+
+Insert immediately after the line `const rawData = generateData();` (just before the existing `let state = {...}` block):
+
+```js
+    const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "https://notes-api-REPLACE_ME.a.run.app";
+    const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";
+    let allNotes = [];
+
+    function readQueuedNotes() {
+      try {
+        return JSON.parse(localStorage.getItem(NOTES_QUEUE_KEY) || "[]");
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function writeQueuedNotes(queue) {
+      try {
+        localStorage.setItem(NOTES_QUEUE_KEY, JSON.stringify(queue));
+      } catch (error) {}
+    }
+
+    function notesForKey(key) {
+      return allNotes.filter(note => note.element_key === key);
+    }
+
+    async function postNote(payload, options = {}) {
+      const queueOnFailure = options.queueOnFailure !== false;
+      if (!isSignedIn()) throw new Error("Not signed in");
+      const response = await fetch(`${NOTES_API_BASE}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getIdToken()}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        if (queueOnFailure) {
+          const queue = readQueuedNotes();
+          queue.push(payload);
+          writeQueuedNotes(queue);
+        }
+        throw new Error(`Note save failed: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function flushQueuedNotes() {
+      if (!isSignedIn()) return;
+      const queue = readQueuedNotes();
+      if (!queue.length) return;
+      const remaining = [];
+      for (const pending of queue) {
+        try {
+          const saved = await postNote(pending, { queueOnFailure: false });
+          allNotes.unshift(saved);
+        } catch (error) {
+          remaining.push(pending);
+        }
+      }
+      writeQueuedNotes(remaining);
+    }
+
+    async function fetchNotes() {
+      if (!isSignedIn()) return;
+      try {
+        const response = await fetch(`${NOTES_API_BASE}/notes`, {
+          headers: { "Authorization": `Bearer ${getIdToken()}` }
+        });
+        if (!response.ok) throw new Error(`Notes fetch failed: ${response.status}`);
+        allNotes = await response.json();
+      } catch (error) {
+        allNotes = allNotes || [];
+      }
+      await flushQueuedNotes();
+    }
+```
+
+Replace `https://notes-api-REPLACE_ME.a.run.app` with the actual `Service URL` recorded in Task 5, Step 4 before this ships.
+
+- [ ] **Step 2: Manually verify**
+
+Open `outputs/marketing_decision_tool.html` in a browser (with Task 6's sign-in button present) and confirm no console errors before signing in (both `fetchNotes` and `postNote` should no-op/throw cleanly rather than crash when `isSignedIn()` is false).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add outputs/marketing_decision_tool.html
+git commit -m "feat: add notes-api client layer with Google-authenticated requests"
+```
+
+### Task 8: Note chips, stable entity keys, and the note drawer — revised
+
+Identical to original Task 6, except the note drawer's compose form no longer collects a name — it shows the signed-in user's name (from Task 6) or, if not signed in, a prompt instead of the textarea/submit button.
+
+**Files:**
+- Modify: `outputs/marketing_decision_tool.html`
+
+**Interfaces:**
+- Consumes: `notesForKey(key)`, `postNote(payload, opts)` (Task 7); `isSignedIn()`, `getIdToken()` (Task 6).
+- Produces: `slugify(text)`, `noteChip(key, label)`, `metricCardHtml(...)`, `decisionCardHtml(...)`, `wireNoteChips(scope)`, `openNoteDrawer(key, label)`, `closeNoteDrawer()`, `refreshPanelNoteBadges()`, `addPanelChips()`. Consumed by Task 9 (Feedback view reads `allNotes` directly), Task 10 (init wiring), Task 11 (regression test).
+
+All CSS and the `slugify`/`noteChip`/`metricCardHtml`/`decisionCardHtml`/`wireNoteChips`/`addPanelChips`/panel-widening steps are **identical to original Task 6, Steps 1–11** (the metric/decision-card/campaign-card/object-row/panel wiring doesn't involve author identity at all) — implement those exactly as written there.
+
+The only change is the drawer markup and logic (original Task 6, Steps 8, 10, 11). Use these replacements instead:
+
+- [ ] **Step 8: Add the drawer markup (revised — no name input)**
+
+Immediately after `<div class="tooltip" id="tooltip"></div>`, add:
+
+```html
+  <div class="note-drawer-backdrop" id="noteDrawerBackdrop"></div>
+  <aside class="note-drawer" id="noteDrawer" aria-hidden="true">
+    <div class="note-drawer-head">
+      <div>
+        <strong id="noteDrawerLabel">Notes</strong>
+        <span id="noteDrawerView"></span>
+      </div>
+      <button type="button" class="note-drawer-close" id="noteDrawerClose" aria-label="Close notes">×</button>
+    </div>
+    <div class="note-drawer-list" id="noteDrawerList"></div>
+    <form class="note-drawer-form hidden" id="noteDrawerForm">
+      <textarea id="noteDrawerText" placeholder="Add a note about this..." maxlength="4000" required></textarea>
+      <div class="note-drawer-form-row">
+        <span class="note-drawer-signed-in-as" id="noteDrawerSignedInAs"></span>
+        <button type="submit">Add note</button>
+      </div>
+      <p class="note-drawer-status" id="noteDrawerStatus"></p>
+    </form>
+    <p class="note-drawer-signin-prompt" id="noteDrawerSigninPrompt">Sign in with Google (sidebar) to add a note.</p>
+  </aside>
+```
+
+- [ ] **Step 9: Add the drawer CSS (same as original Task 6 Step 9, plus two additions)**
+
+Use original Task 6 Step 9's CSS block verbatim, and also add:
+
+```css
+    .note-drawer-signed-in-as {
+      font-size: 12px;
+      color: var(--muted);
+      align-self: center;
+    }
+
+    .note-drawer-signin-prompt {
+      padding: 16px;
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+```
+
+- [ ] **Step 10: Add the drawer logic (revised — gates on sign-in state)**
+
+Immediately after the `addPanelChips` function:
+
+```js
+    let activeNoteKey = null;
+    let activeNoteLabel = null;
+
+    function currentNoteContext() {
+      return {
+        region: state.region,
+        source: state.source,
+        range: state.range,
+        campaignObjective: state.campaignObjective,
+        campaignGrain: state.campaignGrain,
+        campaignDetail: state.campaignDetail
+      };
+    }
+
+    function renderNoteDrawerList() {
+      const notes = notesForKey(activeNoteKey);
+      const list = document.getElementById("noteDrawerList");
+      list.innerHTML = notes.length
+        ? notes.map(note => `
+            <div class="note-drawer-item">
+              <div class="note-drawer-item-meta">${escapeAttr(note.author_name)} &middot; ${new Date(note.created_at).toLocaleString()}</div>
+              <div>${escapeAttr(note.note_text)}</div>
+            </div>
+          `).join("")
+        : `<p class="note-drawer-empty">No notes yet on this element.</p>`;
+    }
+
+    function renderNoteDrawerComposer() {
+      const form = document.getElementById("noteDrawerForm");
+      const prompt = document.getElementById("noteDrawerSigninPrompt");
+      if (isSignedIn()) {
+        form.classList.remove("hidden");
+        prompt.classList.add("hidden");
+        document.getElementById("noteDrawerSignedInAs").textContent = `as ${currentUserName}`;
+      } else {
+        form.classList.add("hidden");
+        prompt.classList.remove("hidden");
+      }
+    }
+
+    function openNoteDrawer(key, label) {
+      activeNoteKey = key;
+      activeNoteLabel = label;
+      document.getElementById("noteDrawerLabel").textContent = label;
+      document.getElementById("noteDrawerView").textContent = titleMap[state.view][0];
+      renderNoteDrawerList();
+      renderNoteDrawerComposer();
+      document.getElementById("noteDrawer").classList.add("open");
+      document.getElementById("noteDrawer").setAttribute("aria-hidden", "false");
+      document.getElementById("noteDrawerBackdrop").classList.add("open");
+    }
+
+    function closeNoteDrawer() {
+      document.getElementById("noteDrawer").classList.remove("open");
+      document.getElementById("noteDrawer").setAttribute("aria-hidden", "true");
+      document.getElementById("noteDrawerBackdrop").classList.remove("open");
+      activeNoteKey = null;
+    }
+
+    function refreshPanelNoteBadges() {
+      document.querySelectorAll(".panel .note-chip").forEach(chip => {
+        const key = chip.dataset.noteKey;
+        const count = notesForKey(key).length;
+        let badge = chip.querySelector(".note-chip-count");
+        if (count > 0) {
+          if (!badge) {
+            badge = document.createElement("span");
+            badge.className = "note-chip-count";
+            chip.appendChild(badge);
+          }
+          badge.textContent = String(count);
+        } else if (badge) {
+          badge.remove();
+        }
+      });
+    }
+
+    function wireNoteChips(scope) {
+      scope.querySelectorAll(".note-chip").forEach(chip => {
+        if (chip.__noteWired) return;
+        chip.__noteWired = true;
+        chip.addEventListener("click", () => {
+          openNoteDrawer(chip.dataset.noteKey, chip.dataset.noteLabel);
+        });
+      });
+    }
+```
+
+- [ ] **Step 11: Wire the drawer's close controls and submit handler (revised — no name field)**
+
+```js
+    document.getElementById("noteDrawerClose").addEventListener("click", closeNoteDrawer);
+    document.getElementById("noteDrawerBackdrop").addEventListener("click", closeNoteDrawer);
+    document.getElementById("noteDrawerForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const text = document.getElementById("noteDrawerText").value.trim();
+      const status = document.getElementById("noteDrawerStatus");
+      if (!text || !activeNoteKey || !isSignedIn()) return;
+      const payload = {
+        view: state.view,
+        element_key: activeNoteKey,
+        element_label: activeNoteLabel,
+        note_text: text,
+        context: currentNoteContext()
+      };
+      status.textContent = "Saving...";
+      try {
+        const saved = await postNote(payload);
+        allNotes.unshift(saved);
+        document.getElementById("noteDrawerText").value = "";
+        status.textContent = "Saved.";
+        renderNoteDrawerList();
+        render();
+        refreshPanelNoteBadges();
+      } catch (error) {
+        status.textContent = "Not saved yet — will retry automatically.";
+        renderNoteDrawerList();
+      }
+    });
+```
+
+- [ ] **Step 12: Manually verify in a browser (both signed out and signed in)**
+
+Before signing in, click a note chip: confirm the drawer shows the sign-in prompt instead of a compose form. Sign in via the sidebar button, click a note chip again: confirm the compose form now appears with "as [your name]" and submitting works.
+
+- [ ] **Step 13: Commit**
+
+```bash
+git add outputs/marketing_decision_tool.html
+git commit -m "feat: add note chips, stable entity keys, and the note drawer across the dashboard"
+```
+
+### Task 9: "Feedback" view
+
+Identical to original Task 7 — unaffected by the auth change (it only reads `allNotes`, which already carries verified `author_name` values). Implement exactly as written there.
+
+### Task 10: Load notes and Google Sign-In on page init
+
+Same as original Task 8, plus calling `initGoogleSignIn()`.
+
+**Files:**
+- Modify: `outputs/marketing_decision_tool.html`
+
+- [ ] **Step 1: Call `initGoogleSignIn()` and `fetchNotes()` after the initial render**
+
+At the very end of the `<script>` block, change:
+
+```js
+    window.addEventListener("resize", render);
+    addPanelChips();
+    render();
+```
+
+to:
+
+```js
+    window.addEventListener("resize", render);
+    addPanelChips();
+    render();
+    initGoogleSignIn();
+    fetchNotes().then(() => {
+      refreshPanelNoteBadges();
+      render();
+    });
+```
+
+(`fetchNotes()` and `flushQueuedNotes()` already no-op when `isSignedIn()` is false, per Task 7, so this is safe to call unconditionally before sign-in completes.)
+
+- [ ] **Step 2: Manually verify in a browser**
+
+Reload the page before signing in — confirm it renders normally with no console errors and no note badges. Sign in — confirm badges populate from any existing notes.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add outputs/marketing_decision_tool.html
+git commit -m "feat: load dashboard notes and Google Sign-In on page init"
+```
+
+### Task 11: Automated regression test for stable note keys
+
+Identical to original Task 9 — unaffected by the auth change. The test seeds `allNotes` directly and calls render functions synchronously; it never calls `fetchNotes`/`postNote`/sign-in at all, so none of this amendment's changes touch it. Implement exactly as written there.
+
+### Task 12: End-to-end verification against the deployed service
+
+Same structure as original Task 10, with one addition at the start of Step 2: **sign in with a real luminasolar.com Google account via the sidebar button before attempting to add any notes** (signed out, the drawer only shows the sign-in prompt, not a compose form — that itself is worth confirming first). Also add, after the existing steps: confirm that a **non**-luminasolar.com Google account (a personal Gmail account, if you have one to test with) is rejected by the backend with 403 when attempting to sign in and use the feature — this is the actual security property this amendment exists to deliver.

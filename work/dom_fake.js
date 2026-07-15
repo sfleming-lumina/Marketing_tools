@@ -24,6 +24,7 @@ class FakeElement {
     };
   }
   addEventListener() {}
+  focus() {}
   insertAdjacentHTML(_position, html) { this.innerHTML += html; }
   closest() { return null; }
   removeChild() {}
@@ -72,6 +73,8 @@ function installFakeDom(extraIds = []) {
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect",
     "refreshBqButton", "freshnessTitle", "freshnessMeta",
+    "askClaudeButton", "claudePanel", "claudeBackdrop", "claudeQuestion", "claudeSubmit",
+    "claudeAnswer", "claudeClose", "claudeForm",
     "trendExplorerMetric", "trendCompareMode", "trendExplorerChart", "trendSummary",
     "noteDrawer", "noteDrawerBackdrop", "noteDrawerClose", "noteDrawerForm",
     "noteDrawerText", "noteDrawerAuthor", "noteDrawerStatus", "noteDrawerLabel", "noteDrawerView",

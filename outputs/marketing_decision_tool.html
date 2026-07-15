@@ -362,6 +362,11 @@
       filter: brightness(0.98);
     }
 
+    .freshness-badge .assistant-button {
+      background: var(--lumina-charcoal);
+      color: #fff;
+    }
+
     .control {
       display: grid;
       gap: 5px;
@@ -658,9 +663,9 @@
     }
 
     .chart path {
-      stroke-dasharray: 900;
-      stroke-dashoffset: 900;
-      animation: drawStroke 900ms ease-out forwards;
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+      animation: none;
     }
 
     .chart rect:not(:first-child) {
@@ -1152,6 +1157,99 @@
       display: none;
     }
 
+    .claude-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 54;
+      background: rgba(23, 32, 25, 0.26);
+    }
+
+    .claude-panel {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 55;
+      width: min(440px, calc(100vw - 28px));
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .claude-panel-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .claude-panel h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .claude-panel p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .claude-close {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 800;
+      width: 34px;
+      height: 34px;
+    }
+
+    .claude-form {
+      display: grid;
+      gap: 9px;
+    }
+
+    .claude-form textarea {
+      width: 100%;
+      min-height: 108px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      font: inherit;
+      line-height: 1.4;
+    }
+
+    .claude-form button {
+      justify-self: start;
+      border: 0;
+      border-radius: 8px;
+      background: var(--lumina-green);
+      color: #06210d;
+      font-weight: 750;
+      padding: 9px 12px;
+      cursor: pointer;
+    }
+
+    .claude-answer {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f9fcf9;
+      color: var(--ink);
+      min-height: 76px;
+      padding: 10px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
     @media (max-width: 1100px) {
       .app-shell { grid-template-columns: 1fr; }
       .app-shell > aside { position: static; }
@@ -1231,6 +1329,7 @@
             <strong id="freshnessTitle">BQ freshness unknown</strong>
             <span id="freshnessMeta">Use Refresh BQ to check source object metadata.</span>
             <button type="button" id="refreshBqButton">Refresh BQ</button>
+            <button type="button" id="askClaudeButton" class="assistant-button">Ask Claude</button>
           </div>
           <div class="control">
             <label for="regionSelect">Market</label>
@@ -1653,6 +1752,22 @@
     </div>
   </aside>
 
+  <div class="claude-backdrop hidden" id="claudeBackdrop"></div>
+  <aside class="claude-panel hidden" id="claudePanel" aria-label="Ask Claude" aria-hidden="true">
+    <div class="claude-panel-head">
+      <div>
+        <h3>Ask Claude</h3>
+        <p>Claude receives the current filters, trend settings, freshness status, summary metrics, and recent notes.</p>
+      </div>
+      <button type="button" class="claude-close" id="claudeClose" aria-label="Close Claude panel">x</button>
+    </div>
+    <form class="claude-form" id="claudeForm">
+      <textarea id="claudeQuestion" placeholder="What should marketing do with this trend?" required></textarea>
+      <button type="submit" id="claudeSubmit">Ask</button>
+    </form>
+    <div class="claude-answer" id="claudeAnswer">Ask a question about the selected view.</div>
+  </aside>
+
   <script>
     const months = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
     const sources = ["Paid Search", "Referral", "Partner", "Events", "Direct Mail"];
@@ -1982,6 +2097,94 @@
 
     function pct(value, digits = 1) {
       return (value * 100).toFixed(digits) + "%";
+    }
+
+    function dashboardContextForClaude() {
+      const rows = filteredRows();
+      const revenue = aggregate(rows, "revenue");
+      const wins = aggregate(rows, "wins");
+      const leads = aggregate(rows, "leads");
+      const spend = aggregate(rows, "spend");
+      const runs = aggregate(rows, "runs");
+      const capacity = aggregate(rows, "capacity");
+      const def = trendMetricDefs[state.trendExplorerMetric] || trendMetricDefs.revenue;
+      const series = trendSeries(state.trendExplorerMetric);
+      const latestTrend = series[series.length - 1] || {};
+      return {
+        view: state.view,
+        view_title: titleMap[state.view] ? titleMap[state.view][0] : state.view,
+        filters: {
+          market: state.region,
+          source: state.source,
+          window_months: state.range
+        },
+        summary_metrics: {
+          projected_revenue: revenue,
+          expected_wins: wins,
+          lead_volume: leads,
+          spend,
+          cost_per_win: spend / Math.max(1, wins),
+          capacity_stress: Math.max(0, runs - capacity) / Math.max(1, runs)
+        },
+        trend: {
+          metric: def.label,
+          comparison_mode: state.trendCompareMode.toUpperCase(),
+          latest_month: latestTrend.month,
+          latest_value: latestTrend.value
+        },
+        freshness: latestFreshness ? {
+          checked_at: latestFreshness.checked_at,
+          latest_modified_at: latestFreshness.latest_modified_at,
+          objects_found: latestFreshness.objects_found,
+          objects_checked: latestFreshness.objects_checked,
+          missing_objects: latestFreshness.missing_objects
+        } : null,
+        recent_notes: allNotes.slice(0, 6).map(note => ({
+          view: note.view,
+          element: note.element_label,
+          feedback_type: note.feedback_type,
+          text: note.note_text
+        }))
+      };
+    }
+
+    function openClaudePanel() {
+      document.getElementById("claudePanel").classList.remove("hidden");
+      document.getElementById("claudePanel").setAttribute("aria-hidden", "false");
+      document.getElementById("claudeBackdrop").classList.remove("hidden");
+      document.getElementById("claudeQuestion").focus();
+    }
+
+    function closeClaudePanel() {
+      document.getElementById("claudePanel").classList.add("hidden");
+      document.getElementById("claudePanel").setAttribute("aria-hidden", "true");
+      document.getElementById("claudeBackdrop").classList.add("hidden");
+    }
+
+    async function askClaude(question) {
+      const submit = document.getElementById("claudeSubmit");
+      const answer = document.getElementById("claudeAnswer");
+      submit.disabled = true;
+      submit.textContent = "Asking...";
+      answer.textContent = "Claude is reading the current dashboard context...";
+      try {
+        const response = await fetch(`${NOTES_API_BASE}/ask-claude`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            context: dashboardContextForClaude()
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.detail || `Claude request failed: ${response.status}`);
+        answer.textContent = payload.answer || "Claude returned an empty response.";
+      } catch (error) {
+        answer.textContent = error.message || "Claude is unavailable right now.";
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Ask";
+      }
     }
 
     const helpCopy = {
@@ -3346,9 +3549,20 @@
     document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
     document.getElementById("capacityBuffer").addEventListener("input", e => { state.shifts.capacityBuffer = Number(e.target.value); renderScenario(); });
     document.getElementById("refreshBqButton").addEventListener("click", refreshBqFreshness);
+    document.getElementById("askClaudeButton").addEventListener("click", openClaudePanel);
+    document.getElementById("claudeClose").addEventListener("click", closeClaudePanel);
+    document.getElementById("claudeBackdrop").addEventListener("click", closeClaudePanel);
+    document.getElementById("claudeForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const question = document.getElementById("claudeQuestion").value.trim();
+      if (question) askClaude(question);
+    });
     window.addEventListener("resize", render);
     window.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeNoteDrawer();
+      if (event.key === "Escape") {
+        closeNoteDrawer();
+        closeClaudePanel();
+      }
     });
     document.getElementById("noteDrawerClose").addEventListener("click", closeNoteDrawer);
     document.getElementById("noteDrawerBackdrop").addEventListener("click", closeNoteDrawer);

@@ -6,6 +6,8 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 from google.cloud import bigquery
 
@@ -15,6 +17,9 @@ PROJECT_ID = os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse")
 DATASET = os.environ.get("BQ_DATASET", "marketing_tool_ops")
 TABLE = os.environ.get("BQ_TABLE", "dashboard_notes")
 TABLE_REF = f"{PROJECT_ID}.{DATASET}.{TABLE}"
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
 
 SOURCE_OBJECTS = [
     "analytics_rpt.rpt_marketing_lead_cohort_performance",
@@ -58,6 +63,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_json_body(self):
+        length = int(self.headers.get("Content-Length", "0") or "0")
+        if length > 120_000:
+            raise ValueError("Request body is too large.")
+        return json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+
     def _iap_user(self):
         raw = self.headers.get("X-Goog-Authenticated-User-Email", "")
         if raw.startswith("accounts.google.com:"):
@@ -85,14 +96,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/notes":
-            length = int(self.headers.get("Content-Length", "0") or "0")
-            payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            payload = self._read_json_body()
             self._send_json(HTTPStatus.CREATED, self._create_note(payload))
             return
         if parsed.path == "/api/freshness/refresh":
             result = self._source_freshness()
             result["refresh_mode"] = "metadata_check"
             self._send_json(HTTPStatus.OK, result)
+            return
+        if parsed.path == "/api/ask-claude":
+            try:
+                status, result = self._ask_claude(self._read_json_body())
+            except ValueError as exc:
+                status, result = HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+            self._send_json(status, result)
             return
         self._send_json(HTTPStatus.NOT_FOUND, {"detail": "Not found"})
 
@@ -177,6 +194,69 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "objects_found": len(objects),
             "missing_objects": missing,
             "objects": objects,
+        }
+
+    def _ask_claude(self, payload):
+        if not ANTHROPIC_API_KEY:
+            return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
+
+        question = str(payload.get("question", "")).strip()
+        if not question:
+            raise ValueError("Question is required.")
+
+        context = payload.get("context", {})
+        context_json = json.dumps(context, indent=2, default=str)[:20_000]
+        body = {
+            "model": ANTHROPIC_MODEL,
+            "max_tokens": 900,
+            "system": (
+                "You are Claude helping Lumina Solar's marketing team interpret an internal "
+                "performance dashboard. Be concise, practical, and explicit about whether a "
+                "recommendation is supported by the supplied dashboard context or is a follow-up "
+                "question for the data team."
+            ),
+            "messages": [
+                {
+                    "role": "user",
+                    "content": (
+                        f"Dashboard context:\n{context_json}\n\n"
+                        f"Marketing user's question:\n{question}"
+                    ),
+                }
+            ],
+        }
+        request = urlrequest.Request(
+            ANTHROPIC_MESSAGES_URL,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+            },
+            method="POST",
+        )
+        try:
+            with urlrequest.urlopen(request, timeout=45) as response:
+                result = json.loads(response.read().decode("utf-8"))
+        except urlerror.HTTPError as exc:
+            detail = "Claude request failed. Check the configured Anthropic key and model."
+            try:
+                error_payload = json.loads(exc.read().decode("utf-8"))
+                detail = error_payload.get("error", {}).get("message", detail)
+            except Exception:
+                pass
+            return HTTPStatus.BAD_GATEWAY, {"detail": detail, "status": exc.code}
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Claude request failed: {exc}"}
+
+        answer = "\n".join(
+            block.get("text", "")
+            for block in result.get("content", [])
+            if block.get("type") == "text"
+        ).strip()
+        return HTTPStatus.OK, {
+            "answer": answer or "Claude returned an empty response.",
+            "model": result.get("model", ANTHROPIC_MODEL),
         }
 
 

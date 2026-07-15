@@ -19,6 +19,7 @@ env:
   DASHBOARD_URL_CANONICAL: https://marketing-decision-tool-6stghdub4a-ue.a.run.app
   DASHBOARD_URL_PROJECT: https://marketing-decision-tool-502916414508.us-east1.run.app
   GOOGLE_OAUTH_CLIENT_ID: 502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com
+  ANTHROPIC_MODEL: claude-sonnet-5
 
 jobs:
   test:
@@ -40,10 +41,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Check dashboard server syntax
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "google-cloud-bigquery>=3.25"
+          python -m py_compile dashboard_server.py
+
       - name: Install notes API dependencies
         working-directory: notes-api
         run: |
-          python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run notes API tests
@@ -87,6 +93,8 @@ jobs:
             --region="${GCP_REGION}" \
             --source=. \
             --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
+            --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ANTHROPIC_MODEL=${ANTHROPIC_MODEL}" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
             --no-allow-unauthenticated \
             --quiet
 

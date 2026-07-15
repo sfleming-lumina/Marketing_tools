@@ -735,6 +735,12 @@
       vertical-align: -1px;
     }
 
+    .legend.line-legend i {
+      height: 3px;
+      border-radius: 999px;
+      vertical-align: 2px;
+    }
+
     .decision-list {
       display: grid;
       gap: 10px;
@@ -1355,6 +1361,10 @@
             </select>
           </div>
           <div class="control">
+            <label for="globalCampaignSelect">Campaign</label>
+            <select id="globalCampaignSelect"></select>
+          </div>
+          <div class="control">
             <label for="rangeSelect">Window</label>
             <select id="rangeSelect">
               <option value="12">12 months</option>
@@ -1394,6 +1404,7 @@
             </div>
           </div>
           <svg class="chart" id="trendExplorerChart" role="img" aria-label="Metric trend comparison chart"></svg>
+          <div class="legend line-legend" id="trendExplorerLegend"></div>
           <div class="trend-summary" id="trendSummary"></div>
         </article>
         <div class="grid-2">
@@ -2072,13 +2083,37 @@
       shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
     };
 
-    function filteredRows() {
+    function baseFilteredRows() {
       const start = months.length - state.range;
       return rawData.filter(row =>
         row.monthIndex >= start &&
         (state.region === "All markets" || row.region === state.region) &&
         (state.source === "All sources" || row.source === state.source)
       );
+    }
+
+    function selectedCampaignSegment() {
+      if (state.campaignDetail === "All campaign details") return null;
+      return campaignSegments.find(segment => segment.campaign === state.campaignDetail) || null;
+    }
+
+    function filteredRows() {
+      const rows = baseFilteredRows();
+      const segment = selectedCampaignSegment();
+      if (!segment) return rows;
+      return rows
+        .filter(row => row.source === segment.source)
+        .map(row => ({
+          ...row,
+          campaign: segment.campaign,
+          leads: row.leads * segment.mix * segment.leadLift,
+          spend: row.spend * segment.mix * segment.costIndex,
+          sets: row.sets * segment.mix * segment.leadLift,
+          runs: row.runs * segment.mix * segment.leadLift * segment.stressLift,
+          wins: row.wins * segment.mix * segment.leadLift * segment.winLift,
+          revenue: row.revenue * segment.mix * segment.leadLift * segment.winLift * segment.revenueLift,
+          capacity: row.capacity * segment.mix
+        }));
     }
 
     function aggregate(rows, key) {
@@ -2109,13 +2144,24 @@
       const capacity = aggregate(rows, "capacity");
       const def = trendMetricDefs[state.trendExplorerMetric] || trendMetricDefs.revenue;
       const series = trendSeries(state.trendExplorerMetric);
+      const comparison = series.map(item => comparisonValue(series, item, state.trendCompareMode));
       const latestTrend = series[series.length - 1] || {};
+      const planRows = campaignPlanRows();
+      const focusCampaign = state.campaignDetail !== "All campaign details"
+        ? planRows.find(row => row.campaign === state.campaignDetail)
+        : planRows[0];
+      const focusTrend = focusCampaign ? campaignRowsByMonth(focusCampaign) : [];
       return {
+        data_scope: {
+          answer_source: "Claude receives dashboard context from the current tool state plus the local demo time series and campaign model represented in the page.",
+          underlying_bq_access: "Claude does not directly query arbitrary BigQuery tables from this button; it sees BQ freshness metadata and the report-ready object inventory unless a controlled BQ query endpoint is added."
+        },
         view: state.view,
         view_title: titleMap[state.view] ? titleMap[state.view][0] : state.view,
         filters: {
           market: state.region,
           source: state.source,
+          campaign: state.campaignDetail,
           window_months: state.range
         },
         summary_metrics: {
@@ -2130,7 +2176,38 @@
           metric: def.label,
           comparison_mode: state.trendCompareMode.toUpperCase(),
           latest_month: latestTrend.month,
-          latest_value: latestTrend.value
+          latest_value: latestTrend.value,
+          monthly_values: series.map((item, index) => ({
+            month: item.month,
+            value: item.value,
+            comparison_value: comparison[index]
+          }))
+        },
+        campaign_planner: {
+          grain: state.campaignGrain,
+          selected_campaign: state.campaignDetail,
+          budget: state.campaignBudget,
+          objective: state.campaignObjective,
+          top_campaigns: planRows.slice(0, 8).map(row => ({
+            campaign: row.campaign,
+            source: row.source,
+            decision: row.decision,
+            score: row.score,
+            planned_spend: row.plannedSpend,
+            expected_revenue: row.expectedRevenue,
+            expected_wins: row.expectedWins,
+            capacity_adjusted_cpw: row.capacityAdjustedCpw,
+            stress: row.stress,
+            tactic: row.tactic,
+            guardrail: row.guardrail
+          })),
+          selected_campaign_trend: focusTrend.map(row => ({
+            month: row.month,
+            leads: row.leads,
+            wins: row.wins,
+            revenue: row.revenue,
+            cost_per_win: row.cpw
+          }))
         },
         freshness: latestFreshness ? {
           checked_at: latestFreshness.checked_at,
@@ -2144,6 +2221,13 @@
           element: note.element_label,
           feedback_type: note.feedback_type,
           text: note.note_text
+        })),
+        bq_object_inventory: objectInventory.map(row => ({
+          domain: row[0],
+          object_id: row[1],
+          label: row[2],
+          purpose: row[3],
+          decision_fit: row[4]
         }))
       };
     }
@@ -2408,16 +2492,25 @@
       return "Prior month";
     }
 
+    function renderLineLegend(containerId, series) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = series.map((item, index) => `
+        <span><i style="background:${item.color || palette[index % palette.length]}"></i>${escapeAttr(item.name)}</span>
+      `).join("");
+    }
+
     function renderTrendExplorer() {
       const def = trendMetricDefs[state.trendExplorerMetric] || trendMetricDefs.revenue;
       const series = trendSeries(state.trendExplorerMetric);
       const comparison = series.map(item => comparisonValue(series, item, state.trendCompareMode));
       const currentValues = series.map(item => item.value);
       const comparisonValues = comparison.map((value, index) => value == null ? currentValues[index] : value);
-      drawLineChart("trendExplorerChart", [
+      const chartSeries = [
         { name: def.label, values: currentValues, color: def.color, format: def.format },
         { name: comparisonLabel(state.trendCompareMode), values: comparisonValues, color: "#7d8580", format: def.format }
-      ], series.map(item => item.month), { yLabel: def.yLabel, minZero: def.yLabel !== "%" });
+      ];
+      drawLineChart("trendExplorerChart", chartSeries, series.map(item => item.month), { yLabel: def.yLabel, minZero: def.yLabel !== "%" });
+      renderLineLegend("trendExplorerLegend", chartSeries);
 
       const latestIndex = series.length - 1;
       const latest = currentValues[latestIndex] || 0;
@@ -2702,12 +2795,20 @@
       return ["All campaign details", ...sourceFiltered.map(segment => segment.campaign)];
     }
 
+    function renderGlobalCampaignSelect() {
+      const select = document.getElementById("globalCampaignSelect");
+      const options = campaignDetailOptions();
+      if (!options.includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
+      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
+    }
+
     function renderCampaignDetailSelect() {
       const select = document.getElementById("campaignDetailSelect");
       const options = campaignDetailOptions();
       if (!options.includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
-      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${option}</option>`).join("");
+      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
       select.disabled = state.campaignGrain !== "Detail";
+      document.getElementById("campaignGrain").value = state.campaignGrain;
     }
 
     function campaignBaseRows() {
@@ -2768,7 +2869,7 @@
     }
 
     function campaignPlanRows() {
-      const rows = filteredRows();
+      const rows = baseFilteredRows();
       const activeItems = campaignBaseRows();
       return activeItems.map((item, index) => {
         const source = item.source;
@@ -3461,6 +3562,7 @@
     }
 
     function render() {
+      renderGlobalCampaignSelect();
       if (state.view === "overview") {
         renderMetrics();
         renderTrendExplorer();
@@ -3499,12 +3601,28 @@
     });
     document.querySelectorAll(".nav button").forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
     document.getElementById("regionSelect").addEventListener("change", e => { state.region = e.target.value; render(); });
-    document.getElementById("sourceSelect").addEventListener("change", e => { state.source = e.target.value; render(); });
+    document.getElementById("sourceSelect").addEventListener("change", e => {
+      state.source = e.target.value;
+      if (!campaignDetailOptions().includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
+      render();
+    });
+    document.getElementById("globalCampaignSelect").addEventListener("change", e => {
+      state.campaignDetail = e.target.value;
+      if (state.campaignDetail !== "All campaign details") state.campaignGrain = "Detail";
+      render();
+    });
     document.getElementById("rangeSelect").addEventListener("change", e => { state.range = Number(e.target.value); render(); });
     document.getElementById("campaignBudget").addEventListener("input", e => { state.campaignBudget = Number(e.target.value); renderCampaignPlanner(); });
     document.getElementById("campaignObjective").addEventListener("change", e => { state.campaignObjective = e.target.value; renderCampaignPlanner(); });
-    document.getElementById("campaignGrain").addEventListener("change", e => { state.campaignGrain = e.target.value; renderCampaignPlanner(); });
-    document.getElementById("campaignDetailSelect").addEventListener("change", e => { state.campaignDetail = e.target.value; renderCampaignPlanner(); });
+    document.getElementById("campaignGrain").addEventListener("change", e => {
+      state.campaignGrain = e.target.value;
+      if (state.campaignGrain === "Source") state.campaignDetail = "All campaign details";
+      render();
+    });
+    document.getElementById("campaignDetailSelect").addEventListener("change", e => {
+      state.campaignDetail = e.target.value;
+      render();
+    });
     document.querySelectorAll("#trendMetric button").forEach(btn => {
       btn.addEventListener("click", () => {
         state.trendMetric = btn.dataset.metric;

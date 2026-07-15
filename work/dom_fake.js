@@ -71,11 +71,11 @@ function installFakeDom(extraIds = []) {
 
   [
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
-    "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect",
+    "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
     "refreshBqButton", "freshnessTitle", "freshnessMeta",
     "askClaudeButton", "claudePanel", "claudeBackdrop", "claudeQuestion", "claudeSubmit",
     "claudeAnswer", "claudeClose", "claudeForm",
-    "trendExplorerMetric", "trendCompareMode", "trendExplorerChart", "trendSummary",
+    "trendExplorerMetric", "trendCompareMode", "trendExplorerChart", "trendExplorerLegend", "trendSummary",
     "noteDrawer", "noteDrawerBackdrop", "noteDrawerClose", "noteDrawerForm",
     "noteDrawerText", "noteDrawerAuthor", "noteDrawerStatus", "noteDrawerLabel", "noteDrawerView",
     "noteDrawerSigninPrompt", "noteDrawerGoogleSignInButton", "noteDrawerSignInAction",

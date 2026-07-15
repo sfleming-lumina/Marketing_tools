@@ -196,6 +196,33 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "objects": objects,
         }
 
+    def _extract_claude_answer(self, result):
+        parts = []
+
+        def collect(value):
+            if isinstance(value, str):
+                if value.strip():
+                    parts.append(value.strip())
+                return
+            if isinstance(value, list):
+                for item in value:
+                    collect(item)
+                return
+            if not isinstance(value, dict):
+                return
+            text = value.get("text")
+            if isinstance(text, str) and text.strip():
+                parts.append(text.strip())
+            nested = value.get("content")
+            if nested is not None:
+                collect(nested)
+
+        collect(result.get("content", []))
+        legacy_completion = result.get("completion")
+        if isinstance(legacy_completion, str) and legacy_completion.strip():
+            parts.append(legacy_completion.strip())
+        return "\n".join(parts).strip()
+
     def _ask_claude(self, payload):
         if not ANTHROPIC_API_KEY:
             return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
@@ -213,7 +240,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "You are Claude helping Lumina Solar's marketing team interpret an internal "
                 "performance dashboard. Be concise, practical, and explicit about whether a "
                 "recommendation is supported by the supplied dashboard context or is a follow-up "
-                "question for the data team."
+                "question for the data team. Return a plain-text answer only; do not use tool "
+                "calls, JSON, markdown tables, or hidden/non-text response blocks."
             ),
             "messages": [
                 {
@@ -249,13 +277,19 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except Exception:
             return HTTPStatus.BAD_GATEWAY, {"detail": "Claude request failed. Check the configured Anthropic key and service logs."}
 
-        answer = "\n".join(
-            block.get("text", "")
-            for block in result.get("content", [])
-            if block.get("type") == "text"
-        ).strip()
+        answer = self._extract_claude_answer(result)
+        if not answer:
+            content_types = [
+                block.get("type", type(block).__name__) if isinstance(block, dict) else type(block).__name__
+                for block in result.get("content", [])
+            ]
+            return HTTPStatus.BAD_GATEWAY, {
+                "detail": "Claude returned no text content.",
+                "stop_reason": result.get("stop_reason"),
+                "content_types": content_types,
+            }
         return HTTPStatus.OK, {
-            "answer": answer or "Claude returned an empty response.",
+            "answer": answer,
             "model": result.get("model", ANTHROPIC_MODEL),
         }
 

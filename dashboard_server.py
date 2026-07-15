@@ -17,8 +17,8 @@ PROJECT_ID = os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse")
 DATASET = os.environ.get("BQ_DATASET", "marketing_tool_ops")
 TABLE = os.environ.get("BQ_TABLE", "dashboard_notes")
 TABLE_REF = f"{PROJECT_ID}.{DATASET}.{TABLE}"
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
 
 SOURCE_OBJECTS = [
@@ -246,8 +246,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
             return HTTPStatus.BAD_GATEWAY, {"detail": detail, "status": exc.code}
-        except Exception as exc:
-            return HTTPStatus.BAD_GATEWAY, {"detail": f"Claude request failed: {exc}"}
+        except Exception:
+            return HTTPStatus.BAD_GATEWAY, {"detail": "Claude request failed. Check the configured Anthropic key and service logs."}
 
         answer = "\n".join(
             block.get("text", "")

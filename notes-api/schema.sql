@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS `lumina-lakehouse.marketing_tool_ops.dashboard_notes`
   view STRING NOT NULL,
   element_key STRING NOT NULL,
   element_label STRING NOT NULL,
+  target_type STRING NOT NULL,
+  feedback_type STRING NOT NULL,
   note_text STRING NOT NULL,
   context STRING
 )

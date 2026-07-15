@@ -773,6 +773,24 @@
       text-align: center;
     }
 
+    .section-feedback {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 10px;
+      min-height: 24px;
+    }
+
+    .section-feedback .note-chip {
+      position: relative;
+      inset: auto;
+      width: auto;
+      min-width: 92px;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 8px;
+      gap: 5px;
+    }
+
     .decision-card, .object-row, .campaign-card { position: relative; }
     .decision-card .note-chip, .object-row .note-chip, .campaign-card .note-chip { right: 10px; }
 
@@ -851,6 +869,17 @@
       margin-bottom: 4px;
     }
 
+    .note-drawer-item-type {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 7px;
+      margin-right: 6px;
+      color: var(--ink);
+      background: #f7faf7;
+    }
+
     .note-drawer-empty {
       color: var(--muted);
       font-size: 13px;
@@ -870,6 +899,39 @@
       padding: 8px;
       font: inherit;
       resize: vertical;
+    }
+
+    .note-intent {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .note-intent label {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      display: grid;
+      gap: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .note-intent input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .note-intent span {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .note-intent label:has(input:checked) {
+      border-color: rgba(11, 122, 117, 0.42);
+      background: #eef8f0;
     }
 
     .note-drawer-form-row {
@@ -1432,6 +1494,12 @@
               <button data-feedback-view="scenario">Scenario</button>
               <button data-feedback-view="objects">BQ Objects</button>
             </div>
+            <div class="segmented" id="feedbackTypeFilter">
+              <button class="active" data-feedback-type="All">All notes</button>
+              <button data-feedback-type="helpful">Helpful</button>
+              <button data-feedback-type="tweak">Needs tweak</button>
+              <button data-feedback-type="not_helpful">Not helpful</button>
+            </div>
           </div>
           <table class="table" id="feedbackTable"></table>
         </article>
@@ -1450,6 +1518,11 @@
     </div>
     <div class="note-drawer-list" id="noteDrawerList"></div>
     <form class="note-drawer-form hidden" id="noteDrawerForm">
+      <div class="note-intent" id="noteIntent">
+        <label><input type="radio" name="noteFeedbackType" value="helpful" checked><span>Helpful</span>Keep this signal</label>
+        <label><input type="radio" name="noteFeedbackType" value="tweak"><span>Needs tweak</span>Adjust wording or logic</label>
+        <label><input type="radio" name="noteFeedbackType" value="not_helpful"><span>Not helpful</span>Remove or rethink it</label>
+      </div>
       <textarea id="noteDrawerText" placeholder="Add a note about this..." maxlength="4000" required></textarea>
       <div class="note-drawer-form-row">
         <span class="note-drawer-signed-in-as" id="noteDrawerSignedInAs"></span>
@@ -1728,6 +1801,7 @@
       trendMetric: "revenue",
       objectDomain: "All",
       feedbackFilter: "All",
+      feedbackTypeFilter: "All",
       campaignBudget: 250000,
       campaignObjective: "Balanced growth",
       campaignGrain: "Detail",
@@ -1833,10 +1907,35 @@
       return String(text).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     }
 
-    function noteChip(key, label) {
+    const feedbackTypeLabels = {
+      helpful: "Helpful",
+      tweak: "Needs tweak",
+      not_helpful: "Not helpful"
+    };
+
+    const targetTypeLabels = {
+      section: "Section",
+      tile: "Tile",
+      chart: "Chart",
+      table: "Table",
+      metric: "Metric",
+      recommendation: "Recommendation",
+      object: "BQ object",
+      control: "Control"
+    };
+
+    function feedbackTypeLabel(type) {
+      return feedbackTypeLabels[type] || "Needs tweak";
+    }
+
+    function targetTypeLabel(type) {
+      return targetTypeLabels[type] || "Tile";
+    }
+
+    function noteChip(key, label, targetType = "tile", text = "N") {
       const count = notesForKey(key).length;
       const badge = count > 0 ? `<span class="note-chip-count">${count}</span>` : "";
-      return `<button type="button" class="note-chip" data-note-key="${escapeAttr(key)}" data-note-label="${escapeAttr(label)}" aria-label="Notes on ${escapeAttr(label)}">N${badge}</button>`;
+      return `<button type="button" class="note-chip" data-note-key="${escapeAttr(key)}" data-note-label="${escapeAttr(label)}" data-note-target-type="${escapeAttr(targetType)}" aria-label="Notes on ${escapeAttr(label)}">${text}${badge}</button>`;
     }
 
     function metricCardHtml([label, value, delta, tone]) {
@@ -1844,7 +1943,7 @@
       return `
         <div class="metric">
           ${helpChip(label)}
-          ${noteChip(key, label)}
+          ${noteChip(key, label, "metric")}
           <span>${label}</span>
           <strong>${value}</strong>
           <span class="delta ${tone}">${delta}</span>
@@ -1855,7 +1954,7 @@
     function decisionCardHtml({ key, title, body, pills, tone }) {
       return `
         <div class="decision-card">
-          ${noteChip(key, title)}
+          ${noteChip(key, title, "recommendation")}
           <h3>${title}</h3>
           <p>${body}</p>
           <div class="impact">${pills.map(pill => `<span class="pill ${tone}">${pill}</span>`).join("")}</div>
@@ -2469,7 +2568,7 @@
         const key = `campaign:${row.source}:${row.key}`;
         return `
           <div class="campaign-card">
-            ${noteChip(key, row.campaign)}
+            ${noteChip(key, row.campaign, "tile")}
             <div>
               <span class="pill ${tone}">${row.decision}</span>
               <h4>${row.campaign}</h4>
@@ -2736,7 +2835,7 @@
       const rows = objectInventory.filter(row => state.objectDomain === "All" || row[0] === state.objectDomain);
       document.getElementById("objectTable").innerHTML = rows.map(([domain, id, name, purpose, score]) => `
         <div class="object-row">
-          ${noteChip(`object:${id}`, name)}
+          ${noteChip(`object:${id}`, name, "object")}
           <div>
             <code>${id}</code>
             <span>${domain}</span>
@@ -2753,18 +2852,23 @@
     }
 
     function renderFeedback() {
-      const notes = state.feedbackFilter === "All" ? allNotes : allNotes.filter(note => note.view === state.feedbackFilter);
+      const notes = allNotes.filter(note =>
+        (state.feedbackFilter === "All" || note.view === state.feedbackFilter) &&
+        (state.feedbackTypeFilter === "All" || (note.feedback_type || "tweak") === state.feedbackTypeFilter)
+      );
       document.getElementById("feedbackTable").innerHTML = `
-        <thead><tr><th>When</th><th>Section</th><th>Element</th><th>Author</th><th>Note</th></tr></thead>
+        <thead><tr><th>When</th><th>Section</th><th>Target</th><th>Feedback</th><th>Element</th><th>Author</th><th>Note</th></tr></thead>
         <tbody>${notes.length ? notes.map(note => `
           <tr>
             <td>${new Date(note.created_at).toLocaleString()}</td>
             <td>${titleMap[note.view] ? titleMap[note.view][0] : note.view}</td>
+            <td>${escapeAttr(targetTypeLabel(note.target_type))}</td>
+            <td>${escapeAttr(feedbackTypeLabel(note.feedback_type))}</td>
             <td>${escapeAttr(note.element_label)}</td>
             <td>${escapeAttr(note.author_name)}</td>
             <td>${escapeAttr(note.note_text)}</td>
           </tr>
-        `).join("") : `<tr><td colspan="5">No feedback yet.</td></tr>`}</tbody>
+        `).join("") : `<tr><td colspan="7">No feedback yet.</td></tr>`}</tbody>
       `;
     }
 
@@ -2792,16 +2896,33 @@
         if (!heading) return;
         const label = heading.textContent;
         const key = `panel:${slugify(label)}`;
+        const targetType = panel.querySelector("svg.chart") ? "chart"
+          : panel.querySelector("table, .object-table, .heatmap") ? "table"
+          : panel.querySelector(".campaign-controls, .slider-row") ? "control"
+          : "tile";
         panel.insertAdjacentHTML("beforeend", helpChip(label));
-        panel.insertAdjacentHTML("beforeend", noteChip(key, label));
+        panel.insertAdjacentHTML("beforeend", noteChip(key, label, targetType));
         panel.__helpAdded = true;
       });
       wireTips(document);
       wireNoteChips(document);
     }
 
+    function addSectionChips() {
+      document.querySelectorAll(".view").forEach(section => {
+        if (section.id === "feedback" || section.__sectionNoteAdded) return;
+        const label = titleMap[section.id] ? titleMap[section.id][0] : section.id;
+        const key = `section:${section.id}`;
+        section.insertAdjacentHTML("afterbegin", `<div class="section-feedback">${noteChip(key, `${label} section`, "section", "Section note")}</div>`);
+        section.__sectionNoteAdded = true;
+      });
+      wireNoteChips(document);
+    }
+
     let activeNoteKey = null;
     let activeNoteLabel = null;
+    let activeNoteTargetType = "tile";
+    let activeNoteView = "overview";
 
     function currentNoteContext() {
       return {
@@ -2820,7 +2941,7 @@
       list.innerHTML = notes.length
         ? notes.map(note => `
             <div class="note-drawer-item">
-              <div class="note-drawer-item-meta">${escapeAttr(note.author_name)} &middot; ${new Date(note.created_at).toLocaleString()}</div>
+              <div class="note-drawer-item-meta"><span class="note-drawer-item-type">${escapeAttr(feedbackTypeLabel(note.feedback_type))}</span><span class="note-drawer-item-type">${escapeAttr(targetTypeLabel(note.target_type))}</span>${escapeAttr(note.author_name)} &middot; ${new Date(note.created_at).toLocaleString()}</div>
               <div>${escapeAttr(note.note_text)}</div>
             </div>
           `).join("")
@@ -2840,11 +2961,15 @@
       }
     }
 
-    function openNoteDrawer(key, label) {
+    function openNoteDrawer(key, label, targetType = "tile", view = state.view) {
       activeNoteKey = key;
       activeNoteLabel = label;
+      activeNoteTargetType = targetType;
+      activeNoteView = view;
       document.getElementById("noteDrawerLabel").textContent = label;
-      document.getElementById("noteDrawerView").textContent = titleMap[state.view][0];
+      document.getElementById("noteDrawerView").textContent = `${titleMap[view] ? titleMap[view][0] : view} / ${targetTypeLabel(targetType)}`;
+      const defaultIntent = document.querySelector('input[name="noteFeedbackType"][value="helpful"]');
+      if (defaultIntent) defaultIntent.checked = true;
       renderNoteDrawerList();
       renderNoteDrawerComposer();
       document.getElementById("noteDrawer").classList.add("open");
@@ -2857,10 +2982,12 @@
       document.getElementById("noteDrawer").setAttribute("aria-hidden", "true");
       document.getElementById("noteDrawerBackdrop").classList.remove("open");
       activeNoteKey = null;
+      activeNoteTargetType = "tile";
+      activeNoteView = "overview";
     }
 
     function refreshPanelNoteBadges() {
-      document.querySelectorAll(".panel .note-chip").forEach(chip => {
+      document.querySelectorAll(".note-chip").forEach(chip => {
         const key = chip.dataset.noteKey;
         const count = notesForKey(key).length;
         let badge = chip.querySelector(".note-chip-count");
@@ -2882,7 +3009,8 @@
         if (chip.__noteWired) return;
         chip.__noteWired = true;
         chip.addEventListener("click", () => {
-          openNoteDrawer(chip.dataset.noteKey, chip.dataset.noteLabel);
+          const view = chip.closest(".view")?.id || state.view;
+          openNoteDrawer(chip.dataset.noteKey, chip.dataset.noteLabel, chip.dataset.noteTargetType || "tile", view);
         });
       });
     }
@@ -2961,6 +3089,13 @@
         renderFeedback();
       });
     });
+    document.querySelectorAll("#feedbackTypeFilter button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.feedbackTypeFilter = btn.dataset.feedbackType;
+        document.querySelectorAll("#feedbackTypeFilter button").forEach(b => b.classList.toggle("active", b === btn));
+        renderFeedback();
+      });
+    });
     document.getElementById("paidSearchShift").addEventListener("input", e => { state.shifts["Paid Search"] = Number(e.target.value); renderScenario(); });
     document.getElementById("referralShift").addEventListener("input", e => { state.shifts["Referral"] = Number(e.target.value); renderScenario(); });
     document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
@@ -2973,10 +3108,13 @@
       const text = document.getElementById("noteDrawerText").value.trim();
       const status = document.getElementById("noteDrawerStatus");
       if (!text || !activeNoteKey || !isSignedIn()) return;
+      const feedbackType = document.querySelector('input[name="noteFeedbackType"]:checked')?.value || "helpful";
       const payload = {
-        view: state.view,
+        view: activeNoteView,
         element_key: activeNoteKey,
         element_label: activeNoteLabel,
+        target_type: activeNoteTargetType,
+        feedback_type: feedbackType,
         note_text: text,
         context: currentNoteContext()
       };
@@ -2994,6 +3132,7 @@
         renderNoteDrawerList();
       }
     });
+    addSectionChips();
     addPanelChips();
     render();
     initGoogleSignIn();

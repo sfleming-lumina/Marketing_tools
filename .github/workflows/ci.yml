@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  GCP_PROJECT_ID: lumina-lakehouse
+  GCP_PROJECT_NUMBER: "502916414508"
+  GCP_REGION: us-east1
+  DASHBOARD_SERVICE: marketing-decision-tool
+  NOTES_SERVICE: notes-api
+  RUNTIME_SERVICE_ACCOUNT: marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com
+  DEPLOY_SERVICE_ACCOUNT: marketing-tools-deployer@lumina-lakehouse.iam.gserviceaccount.com
+  WORKLOAD_IDENTITY_PROVIDER: projects/502916414508/locations/global/workloadIdentityPools/github-actions/providers/github-marketing-tools
+  NOTES_API_BASE: https://notes-api-6stghdub4a-ue.a.run.app
+  DASHBOARD_URL_CANONICAL: https://marketing-decision-tool-6stghdub4a-ue.a.run.app
+  DASHBOARD_URL_PROJECT: https://marketing-decision-tool-502916414508.us-east1.run.app
+  GOOGLE_OAUTH_CLIENT_ID: 502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify dashboard rendering
+        run: node work/verify_marketing_tool.js
+
+      - name: Verify dashboard notes wiring
+        run: node work/verify_dashboard_notes.js
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install notes API dependencies
+        working-directory: notes-api
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run notes API tests
+        working-directory: notes-api
+        run: python -m pytest -q
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Apply notes schema migration
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260715_note_target_metadata.sql
+
+      - name: Deploy notes API
+        run: |
+          gcloud run deploy "${NOTES_SERVICE}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --source=notes-api \
+            --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
+            --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ALLOWED_ORIGINS=${DASHBOARD_URL_CANONICAL},${DASHBOARD_URL_PROJECT}|GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}|ALLOWED_HOSTED_DOMAIN=luminasolar.com" \
+            --quiet
+
+      - name: Deploy dashboard
+        run: |
+          gcloud run deploy "${DASHBOARD_SERVICE}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --source=. \
+            --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
+            --no-allow-unauthenticated \
+            --quiet
+
+      - name: Keep dashboard protected by IAP
+        run: |
+          gcloud run services update "${DASHBOARD_SERVICE}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --iap \
+            --quiet
+          gcloud run services add-iam-policy-binding "${DASHBOARD_SERVICE}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --member="serviceAccount:service-${GCP_PROJECT_NUMBER}@gcp-sa-iap.iam.gserviceaccount.com" \
+            --role=roles/run.invoker \
+            --quiet

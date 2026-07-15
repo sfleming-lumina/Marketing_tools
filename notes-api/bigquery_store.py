@@ -16,7 +16,17 @@ class BigQueryNotesStore(NotesStore):
 
     def list_notes(self, view: Optional[str] = None) -> list[Note]:
         query = f"""
-            SELECT note_id, created_at, author_name, view, element_key, element_label, note_text, context
+            SELECT
+                note_id,
+                created_at,
+                author_name,
+                view,
+                element_key,
+                element_label,
+                COALESCE(target_type, 'tile') AS target_type,
+                COALESCE(feedback_type, 'tweak') AS feedback_type,
+                note_text,
+                context
             FROM `{self._table_ref}`
             {"WHERE view = @view" if view else ""}
             ORDER BY created_at DESC
@@ -33,6 +43,8 @@ class BigQueryNotesStore(NotesStore):
                 view=row["view"],
                 element_key=row["element_key"],
                 element_label=row["element_label"],
+                target_type=row["target_type"],
+                feedback_type=row["feedback_type"],
                 note_text=row["note_text"],
                 context=json.loads(row["context"]) if row["context"] else {},
             )

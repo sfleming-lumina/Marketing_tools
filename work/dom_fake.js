@@ -22,6 +22,8 @@ class FakeElement {
     };
   }
   addEventListener() {}
+  insertAdjacentHTML(_position, html) { this.innerHTML += html; }
+  closest() { return null; }
   removeChild() {}
   querySelectorAll() { return []; }
   setAttribute(name, value) { this.attributes[name] = String(value); }

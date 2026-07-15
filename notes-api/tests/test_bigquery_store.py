@@ -16,6 +16,8 @@ def test_create_note_inserts_json_row_with_serialized_context(mock_client_cls):
         view="overview",
         element_key="metric:a",
         element_label="A",
+        target_type="metric",
+        feedback_type="helpful",
         note_text="hello",
         context={"region": "All markets"},
     )
@@ -27,6 +29,8 @@ def test_create_note_inserts_json_row_with_serialized_context(mock_client_cls):
     table_ref_arg, rows_arg = mock_client.insert_rows_json.call_args[0]
     assert table_ref_arg == "proj.ds.tbl"
     assert rows_arg[0]["note_id"] == created.note_id
+    assert rows_arg[0]["target_type"] == "metric"
+    assert rows_arg[0]["feedback_type"] == "helpful"
     assert json.loads(rows_arg[0]["context"]) == {"region": "All markets"}
 
 

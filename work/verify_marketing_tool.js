@@ -7,6 +7,8 @@ const script = loadDashboardScript();
 const run = new Function(`${script}
 state.view = "campaigns";
 renderCampaignPlanner();
+state.view = "overview";
+renderTrendExplorer();
 return {
   heatmap: document.getElementById("campaignHeatmap").innerHTML,
   cards: document.getElementById("campaignCards").innerHTML,
@@ -14,7 +16,9 @@ return {
   suite: document.getElementById("decisionMetricSuite").innerHTML,
   table: document.getElementById("campaignTable").innerHTML,
   metrics: document.getElementById("campaignMetrics").innerHTML,
-  trend: document.getElementById("campaignTrendChart").innerHTML
+  trend: document.getElementById("campaignTrendChart").innerHTML,
+  explorer: document.getElementById("trendExplorerChart").innerHTML,
+  summary: document.getElementById("trendSummary").innerHTML
 };`);
 
 const output = run();
@@ -44,6 +48,11 @@ if (new Set(heatmapScores).size < 3) {
   process.exit(1);
 }
 
+if (!output.explorer.includes("Prior month") || !output.summary.includes("Latest")) {
+  console.error("Trend explorer did not render expected MOM comparison content.");
+  process.exit(1);
+}
+
 console.log(JSON.stringify({
   heatmapLength: output.heatmap.length,
   heatmapScoreCount: heatmapScores.length,
@@ -53,5 +62,7 @@ console.log(JSON.stringify({
   suiteLength: output.suite.length,
   tableLength: output.table.length,
   metricsLength: output.metrics.length,
-  trendLength: output.trend.length
+  trendLength: output.trend.length,
+  explorerLength: output.explorer.length,
+  summaryLength: output.summary.length
 }, null, 2));

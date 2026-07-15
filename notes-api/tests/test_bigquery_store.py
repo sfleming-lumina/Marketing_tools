@@ -50,3 +50,23 @@ def test_create_note_raises_on_bigquery_errors(mock_client_cls):
         assert False, "expected RuntimeError"
     except RuntimeError as exc:
         assert "boom" in str(exc)
+
+
+@patch("bigquery_store.bigquery.Client")
+def test_source_freshness_reads_table_metadata(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client.project = "proj"
+    table = MagicMock()
+    table.modified.isoformat.return_value = "2026-07-15T12:00:00+00:00"
+    table.table_type = "VIEW"
+    mock_client.get_table.side_effect = [table, Exception("missing")]
+    mock_client_cls.return_value = mock_client
+
+    store = BigQueryNotesStore(project_id="proj", dataset="ds", table="tbl")
+    result = store.source_freshness(["analytics_rpt.one", "analytics_rpt.missing"])
+
+    assert result["objects_checked"] == 2
+    assert result["objects_found"] == 1
+    assert result["latest_modified_at"] == "2026-07-15T12:00:00+00:00"
+    assert result["missing_objects"] == ["analytics_rpt.missing"]
+    mock_client.get_table.assert_any_call("proj.analytics_rpt.one")

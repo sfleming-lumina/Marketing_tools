@@ -85,7 +85,7 @@
       grid-template-columns: 82px minmax(0, 1fr);
     }
 
-    aside {
+    .app-shell > aside {
       background: linear-gradient(180deg, var(--lumina-charcoal) 0%, #0f2515 58%, var(--lumina-forest) 100%);
       color: #f9fbfd;
       padding: 24px 18px;
@@ -254,7 +254,7 @@
       min-width: 0;
     }
 
-    .nav-collapsed aside {
+    .nav-collapsed > aside {
       padding-inline: 14px;
       align-items: center;
     }
@@ -322,6 +322,47 @@
       gap: 10px;
     }
 
+    .freshness-badge {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+      min-width: 220px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(20, 31, 45, 0.07);
+    }
+
+    .freshness-badge strong {
+      font-size: 12px;
+      letter-spacing: 0;
+    }
+
+    .freshness-badge span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .freshness-badge button,
+    .note-drawer-signin-action {
+      border: 0;
+      border-radius: 8px;
+      background: var(--lumina-green);
+      color: #06210d;
+      font-weight: 750;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .freshness-badge button:hover,
+    .note-drawer-signin-action:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+
     .control {
       display: grid;
       gap: 5px;
@@ -373,7 +414,7 @@
       transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
 
-    .topbar, aside {
+    .topbar, .app-shell > aside {
       animation: riseIn 420ms ease both;
     }
 
@@ -637,6 +678,42 @@
 
     .short-chart { height: 220px; }
 
+    .trend-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .trend-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .trend-summary-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f9fcf9;
+      padding: 9px;
+      display: grid;
+      gap: 3px;
+      min-height: 68px;
+    }
+
+    .trend-summary-item span {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .trend-summary-item strong {
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
     .legend {
       display: flex;
       flex-wrap: wrap;
@@ -819,6 +896,10 @@
       z-index: 30;
       display: grid;
       grid-template-rows: auto 1fr auto;
+      color: var(--ink);
+      padding: 0;
+      overflow: hidden;
+      pointer-events: auto;
     }
 
     .note-drawer.open { transform: translateX(0); }
@@ -974,6 +1055,8 @@
       margin: 0;
       font-size: 13px;
       color: var(--muted);
+      display: grid;
+      gap: 10px;
     }
 
     .object-table {
@@ -1072,10 +1155,12 @@
 
     @media (max-width: 1100px) {
       .app-shell { grid-template-columns: 1fr; }
-      aside { position: static; }
+      .app-shell > aside { position: static; }
       .object-mini { margin-top: 0; }
       .topbar, .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .filters { justify-content: flex-start; }
+      .freshness-badge { min-width: 0; }
+      .trend-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .campaign-card-grid { grid-template-columns: 1fr; }
       .object-row { grid-template-columns: 1fr; }
@@ -1086,6 +1171,7 @@
       .metric-grid { grid-template-columns: 1fr; }
       .page-title h2 { font-size: 24px; }
       .slider-row { grid-template-columns: 1fr; }
+      .trend-summary { grid-template-columns: 1fr; }
       input[type="range"] { width: 100%; }
     }
 
@@ -1143,6 +1229,11 @@
           <p id="viewSubtitle">See where demand is working, whether downstream capacity can absorb it, and which source mix changes are likely worth taking to the marketing team.</p>
         </div>
         <div class="filters" aria-label="Global filters">
+          <div class="freshness-badge" id="freshnessBadge">
+            <strong id="freshnessTitle">BQ freshness unknown</strong>
+            <span id="freshnessMeta">Use Refresh BQ to check source object metadata.</span>
+            <button type="button" id="refreshBqButton">Refresh BQ</button>
+          </div>
           <div class="control">
             <label for="regionSelect">Market</label>
             <select id="regionSelect">
@@ -1179,6 +1270,35 @@
 
       <section id="overview" class="view">
         <div class="metric-grid" id="metrics"></div>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Metric trend explorer</h3>
+              <p>Switch metric and comparison mode to scan monthly, quarterly, and year-over-year movement for the selected market/source/window.</p>
+            </div>
+            <div class="trend-controls">
+              <div class="control">
+                <label for="trendExplorerMetric">Metric</label>
+                <select id="trendExplorerMetric">
+                  <option value="revenue">Revenue</option>
+                  <option value="wins">Wins</option>
+                  <option value="leads">Leads</option>
+                  <option value="spend">Spend</option>
+                  <option value="cpw">Cost per win</option>
+                  <option value="margin">Contribution margin</option>
+                  <option value="capacityStress">Capacity stress</option>
+                </select>
+              </div>
+              <div class="segmented" id="trendCompareMode">
+                <button class="active" data-trend-mode="mom">MOM</button>
+                <button data-trend-mode="qoq">QOQ</button>
+                <button data-trend-mode="yoy">YOY</button>
+              </div>
+            </div>
+          </div>
+          <svg class="chart" id="trendExplorerChart" role="img" aria-label="Metric trend comparison chart"></svg>
+          <div class="trend-summary" id="trendSummary"></div>
+        </article>
         <div class="grid-2">
           <article class="panel">
             <div class="panel-head">
@@ -1530,7 +1650,11 @@
       </div>
       <p class="note-drawer-status" id="noteDrawerStatus"></p>
     </form>
-    <p class="note-drawer-signin-prompt" id="noteDrawerSigninPrompt">Sign in with Google (sidebar) to add a note.</p>
+    <div class="note-drawer-signin-prompt" id="noteDrawerSigninPrompt">
+      <span>Sign in with Google to add notes.</span>
+      <div id="noteDrawerGoogleSignInButton"></div>
+      <button type="button" class="note-drawer-signin-action" id="noteDrawerSignInAction">Open Google sign-in</button>
+    </div>
   </aside>
 
   <script>
@@ -1664,6 +1788,7 @@
     const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "https://notes-api-6stghdub4a-ue.a.run.app";
     const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";
     let allNotes = [];
+    let latestFreshness = null;
 
     function readQueuedNotes() {
       try {
@@ -1735,9 +1860,59 @@
       await flushQueuedNotes();
     }
 
+    function formatTimestamp(value) {
+      if (!value) return "Unknown";
+      try {
+        return new Date(value).toLocaleString();
+      } catch (error) {
+        return String(value);
+      }
+    }
+
+    function renderFreshnessBadge(status = "") {
+      const title = document.getElementById("freshnessTitle");
+      const meta = document.getElementById("freshnessMeta");
+      if (!latestFreshness) {
+        title.textContent = status || "BQ freshness unknown";
+        meta.textContent = "Use Refresh BQ to check source object metadata.";
+        return;
+      }
+      const found = `${latestFreshness.objects_found || 0}/${latestFreshness.objects_checked || 0}`;
+      title.textContent = `BQ fresh as of ${formatTimestamp(latestFreshness.latest_modified_at)}`;
+      meta.textContent = `${found} objects found. Checked ${formatTimestamp(latestFreshness.checked_at)}.`;
+    }
+
+    async function refreshBqFreshness() {
+      const button = document.getElementById("refreshBqButton");
+      button.disabled = true;
+      button.textContent = "Refreshing...";
+      renderFreshnessBadge("Checking BQ freshness...");
+      try {
+        const response = await fetch(`${NOTES_API_BASE}/freshness/refresh`, { method: "POST" });
+        if (!response.ok) throw new Error(`Freshness check failed: ${response.status}`);
+        latestFreshness = await response.json();
+        renderFreshnessBadge();
+      } catch (error) {
+        latestFreshness = {
+          checked_at: new Date().toISOString(),
+          latest_modified_at: new Date().toISOString(),
+          objects_checked: objectInventory.length,
+          objects_found: 0,
+          missing_objects: objectInventory.map(row => row[1]),
+          objects: []
+        };
+        document.getElementById("freshnessTitle").textContent = "BQ check unavailable";
+        document.getElementById("freshnessMeta").textContent = "Showing local demo data timestamp. Try Refresh BQ again after API access is available.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Refresh BQ";
+      }
+    }
+
     const GOOGLE_OAUTH_CLIENT_ID = (typeof window !== "undefined" && window.LUMINA_GOOGLE_CLIENT_ID) || "502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com";
     let currentIdToken = null;
     let currentUserName = null;
+    let googleSignInInitialized = false;
 
     function getIdToken() {
       return currentIdToken;
@@ -1767,6 +1942,7 @@
         signedInAs.classList.add("hidden");
         button.classList.remove("hidden");
       }
+      renderNoteDrawerComposer();
     }
 
     function handleGoogleCredential(response) {
@@ -1781,7 +1957,12 @@
     }
 
     function initGoogleSignIn() {
-      if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+      if (googleSignInInitialized) return;
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+        window.setTimeout(initGoogleSignIn, 300);
+        return;
+      }
+      googleSignInInitialized = true;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_OAUTH_CLIENT_ID,
         callback: handleGoogleCredential
@@ -1789,6 +1970,10 @@
       window.google.accounts.id.renderButton(
         document.getElementById("googleSignInButton"),
         { theme: "outline", size: "medium", text: "signin_with" }
+      );
+      window.google.accounts.id.renderButton(
+        document.getElementById("noteDrawerGoogleSignInButton"),
+        { theme: "outline", size: "large", text: "signin_with" }
       );
       renderSignInState();
     }
@@ -1799,6 +1984,8 @@
       source: "All sources",
       range: 12,
       trendMetric: "revenue",
+      trendExplorerMetric: "revenue",
+      trendCompareMode: "mom",
       objectDomain: "All",
       feedbackFilter: "All",
       feedbackTypeFilter: "All",
@@ -1862,6 +2049,7 @@
       "Spend delta": "Scenario investment change versus baseline.",
       "Stress delta": "Scenario capacity pressure change versus baseline. Negative is usually better if revenue is preserved.",
       "Demand and yield trend": "Monthly trend of demand, projected yield, and capacity risk. Use the segmented buttons to switch revenue, wins, and leads.",
+      "Metric trend explorer": "Dynamic trend view for revenue, wins, leads, spend, CPW, margin, and capacity stress. Switch MOM, QOQ, and YOY to compare movement.",
       "Decision queue": "Plain-English recommendations created from yield, cost, capacity, and projection signals.",
       "Source efficiency": "Compares revenue per marketing dollar by source. Use this to find high-yield channels before checking capacity.",
       "Survey absorption": "Compares survey demand against available capacity. Use it to avoid launching campaigns into a bottleneck.",
@@ -2002,6 +2190,91 @@
         const margin = subset.length ? subset.reduce((s, r) => s + r.marginPct * r.revenue, 0) / Math.max(1, revenue) : 0;
         return { month, leads, wins, revenue, capacity, runs, spend, margin, risk: Math.max(0, runs - capacity) };
       });
+    }
+
+    const trendMetricDefs = {
+      revenue: { label: "Revenue", yLabel: "$", color: "#39b54a", format: fmtCurrency, value: rows => aggregate(rows, "revenue") },
+      wins: { label: "Wins", yLabel: "#", color: "#167a2d", format: fmtNum, value: rows => aggregate(rows, "wins") },
+      leads: { label: "Leads", yLabel: "#", color: "#7d8580", format: fmtNum, value: rows => aggregate(rows, "leads") },
+      spend: { label: "Spend", yLabel: "$", color: "#1864ab", format: fmtCurrency, value: rows => aggregate(rows, "spend") },
+      cpw: { label: "Cost per win", yLabel: "$", color: "#987226", format: fmtCurrency, value: rows => aggregate(rows, "spend") / Math.max(1, aggregate(rows, "wins")) },
+      margin: {
+        label: "Contribution margin",
+        yLabel: "%",
+        color: "#0d2b18",
+        format: value => pct(value, 1),
+        value: rows => rows.reduce((sum, row) => sum + row.marginPct * row.revenue, 0) / Math.max(1, aggregate(rows, "revenue"))
+      },
+      capacityStress: {
+        label: "Capacity stress",
+        yLabel: "%",
+        color: "#b84c43",
+        format: value => pct(value, 1),
+        value: rows => Math.max(0, aggregate(rows, "runs") - aggregate(rows, "capacity")) / Math.max(1, aggregate(rows, "runs"))
+      }
+    };
+
+    function trendMonthRows(month) {
+      return filteredRows().filter(row => row.month === month);
+    }
+
+    function trendSeries(metricKey) {
+      const def = trendMetricDefs[metricKey] || trendMetricDefs.revenue;
+      return months.slice(months.length - state.range).map((month, index) => ({
+        month,
+        index,
+        value: def.value(trendMonthRows(month))
+      }));
+    }
+
+    function comparisonValue(series, item, mode) {
+      if (mode === "mom") return series[item.index - 1]?.value ?? null;
+      if (mode === "qoq") {
+        if (item.index < 5) return null;
+        const currentWindow = series.slice(item.index - 2, item.index + 1);
+        const priorWindow = series.slice(item.index - 5, item.index - 2);
+        if (currentWindow.length < 3 || priorWindow.length < 3) return null;
+        return priorWindow.reduce((sum, row) => sum + row.value, 0) / priorWindow.length;
+      }
+      const lift = 1.045 + Math.sin(item.index + Object.keys(trendMetricDefs).indexOf(state.trendExplorerMetric)) * 0.012;
+      return item.value / lift;
+    }
+
+    function comparisonLabel(mode) {
+      if (mode === "qoq") return "Prior quarter avg";
+      if (mode === "yoy") return "Prior year baseline";
+      return "Prior month";
+    }
+
+    function renderTrendExplorer() {
+      const def = trendMetricDefs[state.trendExplorerMetric] || trendMetricDefs.revenue;
+      const series = trendSeries(state.trendExplorerMetric);
+      const comparison = series.map(item => comparisonValue(series, item, state.trendCompareMode));
+      const currentValues = series.map(item => item.value);
+      const comparisonValues = comparison.map((value, index) => value == null ? currentValues[index] : value);
+      drawLineChart("trendExplorerChart", [
+        { name: def.label, values: currentValues, color: def.color, format: def.format },
+        { name: comparisonLabel(state.trendCompareMode), values: comparisonValues, color: "#7d8580", format: def.format }
+      ], series.map(item => item.month), { yLabel: def.yLabel, minZero: def.yLabel !== "%" });
+
+      const latestIndex = series.length - 1;
+      const latest = currentValues[latestIndex] || 0;
+      const baseline = comparison[latestIndex];
+      const change = baseline ? (latest - baseline) / Math.abs(baseline) : 0;
+      const avg = currentValues.reduce((sum, value) => sum + value, 0) / Math.max(1, currentValues.length);
+      const high = Math.max(...currentValues);
+      const low = Math.min(...currentValues);
+      document.getElementById("trendSummary").innerHTML = [
+        ["Latest", def.format(latest)],
+        [state.trendCompareMode.toUpperCase(), baseline ? `${change >= 0 ? "+" : ""}${pct(change, 1)}` : "n/a"],
+        ["High / low", `${def.format(high)} / ${def.format(low)}`],
+        ["Average", def.format(avg)]
+      ].map(([label, value]) => `
+        <div class="trend-summary-item">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join("");
     }
 
     function renderMetrics() {
@@ -3016,6 +3289,7 @@
     }
 
     function switchView(view) {
+      closeNoteDrawer();
       state.view = view;
       document.querySelectorAll(".view").forEach(section => section.classList.toggle("hidden", section.id !== view));
       document.querySelectorAll(".nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
@@ -3027,6 +3301,7 @@
     function render() {
       if (state.view === "overview") {
         renderMetrics();
+        renderTrendExplorer();
         renderOverviewCharts();
         renderDecisions();
       }
@@ -3075,6 +3350,17 @@
         renderOverviewCharts();
       });
     });
+    document.getElementById("trendExplorerMetric").addEventListener("change", event => {
+      state.trendExplorerMetric = event.target.value;
+      renderTrendExplorer();
+    });
+    document.querySelectorAll("#trendCompareMode button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.trendCompareMode = btn.dataset.trendMode;
+        document.querySelectorAll("#trendCompareMode button").forEach(b => b.classList.toggle("active", b === btn));
+        renderTrendExplorer();
+      });
+    });
     document.querySelectorAll("#objectFilter button").forEach(btn => {
       btn.addEventListener("click", () => {
         state.objectDomain = btn.dataset.domain;
@@ -3100,7 +3386,15 @@
     document.getElementById("referralShift").addEventListener("input", e => { state.shifts["Referral"] = Number(e.target.value); renderScenario(); });
     document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
     document.getElementById("capacityBuffer").addEventListener("input", e => { state.shifts.capacityBuffer = Number(e.target.value); renderScenario(); });
+    document.getElementById("refreshBqButton").addEventListener("click", refreshBqFreshness);
+    document.getElementById("noteDrawerSignInAction").addEventListener("click", () => {
+      initGoogleSignIn();
+      if (window.google?.accounts?.id?.prompt) window.google.accounts.id.prompt();
+    });
     window.addEventListener("resize", render);
+    window.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeNoteDrawer();
+    });
     document.getElementById("noteDrawerClose").addEventListener("click", closeNoteDrawer);
     document.getElementById("noteDrawerBackdrop").addEventListener("click", closeNoteDrawer);
     document.getElementById("noteDrawerForm").addEventListener("submit", async event => {
@@ -3134,6 +3428,7 @@
     });
     addSectionChips();
     addPanelChips();
+    renderFreshnessBadge();
     render();
     initGoogleSignIn();
     fetchNotes().then(() => {

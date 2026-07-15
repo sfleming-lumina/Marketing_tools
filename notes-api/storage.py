@@ -17,6 +17,10 @@ class NotesStore(abc.ABC):
     def create_note(self, note: NoteIn, author_name: str) -> Note:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def source_freshness(self, object_ids: list[str]) -> dict:
+        raise NotImplementedError
+
 
 class InMemoryNotesStore(NotesStore):
     def __init__(self) -> None:
@@ -35,3 +39,17 @@ class InMemoryNotesStore(NotesStore):
         )
         self._notes.append(created)
         return created
+
+    def source_freshness(self, object_ids: list[str]) -> dict:
+        checked_at = datetime.now(timezone.utc).isoformat()
+        return {
+            "checked_at": checked_at,
+            "latest_modified_at": checked_at,
+            "objects_checked": len(object_ids),
+            "objects_found": len(object_ids),
+            "missing_objects": [],
+            "objects": [
+                {"object_id": object_id, "type": "TABLE", "modified_at": checked_at}
+                for object_id in object_ids
+            ],
+        }

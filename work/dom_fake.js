@@ -13,6 +13,8 @@ class FakeElement {
     this.attributes = {};
     this._classes = new Set();
     this.classList = {
+      add: name => this._classes.add(name),
+      remove: name => this._classes.delete(name),
       toggle: (name, force) => {
         const shouldAdd = force == null ? !this._classes.has(name) : Boolean(force);
         if (shouldAdd) this._classes.add(name);
@@ -48,7 +50,19 @@ function installFakeDom(extraIds = []) {
       return null;
     }
   };
-  global.window = { addEventListener() {}, LUMINA_NOTES_API_BASE: "http://fake-notes-api.test" };
+  global.window = {
+    addEventListener() {},
+    LUMINA_NOTES_API_BASE: "http://fake-notes-api.test",
+    google: {
+      accounts: {
+        id: {
+          initialize() {},
+          renderButton() {},
+          prompt() {}
+        }
+      }
+    }
+  };
   global.localStorage = {
     getItem() { return null; },
     setItem() {}
@@ -57,8 +71,12 @@ function installFakeDom(extraIds = []) {
   [
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect",
+    "refreshBqButton", "freshnessTitle", "freshnessMeta",
+    "trendExplorerMetric", "trendCompareMode", "trendExplorerChart", "trendSummary",
     "noteDrawer", "noteDrawerBackdrop", "noteDrawerClose", "noteDrawerForm",
     "noteDrawerText", "noteDrawerAuthor", "noteDrawerStatus", "noteDrawerLabel", "noteDrawerView",
+    "noteDrawerSigninPrompt", "noteDrawerGoogleSignInButton", "noteDrawerSignInAction",
+    "googleSignInButton", "signedInAs",
     ...extraIds
   ].forEach(id => getElement(id));
 

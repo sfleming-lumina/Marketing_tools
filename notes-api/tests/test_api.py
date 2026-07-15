@@ -96,3 +96,14 @@ def test_requests_without_valid_google_identity_are_rejected():
     response = client.get("/notes")
     assert response.status_code == 401
     app.dependency_overrides.clear()
+
+
+def test_freshness_endpoint_does_not_require_google_identity():
+    client, _ = make_client()
+    app.dependency_overrides.pop(require_google_user, None)
+    response = client.get("/freshness")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["objects_checked"] > 0
+    assert body["objects_found"] == body["objects_checked"]
+    app.dependency_overrides.clear()

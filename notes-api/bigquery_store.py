@@ -64,3 +64,30 @@ class BigQueryNotesStore(NotesStore):
         if errors:
             raise RuntimeError(f"BigQuery insert failed: {errors}")
         return created
+
+    def source_freshness(self, object_ids: list[str]) -> dict:
+        checked_at = datetime.now(timezone.utc).isoformat()
+        objects = []
+        missing = []
+        for object_id in object_ids:
+            table_id = f"{self._client.project}.{object_id}"
+            try:
+                table = self._client.get_table(table_id)
+            except Exception:
+                missing.append(object_id)
+                continue
+            modified = table.modified.isoformat() if table.modified else None
+            objects.append({
+                "object_id": object_id,
+                "type": table.table_type,
+                "modified_at": modified,
+            })
+        latest = max((item["modified_at"] for item in objects if item["modified_at"]), default=None)
+        return {
+            "checked_at": checked_at,
+            "latest_modified_at": latest,
+            "objects_checked": len(object_ids),
+            "objects_found": len(objects),
+            "missing_objects": missing,
+            "objects": objects,
+        }

@@ -4,8 +4,9 @@ from typing import Optional
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from bigquery_store import BigQueryNotesStore
 from models import Note, NoteIn
-from storage import InMemoryNotesStore, NotesStore
+from storage import NotesStore
 
 ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "*").split(",")]
 
@@ -17,11 +18,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_default_store = InMemoryNotesStore()
+_store_instance: Optional[NotesStore] = None
 
 
 def get_store() -> NotesStore:
-    return _default_store
+    global _store_instance
+    if _store_instance is None:
+        _store_instance = BigQueryNotesStore(
+            project_id=os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse"),
+            dataset=os.environ.get("BQ_DATASET", "marketing_tool_ops"),
+            table=os.environ.get("BQ_TABLE", "dashboard_notes"),
+        )
+    return _store_instance
 
 
 @app.get("/health")

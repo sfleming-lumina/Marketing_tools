@@ -1399,7 +1399,7 @@
         <button data-view="feedback" data-short="FB"><span>Feedback</span></button>
       </nav>
       <div class="status-note">
-        Data mode: local lakehouse catalog plus demo time series. Live BQ query was blocked by expired `gcloud` auth on 2026-07-13.
+        Data mode: demo time series with live BigQuery source-object freshness checks through the IAP-backed dashboard API.
       </div>
       <div class="sign-in-panel" id="signInPanel">
         <div class="signed-in-as" id="signedInAs">Signed in with Google via IAP.</div>
@@ -2099,14 +2099,14 @@
       } catch (error) {
         latestFreshness = {
           checked_at: new Date().toISOString(),
-          latest_modified_at: new Date().toISOString(),
+          latest_modified_at: null,
           objects_checked: objectInventory.length,
           objects_found: 0,
           missing_objects: objectInventory.map(row => row[1]),
           objects: []
         };
         document.getElementById("freshnessTitle").textContent = "BQ check unavailable";
-        document.getElementById("freshnessMeta").textContent = "Showing local demo data timestamp. Try Refresh BQ again after API access is available.";
+        document.getElementById("freshnessMeta").textContent = "The dashboard could not read BQ object metadata from the API. Demo metrics remain available.";
       } finally {
         button.disabled = false;
         button.textContent = "Refresh BQ";

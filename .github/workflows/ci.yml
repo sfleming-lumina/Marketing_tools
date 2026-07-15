@@ -14,6 +14,7 @@ env:
   NOTES_SERVICE: notes-api
   RUNTIME_SERVICE_ACCOUNT: marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com
   DEPLOY_SERVICE_ACCOUNT: marketing-tools-deployer@lumina-lakehouse.iam.gserviceaccount.com
+  BUILD_SERVICE_ACCOUNT: marketing-tools-build@lumina-lakehouse.iam.gserviceaccount.com
   WORKLOAD_IDENTITY_PROVIDER: projects/502916414508/locations/global/workloadIdentityPools/github-actions/providers/github-marketing-tools
   NOTES_API_BASE: https://notes-api-6stghdub4a-ue.a.run.app
   DASHBOARD_URL_CANONICAL: https://marketing-decision-tool-6stghdub4a-ue.a.run.app
@@ -82,6 +83,7 @@ jobs:
             --project="${GCP_PROJECT_ID}" \
             --region="${GCP_REGION}" \
             --source=notes-api \
+            --build-service-account="projects/${GCP_PROJECT_ID}/serviceAccounts/${BUILD_SERVICE_ACCOUNT}" \
             --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
             --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ALLOWED_ORIGINS=${DASHBOARD_URL_CANONICAL},${DASHBOARD_URL_PROJECT}|GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}|ALLOWED_HOSTED_DOMAIN=luminasolar.com" \
             --quiet
@@ -92,6 +94,7 @@ jobs:
             --project="${GCP_PROJECT_ID}" \
             --region="${GCP_REGION}" \
             --source=. \
+            --build-service-account="projects/${GCP_PROJECT_ID}/serviceAccounts/${BUILD_SERVICE_ACCOUNT}" \
             --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
             --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ANTHROPIC_MODEL=${ANTHROPIC_MODEL}" \
             --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \

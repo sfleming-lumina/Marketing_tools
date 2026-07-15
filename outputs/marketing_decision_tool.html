@@ -318,7 +318,8 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 10px;
+      align-items: flex-start;
+      gap: 8px;
     }
 
     .freshness-badge {
@@ -373,11 +374,21 @@
       min-width: 142px;
     }
 
+    .filters .control {
+      align-content: start;
+      gap: 3px;
+      min-width: 128px;
+    }
+
     .control label {
       font-size: 11px;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
+    }
+
+    .filters .control label {
+      line-height: 1.1;
     }
 
     select, input[type="range"] {
@@ -390,6 +401,12 @@
 
     select {
       padding: 9px 10px;
+    }
+
+    .filters select {
+      height: 34px;
+      padding: 6px 9px;
+      font-size: 13px;
     }
 
     select:focus {

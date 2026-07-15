@@ -2996,6 +2996,11 @@
     });
     addPanelChips();
     render();
+    initGoogleSignIn();
+    fetchNotes().then(() => {
+      refreshPanelNoteBadges();
+      render();
+    });
   </script>
 </body>
 </html>

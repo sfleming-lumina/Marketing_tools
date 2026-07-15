@@ -397,7 +397,7 @@
 
     .metric {
       padding: 15px;
-      padding-right: 42px;
+      padding-right: 68px;
       display: grid;
       gap: 8px;
       min-height: 116px;
@@ -562,7 +562,7 @@
       justify-content: space-between;
       gap: 12px;
       align-items: start;
-      padding-right: 26px;
+      padding-right: 54px;
     }
 
     .panel-head h3, .decision-card h3 {
@@ -726,6 +726,192 @@
       background: #fff;
       transform: translateY(-1px);
       outline: none;
+    }
+
+    .note-chip {
+      position: absolute;
+      top: 10px;
+      right: 38px;
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(24, 100, 171, 0.28);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.7);
+      color: #1864ab;
+      display: inline-grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.6;
+      box-shadow: 0 4px 12px rgba(13, 43, 24, 0.08);
+      transition: opacity 140ms ease, transform 140ms ease, background 140ms ease;
+      z-index: 2;
+    }
+
+    .note-chip:hover,
+    .note-chip:focus-visible {
+      opacity: 1;
+      background: #fff;
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .note-chip-count {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 14px;
+      height: 14px;
+      padding: 0 3px;
+      border-radius: 999px;
+      background: #1864ab;
+      color: #fff;
+      font-size: 9px;
+      line-height: 14px;
+      text-align: center;
+    }
+
+    .decision-card, .object-row, .campaign-card { position: relative; }
+    .decision-card .note-chip, .object-row .note-chip, .campaign-card .note-chip { right: 10px; }
+
+    .note-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 19, 13, 0.32);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+      z-index: 29;
+    }
+
+    .note-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .note-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: min(380px, 92vw);
+      background: #fff;
+      box-shadow: -18px 0 40px rgba(13, 43, 24, 0.18);
+      transform: translateX(100%);
+      transition: transform 220ms ease;
+      z-index: 30;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .note-drawer.open { transform: translateX(0); }
+
+    .note-drawer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .note-drawer-head span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .note-drawer-close {
+      border: 0;
+      background: transparent;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .note-drawer-list {
+      padding: 12px 16px;
+      overflow-y: auto;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .note-drawer-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .note-drawer-item-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .note-drawer-empty {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .note-drawer-form {
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+
+    .note-drawer-form textarea {
+      min-height: 70px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font: inherit;
+      resize: vertical;
+    }
+
+    .note-drawer-form-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .note-drawer-form-row input {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .note-drawer-form-row button {
+      border: 0;
+      border-radius: 8px;
+      background: var(--lumina-green);
+      color: #06210d;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    .note-drawer-status {
+      margin: 0;
+      font-size: 11px;
+      color: var(--muted);
+      min-height: 14px;
+    }
+
+    .note-drawer-signed-in-as {
+      font-size: 12px;
+      color: var(--muted);
+      align-self: center;
+    }
+
+    .note-drawer-signin-prompt {
+      padding: 16px;
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .object-table {
@@ -1232,6 +1418,26 @@
     </main>
   </div>
   <div class="tooltip" id="tooltip"></div>
+  <div class="note-drawer-backdrop" id="noteDrawerBackdrop"></div>
+  <aside class="note-drawer" id="noteDrawer" aria-hidden="true">
+    <div class="note-drawer-head">
+      <div>
+        <strong id="noteDrawerLabel">Notes</strong>
+        <span id="noteDrawerView"></span>
+      </div>
+      <button type="button" class="note-drawer-close" id="noteDrawerClose" aria-label="Close notes">×</button>
+    </div>
+    <div class="note-drawer-list" id="noteDrawerList"></div>
+    <form class="note-drawer-form hidden" id="noteDrawerForm">
+      <textarea id="noteDrawerText" placeholder="Add a note about this..." maxlength="4000" required></textarea>
+      <div class="note-drawer-form-row">
+        <span class="note-drawer-signed-in-as" id="noteDrawerSignedInAs"></span>
+        <button type="submit">Add note</button>
+      </div>
+      <p class="note-drawer-status" id="noteDrawerStatus"></p>
+    </form>
+    <p class="note-drawer-signin-prompt" id="noteDrawerSigninPrompt">Sign in with Google (sidebar) to add a note.</p>
+  </aside>
 
   <script>
     const months = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
@@ -1600,6 +1806,40 @@
       return `<button type="button" class="help-chip" aria-label="About ${escapeAttr(label)}" data-tip="${escapeAttr(helpTextFor(label))}">?</button>`;
     }
 
+    function slugify(text) {
+      return String(text).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    }
+
+    function noteChip(key, label) {
+      const count = notesForKey(key).length;
+      const badge = count > 0 ? `<span class="note-chip-count">${count}</span>` : "";
+      return `<button type="button" class="note-chip" data-note-key="${escapeAttr(key)}" data-note-label="${escapeAttr(label)}" aria-label="Notes on ${escapeAttr(label)}">N${badge}</button>`;
+    }
+
+    function metricCardHtml([label, value, delta, tone]) {
+      const key = `metric:${slugify(label)}`;
+      return `
+        <div class="metric">
+          ${helpChip(label)}
+          ${noteChip(key, label)}
+          <span>${label}</span>
+          <strong>${value}</strong>
+          <span class="delta ${tone}">${delta}</span>
+        </div>
+      `;
+    }
+
+    function decisionCardHtml({ key, title, body, pills, tone }) {
+      return `
+        <div class="decision-card">
+          ${noteChip(key, title)}
+          <h3>${title}</h3>
+          <p>${body}</p>
+          <div class="impact">${pills.map(pill => `<span class="pill ${tone}">${pill}</span>`).join("")}</div>
+        </div>
+      `;
+    }
+
     function activeMarketProfiles() {
       return state.region === "All markets"
         ? regions.map(region => regionProfiles[region])
@@ -1662,15 +1902,9 @@
         ["Spend", fmtCurrency(spend), "Marketing spend spine found", "good"],
         ["Survey capacity", fmtNum(capacity), "Ops link included", "warn"]
       ];
-      document.getElementById("metrics").innerHTML = data.map(([label, value, delta, tone]) => `
-        <div class="metric">
-          ${helpChip(label)}
-          <span>${label}</span>
-          <strong>${value}</strong>
-          <span class="delta ${tone}">${delta}</span>
-        </div>
-      `).join("");
+      document.getElementById("metrics").innerHTML = data.map(metricCardHtml).join("");
       wireTips(document.getElementById("metrics"));
+      wireNoteChips(document.getElementById("metrics"));
     }
 
     function svgText(x, y, text, opts = {}) {
@@ -1830,31 +2064,29 @@
       }).sort((a, b) => b.roi - a.roi);
       const cards = [
         {
+          key: "decision:overview:top-source",
           title: `Shift incremental budget toward ${bySource[0].source}`,
           body: `${bySource[0].source} has the strongest revenue per spend in the selected cut and a manageable capacity stress signal.`,
           pills: [`${bySource[0].roi.toFixed(1)}x rev/spend`, `${fmtCurrency(bySource[0].cpw)} CPW`, `${pct(bySource[0].stress)} stress`],
           tone: "good"
         },
         {
+          key: "decision:overview:capacity-throttle",
           title: "Throttle sources that create survey compression",
           body: "When closed-won inflow outruns scheduled survey capacity, marketing growth converts into rework and aging risk.",
           pills: ["Use sales_to_survey_capacity", "Protect first-pass rate", "Align launch calendar"],
           tone: "warn"
         },
         {
+          key: "decision:overview:period-projection",
           title: "Use period projection as the demo close",
           body: "The projection object gives marketing a clean actual-to-date, recommended projection, confidence, and gap-to-quota story.",
           pills: ["Projection ready", "Quota gap", "Confidence band"],
           tone: "good"
         }
       ];
-      document.getElementById("decisionList").innerHTML = cards.map(card => `
-        <div class="decision-card">
-          <h3>${card.title}</h3>
-          <p>${card.body}</p>
-          <div class="impact">${card.pills.map(pill => `<span class="pill ${card.tone}">${pill}</span>`).join("")}</div>
-        </div>
-      `).join("");
+      document.getElementById("decisionList").innerHTML = cards.map(decisionCardHtml).join("");
+      wireNoteChips(document.getElementById("decisionList"));
     }
 
     function renderCohorts() {
@@ -2121,15 +2353,9 @@
         ["Best next dollar", `${planRows[0]?.marginalRoi.toFixed(1) || "0.0"}x`, planRows[0]?.campaign || "n/a", "good"],
         ["Hold/Cut count", fmtNum(planRows.filter(row => row.decision === "Hold" || row.decision === "Cut").length), "Spend to review", "warn"]
       ];
-      document.getElementById("campaignMetrics").innerHTML = data.map(([label, value, delta, tone]) => `
-        <div class="metric">
-          ${helpChip(label)}
-          <span>${label}</span>
-          <strong>${value}</strong>
-          <span class="delta ${tone}">${delta}</span>
-        </div>
-      `).join("");
+      document.getElementById("campaignMetrics").innerHTML = data.map(metricCardHtml).join("");
       wireTips(document.getElementById("campaignMetrics"));
+      wireNoteChips(document.getElementById("campaignMetrics"));
     }
 
     function renderDecisionMetricSuite(planRows) {
@@ -2145,78 +2371,82 @@
       const nextDollar = top ? `${fmtCurrency(top.nextTenKRevenue)} / ${fmtNum(top.nextTenKWins)} wins` : "$0 / 0 wins";
       const cards = [
         {
+          key: "decision:metric-suite:market-readiness",
           title: `Market readiness: ${readiness}/100`,
           body: "Blends permit speed, utility fit, crew coverage, survey access, and cancellation risk for the selected DMV/PA market view.",
           pills: [state.region, marketReadinessTone(readiness) === "good" ? "Scale friendly" : "Guardrail needed", "AHJ + capacity"],
           tone: marketReadinessTone(readiness)
         },
         {
+          key: "decision:metric-suite:capacity-adjusted-cpw",
           title: `Capacity-adjusted CPW: ${fmtCurrency(capAdjustedCpw)}`,
           body: "Normal cost per win adjusted for survey/install pressure and lower-readiness market friction.",
           pills: [`${fmtCurrency(frictionTax)} friction tax`, "Capacity object", "Campaign AHJ rollup"],
           tone: capAdjustedCpw < 5200 ? "good" : capAdjustedCpw < 6500 ? "warn" : "bad"
         },
         {
+          key: "decision:metric-suite:next-10k-efficiency",
           title: `Next $10K efficiency: ${nextDollar}`,
           body: `Shows the expected return from the best incremental spend candidate, currently ${top?.campaign || "n/a"}.`,
           pills: [top ? `${top.nextDollarEfficiency.toFixed(1)}x adjusted ROI` : "0.0x", "Marginal decision", "Spend allocator"],
           tone: top && top.nextDollarEfficiency >= 7 ? "good" : "warn"
         },
         {
+          key: "decision:metric-suite:gross-margin-per-dollar",
           title: `Gross margin per $: ${marginPerDollar.toFixed(1)}x`,
           body: "Uses project economics and campaign yield to shift the conversation from revenue to contribution quality.",
           pills: [`${fmtCurrency(grossMargin)} margin`, "Project economics", "Payback view"],
           tone: marginPerDollar >= 1.8 ? "good" : "warn"
         },
         {
+          key: "decision:metric-suite:product-mix-lift",
           title: `Product mix lift: +${(productLift * 100).toFixed(1)} pts`,
           body: "Flags campaigns likely to produce richer systems, partner/builder demand, or battery attach upside.",
           pills: ["Battery attach", "System size", "Margin quality"],
           tone: productLift >= 0.07 ? "good" : "warn"
         },
         {
+          key: "decision:metric-suite:saturation-guardrail",
           title: "Saturation guardrail",
           body: "Campaigns with high allocation shares are discounted so the recommendation avoids pouring dollars into a market/source already near diminishing returns.",
           pills: ["Diminishing return", "Budget share", "Reallocation ready"],
           tone: "warn"
         }
       ];
-      document.getElementById("decisionMetricSuite").innerHTML = cards.map(card => `
-        <div class="decision-card">
-          <h3>${card.title}</h3>
-          <p>${card.body}</p>
-          <div class="impact">${card.pills.map(pill => `<span class="pill ${card.tone}">${pill}</span>`).join("")}</div>
-        </div>
-      `).join("");
+      document.getElementById("decisionMetricSuite").innerHTML = cards.map(decisionCardHtml).join("");
+      wireNoteChips(document.getElementById("decisionMetricSuite"));
     }
 
     function renderCampaignRecommendations(planRows) {
       const cards = planRows.slice(0, 4).map(row => {
         const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
-        return `
-          <div class="decision-card">
-            <h3>${row.decision}: ${row.campaign}</h3>
-            <p>${row.tactic}</p>
-            <div class="impact">
-              <span class="pill ${tone}">${row.source}</span>
-              <span class="pill ${tone}">${fmtCurrency(row.plannedSpend)} planned</span>
-              <span class="pill ${tone}">${row.marginalRoi.toFixed(1)}x rev/spend</span>
-              <span class="pill ${tone}">${fmtCurrency(row.capacityAdjustedCpw)} cap-adj CPW</span>
-              <span class="pill ${tone}">${row.marginPerDollar.toFixed(1)}x margin/$</span>
-              <span class="pill ${tone}">${fmtNum(row.expectedWins)} wins</span>
-              <span class="pill ${tone}">${pct(row.stress)} stress</span>
-            </div>
-          </div>
-        `;
+        return decisionCardHtml({
+          key: `campaign:${row.source}:${row.key}`,
+          title: `${row.decision}: ${row.campaign}`,
+          body: row.tactic,
+          pills: [
+            row.source,
+            `${fmtCurrency(row.plannedSpend)} planned`,
+            `${row.marginalRoi.toFixed(1)}x rev/spend`,
+            `${fmtCurrency(row.capacityAdjustedCpw)} cap-adj CPW`,
+            `${row.marginPerDollar.toFixed(1)}x margin/$`,
+            `${fmtNum(row.expectedWins)} wins`,
+            `${pct(row.stress)} stress`
+          ],
+          tone
+        });
       }).join("");
       document.getElementById("campaignRecommendations").innerHTML = cards;
+      wireNoteChips(document.getElementById("campaignRecommendations"));
     }
 
     function renderCampaignCards(planRows) {
       document.getElementById("campaignCards").innerHTML = planRows.map(row => {
         const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
+        const key = `campaign:${row.source}:${row.key}`;
         return `
           <div class="campaign-card">
+            ${noteChip(key, row.campaign)}
             <div>
               <span class="pill ${tone}">${row.decision}</span>
               <h4>${row.campaign}</h4>
@@ -2231,6 +2461,7 @@
           </div>
         `;
       }).join("");
+      wireNoteChips(document.getElementById("campaignCards"));
     }
 
     function renderCampaignTrend(planRows) {
@@ -2252,18 +2483,19 @@
     function renderCampaignMoves(planRows) {
       if (planRows.length < 2) {
         const row = planRows[0];
-        document.getElementById("campaignMoves").innerHTML = row ? `
-          <div class="decision-card">
-            <h3>Focused campaign brief</h3>
-            <p>${row.campaign} is isolated in this view. Use the trend, market heatmap, and decision table to decide whether to scale or hold this campaign.</p>
-            <div class="impact">
-              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${row.decision}</span>
-              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${row.marginalRoi.toFixed(1)}x rev/spend</span>
-              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${fmtCurrency(row.plannedSpend)} planned</span>
-              <span class="pill ${row.decision === "Scale" ? "good" : "warn"}">${pct(row.stress)} stress</span>
-            </div>
-          </div>
-        ` : "";
+        document.getElementById("campaignMoves").innerHTML = row ? decisionCardHtml({
+          key: `campaign:${row.source}:${row.key}:brief`,
+          title: "Focused campaign brief",
+          body: `${row.campaign} is isolated in this view. Use the trend, market heatmap, and decision table to decide whether to scale or hold this campaign.`,
+          pills: [
+            row.decision,
+            `${row.marginalRoi.toFixed(1)}x rev/spend`,
+            `${fmtCurrency(row.plannedSpend)} planned`,
+            `${pct(row.stress)} stress`
+          ],
+          tone: row.decision === "Scale" ? "good" : "warn"
+        }) : "";
+        wireNoteChips(document.getElementById("campaignMoves"));
         return;
       }
       const scalable = planRows.filter(row => row.decision === "Scale" || row.decision === "Test").sort((a, b) => b.score - a.score);
@@ -2283,18 +2515,19 @@
         const tone = revenueDelta > 0 ? "good" : "warn";
         return { from, to, moveAmount, winDelta, revenueDelta, tone };
       });
-      document.getElementById("campaignMoves").innerHTML = moves.map(move => `
-        <div class="decision-card">
-          <h3>Move ${fmtCurrency(move.moveAmount)} to ${move.to.campaign}</h3>
-          <p>Take budget from ${move.from.campaign} and redeploy it where expected yield and operational fit are stronger.</p>
-          <div class="impact">
-            <span class="pill ${move.tone}">+${fmtNum(move.winDelta)} wins</span>
-            <span class="pill ${move.tone}">+${fmtCurrency(move.revenueDelta)} revenue</span>
-            <span class="pill ${move.tone}">${move.to.marginalRoi.toFixed(1)}x target ROI</span>
-            <span class="pill ${move.tone}">${pct(move.to.stress)} stress</span>
-          </div>
-        </div>
-      `).join("");
+      document.getElementById("campaignMoves").innerHTML = moves.map((move, index) => decisionCardHtml({
+        key: `decision:campaign-moves:${index}`,
+        title: `Move ${fmtCurrency(move.moveAmount)} to ${move.to.campaign}`,
+        body: `Take budget from ${move.from.campaign} and redeploy it where expected yield and operational fit are stronger.`,
+        pills: [
+          `+${fmtNum(move.winDelta)} wins`,
+          `+${fmtCurrency(move.revenueDelta)} revenue`,
+          `${move.to.marginalRoi.toFixed(1)}x target ROI`,
+          `${pct(move.to.stress)} stress`
+        ],
+        tone: move.tone
+      })).join("");
+      wireNoteChips(document.getElementById("campaignMoves"));
     }
 
     function campaignRegionFit(column, region) {
@@ -2437,15 +2670,9 @@
         ["Spend delta", fmtCurrency(spendDelta), "Scenario investment change", spendDelta > 0 ? "warn" : "good"],
         ["Stress delta", (scenStress - baseStress >= 0 ? "+" : "") + ((scenStress - baseStress) * 100).toFixed(1) + " pts", "Capacity pressure", scenStress > baseStress ? "bad" : "good"]
       ];
-      document.getElementById("scenarioMetrics").innerHTML = metrics.map(([label, value, delta, tone]) => `
-        <div class="metric">
-          ${helpChip(label)}
-          <span>${label}</span>
-          <strong>${value}</strong>
-          <span class="delta ${tone}">${delta}</span>
-        </div>
-      `).join("");
+      document.getElementById("scenarioMetrics").innerHTML = metrics.map(metricCardHtml).join("");
       wireTips(document.getElementById("scenarioMetrics"));
+      wireNoteChips(document.getElementById("scenarioMetrics"));
 
       const frontier = sources.map(source => {
         const subset = scen.filter(row => row.source === source);
@@ -2486,6 +2713,7 @@
       const rows = objectInventory.filter(row => state.objectDomain === "All" || row[0] === state.objectDomain);
       document.getElementById("objectTable").innerHTML = rows.map(([domain, id, name, purpose, score]) => `
         <div class="object-row">
+          ${noteChip(`object:${id}`, name)}
           <div>
             <code>${id}</code>
             <span>${domain}</span>
@@ -2498,6 +2726,7 @@
           </div>
         </div>
       `).join("");
+      wireNoteChips(document.getElementById("objectTable"));
     }
 
     function wireTips(scope) {
@@ -2517,15 +2746,106 @@
       });
     }
 
-    function addPanelHelp() {
+    function addPanelChips() {
       document.querySelectorAll(".panel").forEach(panel => {
         if (panel.__helpAdded) return;
         const heading = panel.querySelector(".panel-head h3");
         if (!heading) return;
-        panel.insertAdjacentHTML("beforeend", helpChip(heading.textContent));
+        const label = heading.textContent;
+        const key = `panel:${slugify(label)}`;
+        panel.insertAdjacentHTML("beforeend", helpChip(label));
+        panel.insertAdjacentHTML("beforeend", noteChip(key, label));
         panel.__helpAdded = true;
       });
       wireTips(document);
+      wireNoteChips(document);
+    }
+
+    let activeNoteKey = null;
+    let activeNoteLabel = null;
+
+    function currentNoteContext() {
+      return {
+        region: state.region,
+        source: state.source,
+        range: state.range,
+        campaignObjective: state.campaignObjective,
+        campaignGrain: state.campaignGrain,
+        campaignDetail: state.campaignDetail
+      };
+    }
+
+    function renderNoteDrawerList() {
+      const notes = notesForKey(activeNoteKey);
+      const list = document.getElementById("noteDrawerList");
+      list.innerHTML = notes.length
+        ? notes.map(note => `
+            <div class="note-drawer-item">
+              <div class="note-drawer-item-meta">${escapeAttr(note.author_name)} &middot; ${new Date(note.created_at).toLocaleString()}</div>
+              <div>${escapeAttr(note.note_text)}</div>
+            </div>
+          `).join("")
+        : `<p class="note-drawer-empty">No notes yet on this element.</p>`;
+    }
+
+    function renderNoteDrawerComposer() {
+      const form = document.getElementById("noteDrawerForm");
+      const prompt = document.getElementById("noteDrawerSigninPrompt");
+      if (isSignedIn()) {
+        form.classList.remove("hidden");
+        prompt.classList.add("hidden");
+        document.getElementById("noteDrawerSignedInAs").textContent = `as ${currentUserName}`;
+      } else {
+        form.classList.add("hidden");
+        prompt.classList.remove("hidden");
+      }
+    }
+
+    function openNoteDrawer(key, label) {
+      activeNoteKey = key;
+      activeNoteLabel = label;
+      document.getElementById("noteDrawerLabel").textContent = label;
+      document.getElementById("noteDrawerView").textContent = titleMap[state.view][0];
+      renderNoteDrawerList();
+      renderNoteDrawerComposer();
+      document.getElementById("noteDrawer").classList.add("open");
+      document.getElementById("noteDrawer").setAttribute("aria-hidden", "false");
+      document.getElementById("noteDrawerBackdrop").classList.add("open");
+    }
+
+    function closeNoteDrawer() {
+      document.getElementById("noteDrawer").classList.remove("open");
+      document.getElementById("noteDrawer").setAttribute("aria-hidden", "true");
+      document.getElementById("noteDrawerBackdrop").classList.remove("open");
+      activeNoteKey = null;
+    }
+
+    function refreshPanelNoteBadges() {
+      document.querySelectorAll(".panel .note-chip").forEach(chip => {
+        const key = chip.dataset.noteKey;
+        const count = notesForKey(key).length;
+        let badge = chip.querySelector(".note-chip-count");
+        if (count > 0) {
+          if (!badge) {
+            badge = document.createElement("span");
+            badge.className = "note-chip-count";
+            chip.appendChild(badge);
+          }
+          badge.textContent = String(count);
+        } else if (badge) {
+          badge.remove();
+        }
+      });
+    }
+
+    function wireNoteChips(scope) {
+      scope.querySelectorAll(".note-chip").forEach(chip => {
+        if (chip.__noteWired) return;
+        chip.__noteWired = true;
+        chip.addEventListener("click", () => {
+          openNoteDrawer(chip.dataset.noteKey, chip.dataset.noteLabel);
+        });
+      });
     }
 
     function switchView(view) {
@@ -2599,7 +2919,35 @@
     document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
     document.getElementById("capacityBuffer").addEventListener("input", e => { state.shifts.capacityBuffer = Number(e.target.value); renderScenario(); });
     window.addEventListener("resize", render);
-    addPanelHelp();
+    document.getElementById("noteDrawerClose").addEventListener("click", closeNoteDrawer);
+    document.getElementById("noteDrawerBackdrop").addEventListener("click", closeNoteDrawer);
+    document.getElementById("noteDrawerForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const text = document.getElementById("noteDrawerText").value.trim();
+      const status = document.getElementById("noteDrawerStatus");
+      if (!text || !activeNoteKey || !isSignedIn()) return;
+      const payload = {
+        view: state.view,
+        element_key: activeNoteKey,
+        element_label: activeNoteLabel,
+        note_text: text,
+        context: currentNoteContext()
+      };
+      status.textContent = "Saving...";
+      try {
+        const saved = await postNote(payload);
+        allNotes.unshift(saved);
+        document.getElementById("noteDrawerText").value = "";
+        status.textContent = "Saved.";
+        renderNoteDrawerList();
+        render();
+        refreshPanelNoteBadges();
+      } catch (error) {
+        status.textContent = "Not saved yet — will retry automatically.";
+        renderNoteDrawerList();
+      }
+    });
+    addPanelChips();
     render();
   </script>
 </body>

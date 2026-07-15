@@ -1175,7 +1175,7 @@
       top: 18px;
       right: 18px;
       z-index: 55;
-      width: min(440px, calc(100vw - 28px));
+      width: min(680px, calc(100vw - 28px));
       max-height: calc(100vh - 36px);
       overflow: auto;
       display: grid;
@@ -1251,9 +1251,80 @@
       color: var(--ink);
       min-height: 76px;
       padding: 10px;
-      white-space: pre-wrap;
       line-height: 1.45;
       font-size: 13px;
+    }
+
+    .claude-output {
+      display: grid;
+      gap: 12px;
+    }
+
+    .claude-output h4 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .claude-output p {
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .claude-section {
+      display: grid;
+      gap: 8px;
+    }
+
+    .claude-section-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .claude-insight {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .claude-insight-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .claude-insight strong {
+      font-size: 13px;
+    }
+
+    .claude-pill {
+      border-radius: 999px;
+      background: #eef6ef;
+      color: #0d3d1a;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 7px;
+      text-transform: uppercase;
+    }
+
+    .claude-pill.high { background: #ffe8e5; color: #8b1d13; }
+    .claude-pill.medium { background: #fff4d8; color: #72500a; }
+    .claude-pill.low { background: #e9f3ff; color: #174d7d; }
+
+    .claude-list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
     }
 
     @media (max-width: 1100px) {
@@ -2134,6 +2205,40 @@
       return (value * 100).toFixed(digits) + "%";
     }
 
+    function campaignCostSpendDiagnostics(planRows) {
+      const totalSpend = planRows.reduce((sum, row) => sum + row.plannedSpend, 0);
+      const totalWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
+      const blendedPlannedCpw = totalSpend / Math.max(1, totalWins);
+      const totalRevenue = planRows.reduce((sum, row) => sum + row.expectedRevenue, 0);
+      const rows = planRows.map(row => ({
+        campaign: row.campaign,
+        source: row.source,
+        decision: row.decision,
+        planned_spend: Math.round(row.plannedSpend),
+        spend_share: row.plannedSpend / Math.max(1, totalSpend),
+        expected_wins: Number(row.expectedWins.toFixed(2)),
+        expected_revenue: Math.round(row.expectedRevenue),
+        planned_cpw: row.plannedSpend / Math.max(1, row.expectedWins),
+        source_cpw: row.cpw,
+        capacity_adjusted_cpw: row.capacityAdjustedCpw,
+        revenue_per_spend: row.marginalRoi,
+        stress: row.stress,
+        score: row.score,
+        above_blended_cpw_pct: (row.plannedSpend / Math.max(1, row.expectedWins) - blendedPlannedCpw) / Math.max(1, blendedPlannedCpw)
+      }));
+      return {
+        blended_planned_cpw: blendedPlannedCpw,
+        total_planned_spend: totalSpend,
+        total_expected_wins: totalWins,
+        total_expected_revenue: totalRevenue,
+        highest_planned_cpw: [...rows].sort((a, b) => b.planned_cpw - a.planned_cpw).slice(0, 5),
+        highest_capacity_adjusted_cpw: [...rows].sort((a, b) => b.capacity_adjusted_cpw - a.capacity_adjusted_cpw).slice(0, 5),
+        highest_spend: [...rows].sort((a, b) => b.planned_spend - a.planned_spend).slice(0, 5),
+        weakest_revenue_per_spend: [...rows].sort((a, b) => a.revenue_per_spend - b.revenue_per_spend).slice(0, 5),
+        full_campaign_table: rows
+      };
+    }
+
     function dashboardContextForClaude() {
       const rows = filteredRows();
       const revenue = aggregate(rows, "revenue");
@@ -2151,6 +2256,7 @@
         ? planRows.find(row => row.campaign === state.campaignDetail)
         : planRows[0];
       const focusTrend = focusCampaign ? campaignRowsByMonth(focusCampaign) : [];
+      const costSpend = campaignCostSpendDiagnostics(planRows);
       return {
         data_scope: {
           answer_source: "Claude receives dashboard context from the current tool state plus the local demo time series and campaign model represented in the page.",
@@ -2188,7 +2294,8 @@
           selected_campaign: state.campaignDetail,
           budget: state.campaignBudget,
           objective: state.campaignObjective,
-          top_campaigns: planRows.slice(0, 8).map(row => ({
+          cost_spend_diagnostics: costSpend,
+          campaigns: planRows.map(row => ({
             campaign: row.campaign,
             source: row.source,
             decision: row.decision,
@@ -2196,7 +2303,10 @@
             planned_spend: row.plannedSpend,
             expected_revenue: row.expectedRevenue,
             expected_wins: row.expectedWins,
+            planned_cpw: row.plannedSpend / Math.max(1, row.expectedWins),
+            source_cpw: row.cpw,
             capacity_adjusted_cpw: row.capacityAdjustedCpw,
+            revenue_per_spend: row.marginalRoi,
             stress: row.stress,
             tactic: row.tactic,
             guardrail: row.guardrail
@@ -2245,6 +2355,70 @@
       document.getElementById("claudeBackdrop").classList.add("hidden");
     }
 
+    function asArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function renderClaudeInsightCard(item, options = {}) {
+      const severity = String(item.severity || item.confidence || "medium").toLowerCase();
+      const title = item.name || item.action || "Insight";
+      const pill = item.metric || item.confidence || item.severity || "";
+      const body = item.evidence || item.rationale || "";
+      const supporting = item.why_it_matters || item.expected_impact || "";
+      return `
+        <div class="claude-insight">
+          <div class="claude-insight-head">
+            <strong>${escapeAttr(title)}</strong>
+            ${pill ? `<span class="claude-pill ${escapeAttr(severity)}">${escapeAttr(pill)}</span>` : ""}
+          </div>
+          ${body ? `<p>${escapeAttr(body)}</p>` : ""}
+          ${supporting ? `<p>${escapeAttr(supporting)}</p>` : ""}
+        </div>
+      `;
+    }
+
+    function renderClaudeList(title, items) {
+      const clean = asArray(items).filter(Boolean);
+      if (!clean.length) return "";
+      return `
+        <div class="claude-section">
+          <div class="claude-section-title">${escapeAttr(title)}</div>
+          <ul class="claude-list">${clean.map(item => `<li>${escapeAttr(item)}</li>`).join("")}</ul>
+        </div>
+      `;
+    }
+
+    function renderClaudeInsights(payload) {
+      const insights = payload.insights;
+      const answer = document.getElementById("claudeAnswer");
+      if (!insights || typeof insights !== "object") {
+        answer.innerHTML = `<div class="claude-output"><p>${escapeAttr(payload.answer || "Claude returned an empty response.")}</p></div>`;
+        return;
+      }
+      const weakSpots = asArray(insights.weak_spots);
+      const recommendations = asArray(insights.recommendations);
+      answer.innerHTML = `
+        <div class="claude-output">
+          ${insights.headline ? `<h4>${escapeAttr(insights.headline)}</h4>` : ""}
+          ${insights.executive_summary ? `<p>${escapeAttr(insights.executive_summary)}</p>` : ""}
+          ${weakSpots.length ? `
+            <div class="claude-section">
+              <div class="claude-section-title">Weak Spots</div>
+              ${weakSpots.map(renderClaudeInsightCard).join("")}
+            </div>
+          ` : ""}
+          ${recommendations.length ? `
+            <div class="claude-section">
+              <div class="claude-section-title">Recommended Moves</div>
+              ${recommendations.map(renderClaudeInsightCard).join("")}
+            </div>
+          ` : ""}
+          ${renderClaudeList("Watchouts", insights.watchouts)}
+          ${renderClaudeList("Next Actions", insights.next_actions)}
+        </div>
+      `;
+    }
+
     async function askClaude(question) {
       const submit = document.getElementById("claudeSubmit");
       const answer = document.getElementById("claudeAnswer");
@@ -2262,9 +2436,9 @@
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.detail || `Claude request failed: ${response.status}`);
-        answer.textContent = payload.answer || "Claude returned an empty response.";
+        renderClaudeInsights(payload);
       } catch (error) {
-        answer.textContent = error.message || "Claude is unavailable right now.";
+        answer.innerHTML = `<div class="claude-output"><p>${escapeAttr(error.message || "Claude is unavailable right now.")}</p></div>`;
       } finally {
         submit.disabled = false;
         submit.textContent = "Ask";

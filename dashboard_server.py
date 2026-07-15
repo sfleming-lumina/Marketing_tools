@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -223,6 +224,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             parts.append(legacy_completion.strip())
         return "\n".join(parts).strip()
 
+    def _parse_claude_insights(self, answer):
+        try:
+            return json.loads(answer)
+        except json.JSONDecodeError:
+            pass
+
+        match = re.search(r"\{[\s\S]*\}", answer)
+        if not match:
+            return None
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            return None
+
     def _ask_claude(self, payload):
         if not ANTHROPIC_API_KEY:
             return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
@@ -235,13 +250,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         context_json = json.dumps(context, indent=2, default=str)[:20_000]
         body = {
             "model": ANTHROPIC_MODEL,
-            "max_tokens": 900,
+            "max_tokens": 1600,
             "system": (
                 "You are Claude helping Lumina Solar's marketing team interpret an internal "
-                "performance dashboard. Be concise, practical, and explicit about whether a "
-                "recommendation is supported by the supplied dashboard context or is a follow-up "
-                "question for the data team. Return a plain-text answer only; do not use tool "
-                "calls, JSON, markdown tables, or hidden/non-text response blocks."
+                "performance dashboard. Give executives and marketing operators decision-grade "
+                "insights, not generic commentary. Use the supplied dashboard context only, call "
+                "out exact evidence, compare against blended benchmarks, and convert findings "
+                "into actions. Return JSON only with this shape: "
+                '{"headline": string, "executive_summary": string, '
+                '"weak_spots": [{"name": string, "metric": string, "evidence": string, '
+                '"why_it_matters": string, "severity": "high"|"medium"|"low"}], '
+                '"recommendations": [{"action": string, "rationale": string, '
+                '"expected_impact": string, "confidence": "high"|"medium"|"low"}], '
+                '"watchouts": [string], "next_actions": [string]}. '
+                "Keep each string concise. If the evidence is directional/demo-mode, say so."
             ),
             "messages": [
                 {
@@ -288,8 +310,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "stop_reason": result.get("stop_reason"),
                 "content_types": content_types,
             }
+        insights = self._parse_claude_insights(answer)
         return HTTPStatus.OK, {
             "answer": answer,
+            "insights": insights,
             "model": result.get("model", ANTHROPIC_MODEL),
         }
 

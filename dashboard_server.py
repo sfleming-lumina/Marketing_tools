@@ -238,6 +238,134 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             return None
 
+    def _fallback_insights(self, question, context, reason):
+        planner = context.get("campaign_planner", {}) if isinstance(context, dict) else {}
+        diagnostics = planner.get("cost_spend_diagnostics", {}) if isinstance(planner, dict) else {}
+        summary = context.get("summary_metrics", {}) if isinstance(context, dict) else {}
+        filters = context.get("filters", {}) if isinstance(context, dict) else {}
+        blended_cpw = self._num(diagnostics.get("blended_planned_cpw")) or self._num(summary.get("cost_per_win")) or 0
+        total_spend = self._num(diagnostics.get("total_planned_spend")) or self._num(summary.get("spend")) or 0
+        highest_cpw = self._first(diagnostics.get("highest_capacity_adjusted_cpw"))
+        highest_spend = self._first(diagnostics.get("highest_spend"))
+        weakest_roi = self._first(diagnostics.get("weakest_revenue_per_spend"))
+        full_table = diagnostics.get("full_campaign_table") or planner.get("campaigns") or []
+        best_efficiency = max(
+            (row for row in full_table if isinstance(row, dict)),
+            key=lambda row: self._num(row.get("revenue_per_spend")),
+            default={},
+        )
+
+        weak_spots = []
+        if highest_cpw:
+            weak_spots.append({
+                "name": self._label(highest_cpw),
+                "metric": "Highest capacity-adjusted CPW",
+                "evidence": (
+                    f"{self._label(highest_cpw)} shows capacity-adjusted CPW of "
+                    f"{self._currency(highest_cpw.get('capacity_adjusted_cpw'))} versus blended planned CPW of "
+                    f"{self._currency(blended_cpw)}."
+                ),
+                "why_it_matters": (
+                    f"Stress is {self._percent(highest_cpw.get('stress'))}; spend here can look efficient before "
+                    "downstream capacity friction is included."
+                ),
+                "severity": "high" if self._num(highest_cpw.get("capacity_adjusted_cpw")) > blended_cpw * 1.25 else "medium",
+            })
+        if highest_spend:
+            weak_spots.append({
+                "name": self._label(highest_spend),
+                "metric": "Largest spend concentration",
+                "evidence": (
+                    f"{self._label(highest_spend)} carries planned spend of "
+                    f"{self._currency(highest_spend.get('planned_spend'))}, "
+                    f"{self._percent(highest_spend.get('spend_share'))} of the selected budget."
+                ),
+                "why_it_matters": "Large budget share deserves extra scrutiny when CPW or revenue-per-spend is not also best in class.",
+                "severity": "medium",
+            })
+        if weakest_roi:
+            weak_spots.append({
+                "name": self._label(weakest_roi),
+                "metric": "Weakest revenue per spend",
+                "evidence": (
+                    f"{self._label(weakest_roi)} has revenue per spend of "
+                    f"{self._num(weakest_roi.get('revenue_per_spend')):.1f}x."
+                ),
+                "why_it_matters": "This is the first place to question marginal dollars if cost per win is also elevated.",
+                "severity": "medium",
+            })
+
+        recommendations = []
+        if highest_cpw:
+            recommendations.append({
+                "action": f"Pressure-test spend on {self._label(highest_cpw)}",
+                "rationale": "It is the clearest cost-per-win weak spot after capacity adjustment.",
+                "expected_impact": "Reduces the chance that paid growth creates expensive downstream bottlenecks.",
+                "confidence": "medium",
+            })
+        if best_efficiency:
+            recommendations.append({
+                "action": f"Move marginal dollars toward {self._label(best_efficiency)} if capacity holds",
+                "rationale": (
+                    f"It has stronger revenue per spend at {self._num(best_efficiency.get('revenue_per_spend')):.1f}x "
+                    "inside the selected context."
+                ),
+                "expected_impact": "Improves budget quality without requiring a full-plan reset.",
+                "confidence": "medium",
+            })
+        recommendations.append({
+            "action": "Review CPW and spend together in the next planning meeting",
+            "rationale": "High spend alone is not a problem; high spend plus weak CPW or weak revenue-per-spend is the decision trigger.",
+            "expected_impact": "Creates a cleaner scale, test, hold, or cut decision for each campaign.",
+            "confidence": "high",
+        })
+
+        return {
+            "headline": "Cost and spend weak spots need budget guardrails",
+            "executive_summary": (
+                f"For {filters.get('market', 'the selected market')} / {filters.get('source', 'the selected source')}, "
+                f"the selected context shows {self._currency(total_spend)} in planned spend and blended CPW of "
+                f"{self._currency(blended_cpw)}. The weak spots are the campaigns where CPW, capacity-adjusted CPW, "
+                "or spend concentration are out of line with that blended benchmark."
+            ),
+            "weak_spots": weak_spots,
+            "recommendations": recommendations,
+            "watchouts": [
+                "These recommendations use the dashboard context supplied to the assistant, not an open-ended BigQuery query.",
+                f"Fallback insight mode was used because Claude returned no usable structured text: {reason}.",
+            ],
+            "next_actions": [
+                "Open the Campaign Planner and compare the weak spot against the best revenue-per-spend campaign.",
+                "Add a note on any campaign whose CPW looks directionally wrong so the data team can validate source data.",
+                "Use the next budget review to decide whether the weak spot should be capped, re-tested, or shifted.",
+            ],
+        }
+
+    def _num(self, value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _first(self, value):
+        if isinstance(value, list) and value:
+            return value[0] if isinstance(value[0], dict) else {}
+        return {}
+
+    def _label(self, row):
+        return str(row.get("campaign") or row.get("source") or row.get("name") or "Selected campaign")
+
+    def _currency(self, value):
+        amount = self._num(value)
+        if abs(amount) >= 1_000_000:
+            return f"${amount / 1_000_000:.1f}M"
+        if abs(amount) >= 1_000:
+            return f"${amount / 1_000:.0f}K"
+        return f"${amount:,.0f}"
+
+    def _percent(self, value):
+        return f"{self._num(value) * 100:.1f}%"
+
     def _ask_claude(self, payload):
         if not ANTHROPIC_API_KEY:
             return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
@@ -301,16 +429,21 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
         answer = self._extract_claude_answer(result)
         if not answer:
-            content_types = [
+            reason = f"stop_reason={result.get('stop_reason')}; content_types={','.join([
                 block.get("type", type(block).__name__) if isinstance(block, dict) else type(block).__name__
                 for block in result.get("content", [])
-            ]
-            return HTTPStatus.BAD_GATEWAY, {
-                "detail": "Claude returned no text content.",
-                "stop_reason": result.get("stop_reason"),
-                "content_types": content_types,
+            ]) or 'none'}"
+            insights = self._fallback_insights(question, context, reason)
+            return HTTPStatus.OK, {
+                "answer": insights["executive_summary"],
+                "insights": insights,
+                "model": result.get("model", ANTHROPIC_MODEL),
+                "fallback": True,
             }
         insights = self._parse_claude_insights(answer)
+        if insights is None:
+            insights = self._fallback_insights(question, context, "unstructured Claude response")
+            insights["watchouts"].insert(0, "Claude returned text, but not in the structured format needed for the insight panel.")
         return HTTPStatus.OK, {
             "answer": answer,
             "insights": insights,

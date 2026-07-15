@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lumina Marketing Decision Workbench</title>
   <link rel="icon" href="assets/lumina-icon-transparent.png">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       color-scheme: light;
@@ -1211,8 +1210,7 @@
         Data mode: local lakehouse catalog plus demo time series. Live BQ query was blocked by expired `gcloud` auth on 2026-07-13.
       </div>
       <div class="sign-in-panel" id="signInPanel">
-        <div id="googleSignInButton"></div>
-        <div class="signed-in-as hidden" id="signedInAs"></div>
+        <div class="signed-in-as" id="signedInAs">Signed in with Google via IAP.</div>
       </div>
       <div class="object-mini">
         <strong>Primary decision layer</strong>
@@ -1650,10 +1648,8 @@
       </div>
       <p class="note-drawer-status" id="noteDrawerStatus"></p>
     </form>
-    <div class="note-drawer-signin-prompt" id="noteDrawerSigninPrompt">
-      <span>Sign in with Google to add notes.</span>
-      <div id="noteDrawerGoogleSignInButton"></div>
-      <button type="button" class="note-drawer-signin-action" id="noteDrawerSignInAction">Open Google sign-in</button>
+    <div class="note-drawer-signin-prompt hidden" id="noteDrawerSigninPrompt">
+      <span>Notes use the same Google/IAP sign-in that opened this dashboard.</span>
     </div>
   </aside>
 
@@ -1785,7 +1781,7 @@
 
     const rawData = generateData();
 
-    const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "https://notes-api-6stghdub4a-ue.a.run.app";
+    const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "/api";
     const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";
     let allNotes = [];
     let latestFreshness = null;
@@ -1810,12 +1806,10 @@
 
     async function postNote(payload, options = {}) {
       const queueOnFailure = options.queueOnFailure !== false;
-      if (!isSignedIn()) throw new Error("Not signed in");
       const response = await fetch(`${NOTES_API_BASE}/notes`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getIdToken()}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
       });
@@ -1831,7 +1825,6 @@
     }
 
     async function flushQueuedNotes() {
-      if (!isSignedIn()) return;
       const queue = readQueuedNotes();
       if (!queue.length) return;
       const remaining = [];
@@ -1847,11 +1840,8 @@
     }
 
     async function fetchNotes() {
-      if (!isSignedIn()) return;
       try {
-        const response = await fetch(`${NOTES_API_BASE}/notes`, {
-          headers: { "Authorization": `Bearer ${getIdToken()}` }
-        });
+        const response = await fetch(`${NOTES_API_BASE}/notes`);
         if (!response.ok) throw new Error(`Notes fetch failed: ${response.status}`);
         allNotes = await response.json();
       } catch (error) {
@@ -1909,17 +1899,14 @@
       }
     }
 
-    const GOOGLE_OAUTH_CLIENT_ID = (typeof window !== "undefined" && window.LUMINA_GOOGLE_CLIENT_ID) || "502916414508-601pvi5aan8mlut76ieqe2bkmd5hffr2.apps.googleusercontent.com";
-    let currentIdToken = null;
-    let currentUserName = null;
-    let googleSignInInitialized = false;
+    let currentUserName = "IAP user";
 
     function getIdToken() {
-      return currentIdToken;
+      return null;
     }
 
     function isSignedIn() {
-      return Boolean(currentIdToken);
+      return true;
     }
 
     function decodeJwtPayload(token) {
@@ -1933,22 +1920,12 @@
 
     function renderSignInState() {
       const signedInAs = document.getElementById("signedInAs");
-      const button = document.getElementById("googleSignInButton");
-      if (isSignedIn()) {
-        signedInAs.textContent = `Signed in as ${currentUserName}`;
-        signedInAs.classList.remove("hidden");
-        button.classList.add("hidden");
-      } else {
-        signedInAs.classList.add("hidden");
-        button.classList.remove("hidden");
-      }
+      signedInAs.textContent = `Signed in with Google via IAP.`;
+      signedInAs.classList.remove("hidden");
       renderNoteDrawerComposer();
     }
 
     function handleGoogleCredential(response) {
-      currentIdToken = response.credential;
-      const payload = decodeJwtPayload(currentIdToken);
-      currentUserName = payload.name || payload.email || "Signed in";
       renderSignInState();
       fetchNotes().then(() => {
         refreshPanelNoteBadges();
@@ -1957,24 +1934,6 @@
     }
 
     function initGoogleSignIn() {
-      if (googleSignInInitialized) return;
-      if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-        window.setTimeout(initGoogleSignIn, 300);
-        return;
-      }
-      googleSignInInitialized = true;
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_OAUTH_CLIENT_ID,
-        callback: handleGoogleCredential
-      });
-      window.google.accounts.id.renderButton(
-        document.getElementById("googleSignInButton"),
-        { theme: "outline", size: "medium", text: "signin_with" }
-      );
-      window.google.accounts.id.renderButton(
-        document.getElementById("noteDrawerGoogleSignInButton"),
-        { theme: "outline", size: "large", text: "signin_with" }
-      );
       renderSignInState();
     }
 
@@ -3387,10 +3346,6 @@
     document.getElementById("eventsShift").addEventListener("input", e => { state.shifts["Events"] = Number(e.target.value); renderScenario(); });
     document.getElementById("capacityBuffer").addEventListener("input", e => { state.shifts.capacityBuffer = Number(e.target.value); renderScenario(); });
     document.getElementById("refreshBqButton").addEventListener("click", refreshBqFreshness);
-    document.getElementById("noteDrawerSignInAction").addEventListener("click", () => {
-      initGoogleSignIn();
-      if (window.google?.accounts?.id?.prompt) window.google.accounts.id.prompt();
-    });
     window.addEventListener("resize", render);
     window.addEventListener("keydown", event => {
       if (event.key === "Escape") closeNoteDrawer();

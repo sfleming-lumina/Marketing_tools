@@ -69,7 +69,13 @@ if (new Set(ahjScores).size < 5) {
 }
 
 const renderedCountyCount = (output.ahjTable.match(/<strong>[^<]+County|<strong>District of Columbia/g) || []).length;
-if (renderedCountyCount < 6 || !output.ahjDetail.includes("Best move") || !output.ahjInsights.includes("Scale")) {
+if (
+  renderedCountyCount < 6 ||
+  !output.ahjDetail.includes("Solar Reviews") ||
+  !output.ahjTable.includes("Cap-adj CPW") ||
+  !output.ahjInsights.includes("Scale") ||
+  !output.ahjTable.includes("Avoid")
+) {
   console.error("AHJ planner did not render expected county recommendations and drilldown.");
   process.exit(1);
 }

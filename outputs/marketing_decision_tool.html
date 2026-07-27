@@ -1770,22 +1770,20 @@
           <article class="panel">
             <div class="panel-head">
               <div>
-                <h3>AHJ spend controls</h3>
-                <p>Rank county/AHJ opportunities for the selected market, source, campaign, and time window.</p>
+                <h3>Campaign AHJ controls</h3>
+                <p>Select a campaign and compare the AHJs where performance is strong enough to scale, test, or hold.</p>
               </div>
             </div>
             <div class="campaign-controls">
-              <div class="budget-total">
-                <div class="control">
-                  <label for="ahjBudget">AHJ budget</label>
-                  <input id="ahjBudget" type="range" min="25000" max="500000" step="25000" value="150000">
-                </div>
-                <strong id="ahjBudgetOut">$150K</strong>
-              </div>
               <div class="ahj-control-row">
                 <div class="control">
-                  <label for="ahjObjective">AHJ objective</label>
+                  <label for="ahjCampaignSelect">Campaign focus</label>
+                  <select id="ahjCampaignSelect"></select>
+                </div>
+                <div class="control">
+                  <label for="ahjObjective">Performance lens</label>
                   <select id="ahjObjective">
+                    <option>Balanced quality</option>
                     <option>Scale revenue</option>
                     <option>Lowest cost per win</option>
                     <option>Capacity safe</option>
@@ -1810,7 +1808,7 @@
             <div class="panel-head">
               <div>
                 <h3>Immediate AHJ insights</h3>
-                <p>Concrete spend calls that combine campaign quality, AHJ readiness, cost, and capacity.</p>
+                <p>Concrete calls for the selected campaign, with strict scale gates and clear guardrails.</p>
               </div>
             </div>
             <div class="decision-list" id="ahjImmediateInsights"></div>
@@ -1831,8 +1829,8 @@
           <article class="panel">
             <div class="panel-head">
               <div>
-                <h3>AHJ allocation table</h3>
-                <p>Ranked next-dollar recommendations for campaign spend at the county/AHJ level.</p>
+                <h3>Selected campaign AHJ performance</h3>
+                <p>Top AHJs for the selected campaign, including volume, cost, conversion, readiness, and decision gate.</p>
               </div>
             </div>
             <table class="table" id="ahjAllocationTable"></table>
@@ -2320,8 +2318,8 @@
       campaignDetail: "All campaign details",
       campaignAllocations: { "Paid Search": 32, "Referral": 24, "Partner": 20, "Events": 12, "Direct Mail": 12 },
       campaignDetailAllocations: {},
-      ahjBudget: 150000,
-      ahjObjective: "Scale revenue",
+      ahjObjective: "Balanced quality",
+      ahjCampaign: "Solar Reviews",
       selectedAhj: "All AHJs",
       shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
     };
@@ -2493,7 +2491,7 @@
           }))
         },
         ahj_planner: {
-          budget: state.ahjBudget,
+          campaign_focus: state.ahjCampaign,
           objective: state.ahjObjective,
           selected_ahj: state.selectedAhj,
           active_counties: activeAhjProfiles().map(profile => ({
@@ -2516,11 +2514,14 @@
             source: row.source,
             decision: row.decision,
             score: row.score,
-            suggested_spend: row.plannedSpend,
-            expected_wins: row.expectedWins,
-            expected_revenue: row.expectedRevenue,
+            modeled_spend: row.spend,
+            modeled_wins: row.wins,
+            modeled_revenue: row.revenue,
+            lead_volume: row.leads,
+            lead_to_win_rate: row.winRate,
             capacity_adjusted_cpw: row.capacityAdjustedCpw,
-            revenue_per_spend: row.expectedRevenue / Math.max(1, row.plannedSpend),
+            revenue_per_spend: row.revenue / Math.max(1, row.spend),
+            suggested_test_spend: row.suggestedTestSpend,
             stress: row.stress,
             readiness: row.readiness,
             fit: row.fit,
@@ -2696,10 +2697,10 @@
       "Spend frontier": "Plots campaign yield against capacity stress. Favor upper-left opportunities with high yield and lower stress.",
       "Where to spend": "Market-by-campaign heatmap. Higher scores indicate better economics and operational fit.",
       "Campaign decision table": "Detailed campaign ranking table for defending why each campaign should scale, test, hold, or cut.",
-      "AHJ spend controls": "Controls for ranking county/AHJ spend opportunities. Use objective and AHJ focus to narrow the recommendations.",
-      "Immediate AHJ insights": "Plain-English county/AHJ spend recommendations that combine campaign fit, cost, readiness, and capacity.",
+      "Campaign AHJ controls": "Controls for comparing county/AHJ performance for a selected campaign, objective lens, and AHJ focus.",
+      "Immediate AHJ insights": "Plain-English county/AHJ recommendations for the selected campaign, using strict scale gates and guardrails.",
       "Campaign by AHJ heatmap": "County/AHJ-by-campaign heatmap. Higher scores indicate better next-dollar fit after operational guardrails.",
-      "AHJ allocation table": "Ranked AHJ recommendations with suggested spend, expected wins, CPW, revenue, and guardrails.",
+      "Selected campaign AHJ performance": "Performance table for the selected campaign across AHJs, with volume, CPW, conversion, readiness, and decision gate.",
       "Selected AHJ drilldown": "Focused county/AHJ detail for interrogating why a recommendation is attractive or risky.",
       "AHJ efficiency frontier": "Plots AHJ campaign yield against capacity stress. Favor upper-left opportunities.",
       "Budget shift scenario": "Use sliders to simulate source mix and capacity changes, then compare revenue, wins, spend, and stress.",
@@ -3705,17 +3706,59 @@
       return Math.round(fit);
     }
 
+    function ahjCpwBenchmark(source) {
+      return {
+        "Paid Search": 1250,
+        "Referral": 230,
+        "Partner": 620,
+        "Events": 1650,
+        "Direct Mail": 1300
+      }[source] || 1100;
+    }
+
+    function ahjDecisionFor(row) {
+      const cpwBenchmark = ahjCpwBenchmark(row.source);
+      const hasEnoughSignal = row.leads >= 8 && row.wins >= 1;
+      if (
+        row.score >= 84 &&
+        row.readiness >= 73 &&
+        row.fit >= 18 &&
+        row.stress <= 0.08 &&
+        row.capacityAdjustedCpw <= cpwBenchmark &&
+        hasEnoughSignal
+      ) {
+        return "Scale";
+      }
+      if (
+        row.score >= 72 &&
+        row.readiness >= 66 &&
+        row.fit >= 8 &&
+        row.stress <= 0.16 &&
+        row.capacityAdjustedCpw <= cpwBenchmark * 1.45 &&
+        hasEnoughSignal
+      ) {
+        return "Test";
+      }
+      if (row.score >= 58 && row.stress <= 0.24 && row.capacityAdjustedCpw <= cpwBenchmark * 2.15) {
+        return "Hold";
+      }
+      return "Avoid";
+    }
+
     function ahjObjectiveBoost(row) {
       if (state.ahjObjective === "Lowest cost per win") {
-        return Math.max(0.78, Math.min(1.22, 1.1 - row.capacityAdjustedCpw / 18000));
+        return Math.max(0.82, Math.min(1.16, 1.08 - row.capacityAdjustedCpw / (ahjCpwBenchmark(row.source) * 24)));
       }
       if (state.ahjObjective === "Capacity safe") {
-        return Math.max(0.7, 1.16 - row.stress * 2.2 + (row.readiness - 66) / 180);
+        return Math.max(0.72, 1.12 - row.stress * 2.4 + (row.readiness - 68) / 220);
       }
       if (state.ahjObjective === "Battery and margin") {
-        return 0.9 + row.productLift * 1.6 + (row.profile.batteryFit - 62) / 240 + row.margin * 0.42;
+        return 0.9 + row.productLift * 1.15 + (row.profile.batteryFit - 64) / 280 + row.margin * 0.28;
       }
-      return row.roi >= 8 ? 1.12 : row.expectedRevenue > 250000 ? 1.06 : 1;
+      if (state.ahjObjective === "Scale revenue") {
+        return row.roi >= 8 && row.readiness >= 68 ? 1.08 : 0.96;
+      }
+      return 1;
     }
 
     function ahjBaseDecisionRows() {
@@ -3741,17 +3784,18 @@
           const productLift = campaignProductLift({ ...item, source: item.source }) + Math.max(0, profile.batteryFit - 64) / 1000;
           const capacityAdjustedCpw = cpw * (1 + stress * 1.95 + Math.max(0, 70 - readiness) / 95 - Math.max(0, fit) / 260);
           const grossMargin = revenue * (margin + productLift * 0.08);
+          const cpwBenchmark = ahjCpwBenchmark(item.source);
           const score = Math.round(Math.max(24, Math.min(100,
-            28 +
-            Math.log2(Math.max(1, roi)) * 12 +
-            readiness * 0.26 +
+            24 +
+            Math.min(32, Math.log2(Math.max(1, roi)) * 5.8) +
+            (readiness - 55) * 0.72 +
             fit * 0.72 +
-            productLift * 55 -
-            stress * 42 -
-            Math.max(0, capacityAdjustedCpw - 5200) / 190
+            Math.min(8, Math.log1p(Math.max(0, wins)) * 2) +
+            productLift * 30 -
+            stress * 70 -
+            Math.max(0, capacityAdjustedCpw / cpwBenchmark - 1) * 18
           )));
-          const decision = score >= 80 ? "Scale" : score >= 66 ? "Test" : score >= 52 ? "Hold" : "Avoid";
-          return {
+          const row = {
             key: `${profile.key}:${item.key}`,
             profile,
             profileIndex,
@@ -3780,38 +3824,46 @@
             productLift,
             capacityAdjustedCpw,
             grossMargin,
-            score,
-            decision
+            cpwBenchmark,
+            winRate: wins / Math.max(1, leads),
+            score
           };
+          return { ...row, decision: ahjDecisionFor(row) };
         });
       });
     }
 
-    function ahjDecisionRows() {
+    function ahjCampaignOptions() {
+      const options = campaignDetailOptions().filter(option => option !== "All campaign details");
+      return ["All campaigns", ...options];
+    }
+
+    function selectedAhjCampaignLabel() {
+      if (state.ahjCampaign === "All campaigns") return "All campaigns";
+      return state.ahjCampaign;
+    }
+
+    function ahjDecisionRows(options = {}) {
       const rows = ahjBaseDecisionRows();
-      const filtered = state.selectedAhj === "All AHJs" ? rows : rows.filter(row => row.ahjKey === state.selectedAhj);
+      const filtered = rows.filter(row =>
+        (options.ignoreAhj || state.selectedAhj === "All AHJs" || row.ahjKey === state.selectedAhj) &&
+        (options.ignoreCampaign || state.ahjCampaign === "All campaigns" || row.campaign === state.ahjCampaign)
+      );
       const boosted = filtered
         .map(row => ({ ...row, objectiveScore: row.score * ahjObjectiveBoost(row) }))
         .sort((a, b) => b.objectiveScore - a.objectiveScore);
-      const investable = new Set(boosted.slice(0, Math.min(24, boosted.length)).map(row => row.key));
-      const totalWeight = boosted.reduce((sum, row) => {
-        return investable.has(row.key) ? sum + Math.pow(Math.max(1, row.objectiveScore - 44), 1.35) : sum;
-      }, 0) || 1;
       return boosted.map(row => {
-        const weight = investable.has(row.key) ? Math.pow(Math.max(1, row.objectiveScore - 44), 1.35) : 0;
-        const plannedSpend = state.ahjBudget * weight / totalWeight;
-        const expectedWins = plannedSpend / Math.max(1, row.capacityAdjustedCpw) * ahjObjectiveBoost(row);
-        const expectedRevenue = plannedSpend * row.roi * ahjObjectiveBoost(row) * (1 - Math.min(0.32, row.stress * 0.7));
-        const expectedGrossMargin = expectedRevenue * (row.margin + row.productLift * 0.08);
+        const suggestedTestSpend = row.decision === "Scale"
+          ? Math.min(65000, Math.max(18000, row.spend * 0.28))
+          : row.decision === "Test"
+            ? Math.min(30000, Math.max(8000, row.spend * 0.16))
+            : 0;
         const nextTenKWins = 10000 / Math.max(1, row.capacityAdjustedCpw) * ahjObjectiveBoost(row);
         const nextTenKRevenue = 10000 * row.roi * ahjObjectiveBoost(row) * (1 - Math.min(0.32, row.stress * 0.7));
         return {
           ...row,
-          plannedSpend,
-          expectedWins,
-          expectedRevenue,
-          expectedGrossMargin,
-          marginPerDollar: expectedGrossMargin / Math.max(1, plannedSpend),
+          suggestedTestSpend,
+          marginPerDollar: row.grossMargin / Math.max(1, row.spend),
           nextTenKWins,
           nextTenKRevenue
         };
@@ -3821,32 +3873,41 @@
     function renderAhjFocusSelect(rows) {
       const select = document.getElementById("ahjFocusSelect");
       const active = activeAhjProfiles();
+      const campaignSelect = document.getElementById("ahjCampaignSelect");
+      const campaignOptions = ahjCampaignOptions();
+      if (!campaignOptions.includes(state.ahjCampaign)) {
+        state.ahjCampaign = campaignOptions.includes(state.campaignDetail) ? state.campaignDetail : "All campaigns";
+      }
       if (state.selectedAhj !== "All AHJs" && !active.some(profile => profile.key === state.selectedAhj)) {
         state.selectedAhj = "All AHJs";
       }
+      campaignSelect.innerHTML = campaignOptions.map(option => `<option value="${escapeAttr(option)}"${option === state.ahjCampaign ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
       select.innerHTML = [
         `<option value="All AHJs"${state.selectedAhj === "All AHJs" ? " selected" : ""}>All AHJs</option>`,
         ...active.map(profile => `<option value="${escapeAttr(profile.key)}"${profile.key === state.selectedAhj ? " selected" : ""}>${escapeAttr(profile.county)}</option>`)
       ].join("");
       document.getElementById("ahjObjective").value = state.ahjObjective;
-      document.getElementById("ahjBudgetOut").textContent = fmtCurrency(state.ahjBudget);
     }
 
     function renderAhjMetrics(rows) {
       const top = rows[0] || {};
-      const expectedWins = rows.reduce((sum, row) => sum + row.expectedWins, 0);
-      const expectedRevenue = rows.reduce((sum, row) => sum + row.expectedRevenue, 0);
-      const weightedStress = rows.reduce((sum, row) => sum + row.stress * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const capCpw = rows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const budgetReady = new Set(rows.filter(row => row.decision === "Scale" || row.decision === "Test").map(row => row.ahjKey)).size;
+      const wins = rows.reduce((sum, row) => sum + row.wins, 0);
+      const revenue = rows.reduce((sum, row) => sum + row.revenue, 0);
+      const spend = rows.reduce((sum, row) => sum + row.spend, 0);
+      const weightedStress = rows.reduce((sum, row) => sum + row.stress * row.wins, 0) / Math.max(1, wins);
+      const capCpw = rows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.wins, 0) / Math.max(1, wins);
+      const scaleReady = new Set(rows.filter(row => row.decision === "Scale").map(row => row.ahjKey)).size;
+      const testReady = new Set(rows.filter(row => row.decision === "Test").map(row => row.ahjKey)).size;
+      const holdAvoid = rows.filter(row => row.decision === "Hold" || row.decision === "Avoid").length;
       const risk = [...rows].sort((a, b) => b.capacityAdjustedCpw - a.capacityAdjustedCpw)[0] || {};
       const metrics = [
-        ["Best AHJ next dollar", top.county || "n/a", top.campaign || "No AHJ rows", top.decision === "Scale" ? "good" : "warn"],
-        ["AHJ budget", fmtCurrency(state.ahjBudget), `${state.ahjObjective}`, "good"],
-        ["Expected AHJ wins", fmtNum(expectedWins), `${fmtCurrency(capCpw)} cap-adj CPW`, capCpw < 5200 ? "good" : capCpw < 6500 ? "warn" : "bad"],
-        ["Expected AHJ revenue", fmtCurrency(expectedRevenue), `${(expectedRevenue / Math.max(1, state.ahjBudget)).toFixed(1)}x rev/spend`, "good"],
-        ["Budget-ready AHJs", fmtNum(budgetReady), `${activeAhjProfiles().length} in selected market`, budgetReady >= 4 ? "good" : "warn"],
-        ["Weighted AHJ stress", pct(weightedStress), weightedStress > 0.18 ? "Capacity guardrail" : "Ops absorbable", weightedStress > 0.18 ? "bad" : "good"],
+        ["Top AHJ candidate", top.county || "n/a", top.campaign || "No AHJ rows", top.decision === "Scale" ? "good" : top.decision === "Test" ? "warn" : "bad"],
+        ["Selected campaign", selectedAhjCampaignLabel(), state.ahjObjective, "good"],
+        ["Scale-ready AHJs", fmtNum(scaleReady), `${testReady} test candidates`, scaleReady >= 3 ? "good" : scaleReady >= 1 ? "warn" : "bad"],
+        ["Hold/Avoid gates", fmtNum(holdAvoid), `${rows.length} AHJ/campaign rows reviewed`, holdAvoid >= rows.length / 2 ? "good" : "warn"],
+        ["Campaign CPW", fmtCurrency(capCpw), `${fmtNum(wins)} modeled wins`, capCpw <= (top.cpwBenchmark || 1200) ? "good" : "warn"],
+        ["Campaign revenue", fmtCurrency(revenue), `${(revenue / Math.max(1, spend)).toFixed(1)}x rev/spend`, "good"],
+        ["Weighted AHJ stress", pct(weightedStress), weightedStress > 0.16 ? "Capacity guardrail" : "Ops absorbable", weightedStress > 0.16 ? "bad" : "good"],
         ["Highest CPW risk", risk.county || "n/a", risk.capacityAdjustedCpw ? `${fmtCurrency(risk.capacityAdjustedCpw)} with ${risk.campaign}` : "n/a", "warn"],
         ["Selected focus", state.selectedAhj === "All AHJs" ? "All AHJs" : (activeAhjProfiles().find(profile => profile.key === state.selectedAhj)?.county || "n/a"), state.campaignDetail, "good"]
       ];
@@ -3858,16 +3919,19 @@
     function renderAhjInsights(rows) {
       const top = rows[0];
       const weak = [...rows].sort((a, b) => b.capacityAdjustedCpw - a.capacityAdjustedCpw)[0];
-      const capacitySafe = rows.find(row => row.decision === "Scale" && row.stress < 0.08) || rows.find(row => row.stress < 0.1) || top;
+      const capacitySafe = rows.find(row => (row.decision === "Scale" || row.decision === "Test") && row.stress < 0.08) || rows.find(row => row.stress < 0.1) || top;
       const margin = [...rows].sort((a, b) => b.marginPerDollar - a.marginPerDollar)[0] || top;
       const cards = [top, weak, capacitySafe, margin].filter(Boolean).map((row, index) => {
         if (index === 0) {
+          const action = row.decision === "Scale" ? "Scale" : row.decision === "Test" ? "Test" : "Do not scale";
           return decisionCardHtml({
             key: `ahj:insight:top:${row.key}`,
-            title: `Scale ${row.campaign} in ${row.county}`,
-            body: `${row.county} has the best objective-weighted AHJ score because campaign fit, readiness, and expected revenue per spend are all favorable.`,
-            pills: [`${fmtCurrency(row.plannedSpend)} suggested`, `${fmtNum(row.expectedWins)} wins`, `${row.roi.toFixed(1)}x rev/spend`, `${row.readiness}/100 ready`],
-            tone: "good"
+            title: `${action}: ${row.campaign} in ${row.county}`,
+            body: row.decision === "Scale"
+              ? `${row.county} clears the strict scale gate for readiness, fit, stress, CPW, and volume.`
+              : `${row.county} is the best candidate in this cut, but it should stay in ${row.decision} until the weaker gate clears.`,
+            pills: [`${fmtCurrency(row.spend)} spend`, `${fmtNum(row.wins)} wins`, `${fmtCurrency(row.capacityAdjustedCpw)} CPW`, `${row.readiness}/100 ready`],
+            tone: row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad"
           });
         }
         if (index === 1) {
@@ -3884,7 +3948,7 @@
             key: `ahj:insight:capacity:${row.key}`,
             title: `Capacity-safe spend: ${row.county}`,
             body: `${row.ahj} has enough survey and crew coverage to absorb incremental demand without creating downstream drag.`,
-            pills: [`${pct(row.stress)} stress`, `${row.profile.capacitySlots} slots`, `${row.campaign}`, `${fmtCurrency(row.nextTenKRevenue)} next $10K`],
+            pills: [`${pct(row.stress)} stress`, `${row.profile.capacitySlots} slots`, `${row.campaign}`, row.decision],
             tone: row.stress < 0.1 ? "good" : "warn"
           });
         }
@@ -3892,7 +3956,7 @@
           key: `ahj:insight:margin:${row.key}`,
           title: `Margin quality: ${row.county}`,
           body: `${row.campaign} is a strong quality candidate when the team optimizes for contribution and battery attach, not just raw lead volume.`,
-          pills: [`${row.marginPerDollar.toFixed(1)}x margin/$`, `+${(row.productLift * 100).toFixed(1)} pts product`, `${fmtCurrency(row.expectedGrossMargin)} margin`],
+          pills: [`${row.marginPerDollar.toFixed(1)}x margin/$`, `+${(row.productLift * 100).toFixed(1)} pts product`, `${fmtCurrency(row.grossMargin)} margin`],
           tone: "good"
         });
       }).join("");
@@ -3901,9 +3965,21 @@
     }
 
     function renderAhjHeatmap(rows) {
-      const allRows = ahjBaseDecisionRows();
+      const allRows = ahjDecisionRows({ ignoreCampaign: true });
       const profiles = activeAhjProfiles();
-      const columns = campaignBaseRows().slice(0, 5);
+      const baseColumns = campaignBaseRows();
+      const selectedColumn = state.ahjCampaign === "All campaigns" ? null : baseColumns.find(column => column.campaign === state.ahjCampaign);
+      const bestByCampaign = baseColumns
+        .map(column => ({
+          column,
+          bestScore: Math.max(...allRows.filter(row => row.campaign === column.campaign).map(row => row.score), 0)
+        }))
+        .sort((a, b) => b.bestScore - a.bestScore)
+        .map(item => item.column);
+      const columns = [
+        ...(selectedColumn ? [selectedColumn] : []),
+        ...bestByCampaign.filter(column => !selectedColumn || column.campaign !== selectedColumn.campaign)
+      ].slice(0, 5);
       const heatmap = document.getElementById("ahjHeatmap");
       heatmap.style.gridTemplateColumns = `132px repeat(${columns.length}, minmax(96px, 1fr))`;
       const header = `<div class="heat-cell header">County / AHJ</div>${columns.map(column => `<div class="heat-cell header">${escapeAttr(column.campaign)}</div>`).join("")}`;
@@ -3929,27 +4005,24 @@
     }
 
     function renderAhjAllocationTable(rows) {
-      const tableRows = state.selectedAhj === "All AHJs"
-        ? [
-            ...activeAhjProfiles().map(profile => rows.find(row => row.ahjKey === profile.key)).filter(Boolean),
-            ...rows.filter(row => row.plannedSpend > 0)
-          ].filter((row, index, list) => list.findIndex(item => item.key === row.key) === index).slice(0, 14)
-        : rows.slice(0, 14);
+      const tableRows = rows.slice(0, 14);
       document.getElementById("ahjAllocationTable").innerHTML = `
         <thead>
-          <tr><th>Decision</th><th>County / AHJ</th><th>Campaign</th><th>Suggested spend</th><th>Wins</th><th>Revenue</th><th>Cap-adj CPW</th><th>Stress</th><th>Why</th></tr>
+          <tr><th>Rank</th><th>Decision</th><th>County / AHJ</th><th>Campaign</th><th>Leads</th><th>Wins</th><th>Spend</th><th>Revenue</th><th>Cap-adj CPW</th><th>Rev/spend</th><th>Gate</th></tr>
         </thead>
-        <tbody>${tableRows.map(row => `
+        <tbody>${tableRows.map((row, index) => `
           <tr>
+            <td>${index + 1}</td>
             <td>${row.decision}</td>
             <td><strong>${escapeAttr(row.county)}</strong><br>${escapeAttr(row.ahj)}</td>
             <td>${escapeAttr(row.campaign)}<br>${escapeAttr(row.source)}</td>
-            <td>${fmtCurrency(row.plannedSpend)}</td>
-            <td>${fmtNum(row.expectedWins)}</td>
-            <td>${fmtCurrency(row.expectedRevenue)}</td>
+            <td>${fmtNum(row.leads)}</td>
+            <td>${fmtNum(row.wins)}</td>
+            <td>${fmtCurrency(row.spend)}</td>
+            <td>${fmtCurrency(row.revenue)}</td>
             <td>${fmtCurrency(row.capacityAdjustedCpw)}</td>
-            <td>${pct(row.stress)}</td>
-            <td>${row.readiness}/100 ready, ${row.fit > 0 ? "+" : ""}${row.fit} fit, ${fmtCurrency(row.nextTenKRevenue)} next $10K</td>
+            <td>${row.roi.toFixed(1)}x</td>
+            <td>${row.readiness}/100 ready, ${pct(row.stress)} stress, ${row.fit > 0 ? "+" : ""}${row.fit} fit</td>
           </tr>
         `).join("")}</tbody>
       `;
@@ -3962,8 +4035,13 @@
         document.getElementById("ahjDetail").innerHTML = "";
         return;
       }
-      const detailRows = ahjDecisionRows().filter(row => row.ahjKey === profile.key).slice(0, 5);
-      const top = detailRows[0];
+      const detailRows = ahjDecisionRows({ ignoreCampaign: true }).filter(row => row.ahjKey === profile.key)
+        .sort((a, b) => {
+          if (a.campaign === state.ahjCampaign) return -1;
+          if (b.campaign === state.ahjCampaign) return 1;
+          return b.objectiveScore - a.objectiveScore;
+        }).slice(0, 7);
+      const top = detailRows.find(row => row.campaign === state.ahjCampaign) || detailRows[0];
       document.getElementById("ahjDetail").innerHTML = `
         <div>
           ${noteChip(`ahj:detail:${profile.key}`, `${profile.county} detail`, "tile")}
@@ -3978,14 +4056,14 @@
         </div>
         ${top ? decisionCardHtml({
           key: `ahj:detail:best:${top.key}`,
-          title: `Best move: ${top.campaign}`,
+          title: `${top.decision}: ${top.campaign}`,
           body: `${top.tactic} ${top.guardrail}`,
-          pills: [`${fmtCurrency(top.plannedSpend)} suggested`, `${fmtNum(top.expectedWins)} wins`, `${fmtCurrency(top.capacityAdjustedCpw)} CPW`, `${pct(top.stress)} stress`],
-          tone: top.decision === "Scale" ? "good" : "warn"
+          pills: [`${fmtCurrency(top.spend)} spend`, `${fmtNum(top.wins)} wins`, `${fmtCurrency(top.capacityAdjustedCpw)} CPW`, `${pct(top.stress)} stress`],
+          tone: top.decision === "Scale" ? "good" : top.decision === "Test" ? "warn" : "bad"
         }) : ""}
         <table class="table">
-          <thead><tr><th>Campaign</th><th>Decision</th><th>Score</th><th>Next $10K</th></tr></thead>
-          <tbody>${detailRows.map(row => `<tr><td>${escapeAttr(row.campaign)}</td><td>${row.decision}</td><td>${row.score}</td><td>${fmtCurrency(row.nextTenKRevenue)} / ${fmtNum(row.nextTenKWins)} wins</td></tr>`).join("")}</tbody>
+          <thead><tr><th>Campaign</th><th>Decision</th><th>Leads</th><th>Wins</th><th>CPW</th><th>Gate</th></tr></thead>
+          <tbody>${detailRows.map(row => `<tr><td>${escapeAttr(row.campaign)}</td><td>${row.decision}</td><td>${fmtNum(row.leads)}</td><td>${fmtNum(row.wins)}</td><td>${fmtCurrency(row.capacityAdjustedCpw)}</td><td>${row.score} score, ${row.fit > 0 ? "+" : ""}${row.fit} fit</td></tr>`).join("")}</tbody>
         </table>
       `;
       wireNoteChips(document.getElementById("ahjDetail"));
@@ -4001,9 +4079,9 @@
       renderAhjDetail(rows);
       drawFrontier(rows.slice(0, 12).map(row => ({
         source: `${row.county} / ${row.campaign}`,
-        yieldScore: row.expectedRevenue / Math.max(1, row.plannedSpend),
+        yieldScore: row.revenue / Math.max(1, row.spend),
         stress: row.stress,
-        wins: row.expectedWins
+        wins: row.wins
       })), "ahjFrontierChart");
     }
 
@@ -4191,6 +4269,7 @@
         campaignGrain: state.campaignGrain,
         campaignDetail: state.campaignDetail,
         ahjObjective: state.ahjObjective,
+        ahjCampaign: state.ahjCampaign,
         selectedAhj: state.selectedAhj
       };
     }
@@ -4329,11 +4408,13 @@
     document.getElementById("sourceSelect").addEventListener("change", e => {
       state.source = e.target.value;
       if (!campaignDetailOptions().includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
+      if (!ahjCampaignOptions().includes(state.ahjCampaign)) state.ahjCampaign = "All campaigns";
       render();
     });
     document.getElementById("globalCampaignSelect").addEventListener("change", e => {
       state.campaignDetail = e.target.value;
       if (state.campaignDetail !== "All campaign details") state.campaignGrain = "Detail";
+      if (state.campaignDetail !== "All campaign details") state.ahjCampaign = state.campaignDetail;
       render();
     });
     document.getElementById("rangeSelect").addEventListener("change", e => { state.range = Number(e.target.value); render(); });
@@ -4348,7 +4429,7 @@
       state.campaignDetail = e.target.value;
       render();
     });
-    document.getElementById("ahjBudget").addEventListener("input", e => { state.ahjBudget = Number(e.target.value); renderAhjPlanner(); });
+    document.getElementById("ahjCampaignSelect").addEventListener("change", e => { state.ahjCampaign = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjObjective").addEventListener("change", e => { state.ahjObjective = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjFocusSelect").addEventListener("change", e => { state.selectedAhj = e.target.value; renderAhjPlanner(); });
     document.querySelectorAll("#trendMetric button").forEach(btn => {

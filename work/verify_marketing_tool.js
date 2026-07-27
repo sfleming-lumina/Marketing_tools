@@ -18,7 +18,7 @@ return {
   ahjInsights: document.getElementById("ahjImmediateInsights").innerHTML,
   ahjTable: document.getElementById("ahjAllocationTable").innerHTML,
   ahjDetail: document.getElementById("ahjDetail").innerHTML,
-  ahjFrontier: document.getElementById("ahjFrontierChart").innerHTML,
+  ahjBreakdown: document.getElementById("ahjPerformanceBreakdown").innerHTML,
   cards: document.getElementById("campaignCards").innerHTML,
   moves: document.getElementById("campaignMoves").innerHTML,
   suite: document.getElementById("decisionMetricSuite").innerHTML,
@@ -73,8 +73,10 @@ if (
   renderedCountyCount < 6 ||
   !output.ahjDetail.includes("Solar Reviews") ||
   !output.ahjTable.includes("Cap-adj CPW") ||
+  !output.ahjTable.includes("Selected metric") ||
   !output.ahjInsights.includes("Scale") ||
-  !output.ahjTable.includes("Avoid")
+  !output.ahjTable.includes("Avoid") ||
+  !output.ahjBreakdown.includes("rev/spend")
 ) {
   console.error("AHJ planner did not render expected county recommendations and drilldown.");
   process.exit(1);
@@ -94,6 +96,7 @@ console.log(JSON.stringify({
   uniqueAhjHeatmapScores: new Set(ahjScores).size,
   ahjTableLength: output.ahjTable.length,
   ahjDetailLength: output.ahjDetail.length,
+  ahjBreakdownLength: output.ahjBreakdown.length,
   cardsLength: output.cards.length,
   movesLength: output.moves.length,
   suiteLength: output.suite.length,

@@ -7,10 +7,18 @@ const script = loadDashboardScript();
 const run = new Function(`${script}
 state.view = "campaigns";
 renderCampaignPlanner();
+state.view = "ahj";
+renderAhjPlanner();
 state.view = "overview";
 renderTrendExplorer();
 return {
   heatmap: document.getElementById("campaignHeatmap").innerHTML,
+  ahjHeatmap: document.getElementById("ahjHeatmap").innerHTML,
+  ahjMetrics: document.getElementById("ahjMetrics").innerHTML,
+  ahjInsights: document.getElementById("ahjImmediateInsights").innerHTML,
+  ahjTable: document.getElementById("ahjAllocationTable").innerHTML,
+  ahjDetail: document.getElementById("ahjDetail").innerHTML,
+  ahjFrontier: document.getElementById("ahjFrontierChart").innerHTML,
   cards: document.getElementById("campaignCards").innerHTML,
   moves: document.getElementById("campaignMoves").innerHTML,
   suite: document.getElementById("decisionMetricSuite").innerHTML,
@@ -48,6 +56,24 @@ if (new Set(heatmapScores).size < 3) {
   process.exit(1);
 }
 
+const ahjScores = [...output.ahjHeatmap.matchAll(/<strong>(\d+)<\/strong>/g)].map(match => Number(match[1]));
+if (ahjScores.length !== 60) {
+  console.error(`Expected 60 AHJ heatmap scores for twelve counties and five campaigns, found ${ahjScores.length}.`);
+  process.exit(1);
+}
+
+if (new Set(ahjScores).size < 5) {
+  console.error("AHJ heatmap scores are not varied enough.");
+  console.error(ahjScores.join(", "));
+  process.exit(1);
+}
+
+const renderedCountyCount = (output.ahjTable.match(/<strong>[^<]+County|<strong>District of Columbia/g) || []).length;
+if (renderedCountyCount < 6 || !output.ahjDetail.includes("Best move") || !output.ahjInsights.includes("Scale")) {
+  console.error("AHJ planner did not render expected county recommendations and drilldown.");
+  process.exit(1);
+}
+
 if (!output.explorer.includes("Prior month") || !output.summary.includes("Latest")) {
   console.error("Trend explorer did not render expected MOM comparison content.");
   process.exit(1);
@@ -57,6 +83,11 @@ console.log(JSON.stringify({
   heatmapLength: output.heatmap.length,
   heatmapScoreCount: heatmapScores.length,
   uniqueHeatmapScores: new Set(heatmapScores).size,
+  ahjHeatmapLength: output.ahjHeatmap.length,
+  ahjHeatmapScoreCount: ahjScores.length,
+  uniqueAhjHeatmapScores: new Set(ahjScores).size,
+  ahjTableLength: output.ahjTable.length,
+  ahjDetailLength: output.ahjDetail.length,
   cardsLength: output.cards.length,
   movesLength: output.moves.length,
   suiteLength: output.suite.length,

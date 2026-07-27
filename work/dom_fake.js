@@ -11,6 +11,7 @@ class FakeElement {
     this.clientHeight = 280;
     this.firstChild = null;
     this.attributes = {};
+    this.style = {};
     this._classes = new Set();
     this.classList = {
       add: name => this._classes.add(name),
@@ -43,7 +44,7 @@ function installFakeDom(extraIds = []) {
   global.document = {
     getElementById: getElement,
     querySelectorAll(selector) {
-      if (selector === ".view") return [getElement("overview"), getElement("campaigns")];
+      if (selector === ".view") return [getElement("overview"), getElement("campaigns"), getElement("ahj")];
       return [];
     },
     querySelector(selector) {
@@ -72,6 +73,8 @@ function installFakeDom(extraIds = []) {
   [
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
+    "ahjBudget", "ahjBudgetOut", "ahjObjective", "ahjFocusSelect", "ahjMetrics",
+    "ahjImmediateInsights", "ahjHeatmap", "ahjAllocationTable", "ahjDetail", "ahjFrontierChart",
     "refreshBqButton", "freshnessTitle", "freshnessMeta",
     "askClaudeButton", "claudePanel", "claudeBackdrop", "claudeQuestion", "claudeSubmit",
     "claudeAnswer", "claudeClose", "claudeForm",

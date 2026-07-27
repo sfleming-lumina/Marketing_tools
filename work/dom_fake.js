@@ -73,9 +73,9 @@ function installFakeDom(extraIds = []) {
   [
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
-    "ahjCampaignSelect", "ahjObjective", "ahjFocusSelect", "ahjMetrics",
+    "ahjCampaignSelect", "ahjObjective", "ahjFocusSelect", "ahjLayoutSelect", "ahjMetrics",
     "ahjImmediateInsights", "ahjHeatmap", "ahjAllocationTable", "ahjDetail",
-    "ahjAreaTabs", "ahjPerformanceBreakdown",
+    "ahjAreaTabs", "ahjPerformanceBreakdown", "ahjInvestigationCanvas",
     "refreshBqButton", "freshnessTitle", "freshnessMeta",
     "askClaudeButton", "claudePanel", "claudeBackdrop", "claudeQuestion", "claudeSubmit",
     "claudeAnswer", "claudeClose", "claudeForm",

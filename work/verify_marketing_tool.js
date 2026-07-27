@@ -18,6 +18,7 @@ return {
   ahjInsights: document.getElementById("ahjImmediateInsights").innerHTML,
   ahjTable: document.getElementById("ahjAllocationTable").innerHTML,
   ahjDetail: document.getElementById("ahjDetail").innerHTML,
+  ahjCanvas: document.getElementById("ahjInvestigationCanvas").innerHTML,
   ahjBreakdown: document.getElementById("ahjPerformanceBreakdown").innerHTML,
   cards: document.getElementById("campaignCards").innerHTML,
   moves: document.getElementById("campaignMoves").innerHTML,
@@ -74,6 +75,8 @@ if (
   !output.ahjDetail.includes("Solar Reviews") ||
   !output.ahjTable.includes("Cap-adj CPW") ||
   !output.ahjTable.includes("Selected metric") ||
+  !output.ahjCanvas.includes("Solar Reviews") ||
+  !output.ahjCanvas.includes("ahj-click-card") ||
   !output.ahjInsights.includes("Scale") ||
   !output.ahjTable.includes("Avoid") ||
   !output.ahjBreakdown.includes("rev/spend")
@@ -96,6 +99,7 @@ console.log(JSON.stringify({
   uniqueAhjHeatmapScores: new Set(ahjScores).size,
   ahjTableLength: output.ahjTable.length,
   ahjDetailLength: output.ahjDetail.length,
+  ahjCanvasLength: output.ahjCanvas.length,
   ahjBreakdownLength: output.ahjBreakdown.length,
   cardsLength: output.cards.length,
   movesLength: output.moves.length,

@@ -651,6 +651,105 @@
       line-height: 1.4;
     }
 
+    .ahj-investigation {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ahj-selected-pair {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfb;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .ahj-selected-pair h4 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .ahj-click-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .ahj-click-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 11px;
+      display: grid;
+      gap: 7px;
+      cursor: pointer;
+      text-align: left;
+      color: var(--ink);
+      font: inherit;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ahj-click-card:hover,
+    .ahj-click-card:focus-visible,
+    .ahj-click-card.active {
+      transform: translateY(-1px);
+      border-color: rgba(11, 122, 117, 0.34);
+      box-shadow: 0 10px 24px rgba(20, 31, 45, 0.1);
+      outline: none;
+    }
+
+    .ahj-click-card strong {
+      font-size: 13px;
+    }
+
+    .ahj-click-card span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .metric-matrix {
+      display: grid;
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 140px repeat(5, minmax(112px, 1fr));
+      gap: 6px;
+    }
+
+    .matrix-cell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      min-height: 54px;
+      display: grid;
+      gap: 3px;
+      cursor: pointer;
+      color: var(--ink);
+      font: inherit;
+      text-align: left;
+    }
+
+    .matrix-cell.header {
+      cursor: default;
+      background: #edf3ee;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .table tr[data-ahj-key] {
+      cursor: pointer;
+    }
+
+    .table tr[data-ahj-key]:hover {
+      background: #f6fbf7;
+    }
+
     .ahj-detail {
       display: grid;
       gap: 12px;
@@ -1819,6 +1918,7 @@
                     <option>AHJ readiness</option>
                     <option>Capacity headroom</option>
                     <option>Margin quality</option>
+                    <option>Sample confidence</option>
                     <option>Growth volume</option>
                   </select>
                 </div>
@@ -1827,9 +1927,11 @@
                   <select id="ahjFocusSelect"></select>
                 </div>
                 <div class="control">
-                  <label>Decision grain</label>
-                  <select disabled>
-                    <option>County / AHJ / campaign</option>
+                  <label for="ahjLayoutSelect">Layout</label>
+                  <select id="ahjLayoutSelect">
+                    <option value="ranked-ahjs">Ranked AHJs</option>
+                    <option value="campaigns-for-ahj">Campaigns for AHJ</option>
+                    <option value="metric-matrix">Metric matrix</option>
                   </select>
                 </div>
               </div>
@@ -1846,6 +1948,16 @@
             <div class="decision-list" id="ahjImmediateInsights"></div>
           </article>
         </div>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>AHJ investigation canvas</h3>
+              <p>Click an AHJ, campaign, or matrix cell to re-center the whole view on that campaign/AHJ pair.</p>
+            </div>
+          </div>
+          <div class="ahj-investigation" id="ahjInvestigationCanvas"></div>
+        </article>
 
         <article class="panel">
           <div class="panel-head">
@@ -2359,6 +2471,7 @@
       ahjObjective: "Balanced decision score",
       ahjCampaign: "Solar Reviews",
       ahjArea: "efficiency",
+      ahjLayout: "ranked-ahjs",
       selectedAhj: "All AHJs",
       shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
     };
@@ -2532,6 +2645,7 @@
         ahj_planner: {
           campaign_focus: state.ahjCampaign,
           rank_metric: state.ahjObjective,
+          layout: state.ahjLayout,
           drilldown_area: state.ahjArea,
           selected_ahj: state.selectedAhj,
           active_counties: activeAhjProfiles().map(profile => ({
@@ -2561,6 +2675,7 @@
             modeled_revenue: row.revenue,
             lead_volume: row.leads,
             lead_to_win_rate: row.winRate,
+            sample_size_bucket: row.sampleSizeBucket,
             capacity_adjusted_cpw: row.capacityAdjustedCpw,
             revenue_per_spend: row.revenue / Math.max(1, row.spend),
             suggested_test_spend: row.suggestedTestSpend,
@@ -3760,7 +3875,7 @@
 
     function ahjDecisionFor(row) {
       const cpwBenchmark = ahjCpwBenchmark(row.source);
-      const hasEnoughSignal = row.leads >= 8 && row.wins >= 1;
+      const hasEnoughSignal = row.sampleConfidence >= 2 && row.wins >= 1;
       if (
         row.score >= 84 &&
         row.readiness >= 73 &&
@@ -3795,6 +3910,7 @@
       if (metric === "AHJ readiness") return row.readiness + Math.max(-12, Math.min(12, row.fit / 2));
       if (metric === "Capacity headroom") return (1 - Math.min(0.8, row.stress)) * 100 + Math.min(20, row.profile.capacitySlots / 4);
       if (metric === "Margin quality") return row.marginPerDollar * 18 + row.productLift * 130 + row.roi * 0.3;
+      if (metric === "Sample confidence") return row.sampleConfidence * 28 + Math.log1p(row.leads) * 4 + Math.log1p(row.wins) * 10;
       if (metric === "Growth volume") return Math.log1p(row.wins) * 18 + Math.log1p(row.leads) * 6 + row.roi * 0.25;
       return row.score * 0.55 +
         Math.min(24, row.roi * 0.55) +
@@ -3811,8 +3927,23 @@
       if (metric === "AHJ readiness") return `${row.readiness}/100 ready, ${row.fit > 0 ? "+" : ""}${row.fit} fit`;
       if (metric === "Capacity headroom") return `${pct(row.stress)} stress, ${row.profile.capacitySlots} slots`;
       if (metric === "Margin quality") return `${row.marginPerDollar.toFixed(1)}x margin/$`;
+      if (metric === "Sample confidence") return row.sampleSizeBucket;
       if (metric === "Growth volume") return `${fmtNum(row.leads)} leads, ${fmtNum(row.wins)} wins`;
       return `${row.score} score`;
+    }
+
+    function ahjSampleSizeBucket(leads, wins) {
+      if (leads >= 80 && wins >= 5) return "High Sample";
+      if (leads >= 25 && wins >= 2) return "Medium Sample";
+      if (leads >= 8 || wins >= 1) return "Low Sample";
+      return "No Same-Period Sample";
+    }
+
+    function ahjSampleConfidence(bucket) {
+      if (bucket === "High Sample") return 3;
+      if (bucket === "Medium Sample") return 2;
+      if (bucket === "Low Sample") return 1;
+      return 0;
     }
 
     function ahjBaseDecisionRows() {
@@ -3839,6 +3970,8 @@
           const capacityAdjustedCpw = cpw * (1 + stress * 1.95 + Math.max(0, 70 - readiness) / 95 - Math.max(0, fit) / 260);
           const grossMargin = revenue * (margin + productLift * 0.08);
           const cpwBenchmark = ahjCpwBenchmark(item.source);
+          const sampleSizeBucket = ahjSampleSizeBucket(leads, wins);
+          const sampleConfidence = ahjSampleConfidence(sampleSizeBucket);
           const score = Math.round(Math.max(24, Math.min(100,
             24 +
             Math.min(32, Math.log2(Math.max(1, roi)) * 5.8) +
@@ -3879,6 +4012,8 @@
             capacityAdjustedCpw,
             grossMargin,
             cpwBenchmark,
+            sampleSizeBucket,
+            sampleConfidence,
             winRate: wins / Math.max(1, leads),
             score
           };
@@ -3895,6 +4030,18 @@
     function selectedAhjCampaignLabel() {
       if (state.ahjCampaign === "All campaigns") return "All campaigns";
       return state.ahjCampaign;
+    }
+
+    function selectedAhjLabel() {
+      if (state.selectedAhj === "All AHJs") return "All AHJs";
+      const profile = activeAhjProfiles().find(item => item.key === state.selectedAhj);
+      return profile ? profile.county : "All AHJs";
+    }
+
+    function setAhjSelection(ahjKey, campaign) {
+      if (ahjKey) state.selectedAhj = ahjKey;
+      if (campaign && campaign !== "All campaigns") state.ahjCampaign = campaign;
+      renderAhjPlanner();
     }
 
     function ahjDecisionRows(options = {}) {
@@ -3944,6 +4091,7 @@
         ...active.map(profile => `<option value="${escapeAttr(profile.key)}"${profile.key === state.selectedAhj ? " selected" : ""}>${escapeAttr(profile.county)}</option>`)
       ].join("");
       document.getElementById("ahjObjective").value = state.ahjObjective;
+      document.getElementById("ahjLayoutSelect").value = state.ahjLayout;
     }
 
     function renderAhjMetrics(rows) {
@@ -4048,17 +4196,14 @@
           const score = row ? row.score : 0;
           const hue = Math.round(6 + score * 1.22);
           const tone = row && row.decision === "Avoid" ? "bad" : row && row.decision === "Scale" ? "good" : "warn";
-          return `<div class="heat-cell" role="button" tabindex="0" data-ahj-key="${escapeAttr(profile.key)}" style="background:hsl(${hue}, 58%, 84%)" data-tip="${escapeAttr(`${profile.county} ${column.campaign}: score ${score}, ${row ? row.roi.toFixed(1) : "0.0"}x rev/spend, ${row ? pct(row.stress) : "0.0%"} stress, ${row ? fmtCurrency(row.capacityAdjustedCpw) : "$0"} cap-adj CPW`)}"><strong>${score}</strong><span class="pill ${tone}">${row ? row.decision : "n/a"}</span></div>`;
+          return `<div class="heat-cell" role="button" tabindex="0" data-ahj-key="${escapeAttr(profile.key)}" data-campaign="${escapeAttr(column.campaign)}" style="background:hsl(${hue}, 58%, 84%)" data-tip="${escapeAttr(`${profile.county} ${column.campaign}: score ${score}, ${row ? row.roi.toFixed(1) : "0.0"}x rev/spend, ${row ? pct(row.stress) : "0.0%"} stress, ${row ? fmtCurrency(row.capacityAdjustedCpw) : "$0"} cap-adj CPW`)}"><strong>${score}</strong><span class="pill ${tone}">${row ? row.decision : "n/a"}</span></div>`;
         }).join("");
         return head + rowCells;
       }).join("");
       heatmap.innerHTML = header + cells;
       wireTips(heatmap);
       heatmap.querySelectorAll("[data-ahj-key]").forEach(cell => {
-        cell.addEventListener("click", () => {
-          state.selectedAhj = cell.dataset.ahjKey;
-          renderAhjPlanner();
-        });
+        cell.addEventListener("click", () => setAhjSelection(cell.dataset.ahjKey, cell.dataset.campaign));
       });
     }
 
@@ -4069,7 +4214,7 @@
           <tr><th>Rank</th><th>Decision</th><th>County / AHJ</th><th>Campaign</th><th>Selected metric</th><th>Leads</th><th>Wins</th><th>Spend</th><th>Revenue</th><th>Cap-adj CPW</th><th>Gate</th></tr>
         </thead>
         <tbody>${tableRows.map((row, index) => `
-          <tr>
+          <tr data-ahj-key="${escapeAttr(row.ahjKey)}" data-campaign="${escapeAttr(row.campaign)}">
             <td>${index + 1}</td>
             <td>${row.decision}</td>
             <td><strong>${escapeAttr(row.county)}</strong><br>${escapeAttr(row.ahj)}</td>
@@ -4080,10 +4225,134 @@
             <td>${fmtCurrency(row.spend)}</td>
             <td>${fmtCurrency(row.revenue)}</td>
             <td>${fmtCurrency(row.capacityAdjustedCpw)}</td>
-            <td>${row.readiness}/100 ready, ${pct(row.stress)} stress, ${row.fit > 0 ? "+" : ""}${row.fit} fit</td>
+            <td>${row.readiness}/100 ready, ${pct(row.stress)} stress, ${escapeAttr(row.sampleSizeBucket)}</td>
           </tr>
         `).join("")}</tbody>
       `;
+      document.getElementById("ahjAllocationTable").querySelectorAll("[data-ahj-key]").forEach(row => {
+        row.addEventListener("click", () => setAhjSelection(row.dataset.ahjKey, row.dataset.campaign));
+      });
+    }
+
+    function selectedAhjPair(rows) {
+      if (state.selectedAhj !== "All AHJs" && state.ahjCampaign !== "All campaigns") {
+        return ahjDecisionRows({ ignoreCampaign: true }).find(row => row.ahjKey === state.selectedAhj && row.campaign === state.ahjCampaign) || rows[0];
+      }
+      return rows[0];
+    }
+
+    function selectedPairHtml(row) {
+      if (!row) return "";
+      const tone = row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad";
+      return `
+        <div class="ahj-selected-pair">
+          <h4>${escapeAttr(row.county)} / ${escapeAttr(row.campaign)}</h4>
+          <div class="impact">
+            <span class="pill ${tone}">${row.decision}</span>
+            <span class="pill">${escapeAttr(state.ahjObjective)}: ${escapeAttr(row.metricDisplay)}</span>
+            <span class="pill">${fmtCurrency(row.capacityAdjustedCpw)} CPW</span>
+            <span class="pill">${row.roi.toFixed(1)}x rev/spend</span>
+            <span class="pill">${pct(row.winRate)} lead-to-win</span>
+            <span class="pill">${escapeAttr(row.sampleSizeBucket)}</span>
+            <span class="pill">${pct(row.stress)} stress</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function ahjClickCard(row, label, sublabel, extra = "") {
+      const tone = row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad";
+      return `
+        <button type="button" class="ahj-click-card${row.ahjKey === state.selectedAhj && row.campaign === state.ahjCampaign ? " active" : ""}" data-ahj-key="${escapeAttr(row.ahjKey)}" data-campaign="${escapeAttr(row.campaign)}">
+          <strong>${escapeAttr(label)}</strong>
+          <span>${escapeAttr(sublabel)}</span>
+          <div class="impact">
+            <span class="pill ${tone}">${row.decision}</span>
+            <span class="pill">${escapeAttr(row.metricDisplay)}</span>
+            ${extra}
+          </div>
+        </button>
+      `;
+    }
+
+    function renderRankedAhjCanvas(rows) {
+      return `
+        <div class="ahj-click-grid">
+          ${rows.slice(0, 12).map(row => ahjClickCard(
+            row,
+            row.county,
+            `${row.ahj} / ${row.campaign}`,
+            `<span class="pill">${fmtNum(row.leads)} leads</span><span class="pill">${fmtNum(row.wins)} wins</span>`
+          )).join("")}
+        </div>
+      `;
+    }
+
+    function renderCampaignsForAhjCanvas(rows) {
+      const focusKey = state.selectedAhj === "All AHJs" ? rows[0]?.ahjKey : state.selectedAhj;
+      const profile = activeAhjProfiles().find(item => item.key === focusKey);
+      const campaignRows = ahjDecisionRows({ ignoreCampaign: true })
+        .filter(row => !profile || row.ahjKey === profile.key)
+        .sort((a, b) => b.metricValue - a.metricValue);
+      return `
+        <div class="ahj-click-grid">
+          ${campaignRows.slice(0, 12).map(row => ahjClickCard(
+            row,
+            row.campaign,
+            `${row.county} / ${row.source}`,
+            `<span class="pill">${fmtCurrency(row.spend)} spend</span><span class="pill">${row.roi.toFixed(1)}x ROI</span>`
+          )).join("")}
+        </div>
+      `;
+    }
+
+    function renderMetricMatrixCanvas(rows) {
+      const profiles = activeAhjProfiles();
+      const allRows = ahjDecisionRows({ ignoreCampaign: true, ignoreAhj: true });
+      const campaigns = campaignBaseRows()
+        .map(campaign => ({
+          campaign: campaign.campaign,
+          best: Math.max(...allRows.filter(row => row.campaign === campaign.campaign).map(row => row.metricValue), 0)
+        }))
+        .sort((a, b) => b.best - a.best)
+        .map(row => row.campaign)
+        .slice(0, 5);
+      return `
+        <div class="metric-matrix">
+          <div class="matrix-row">
+            <div class="matrix-cell header">AHJ / Campaign</div>
+            ${campaigns.map(campaign => `<div class="matrix-cell header">${escapeAttr(campaign)}</div>`).join("")}
+          </div>
+          ${profiles.map(profile => `
+            <div class="matrix-row">
+              <div class="matrix-cell header">${escapeAttr(profile.county)}</div>
+              ${campaigns.map(campaign => {
+                const row = allRows.find(item => item.ahjKey === profile.key && item.campaign === campaign);
+                const tone = row && row.decision === "Scale" ? "good" : row && row.decision === "Test" ? "warn" : "bad";
+                return row ? `
+                  <button type="button" class="matrix-cell" data-ahj-key="${escapeAttr(row.ahjKey)}" data-campaign="${escapeAttr(row.campaign)}">
+                    <strong>${escapeAttr(row.metricDisplay)}</strong>
+                    <span class="pill ${tone}">${row.decision}</span>
+                  </button>
+                ` : `<div class="matrix-cell"></div>`;
+              }).join("")}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderAhjInvestigationCanvas(rows) {
+      const selected = selectedAhjPair(rows);
+      let body = "";
+      if (state.ahjLayout === "campaigns-for-ahj") body = renderCampaignsForAhjCanvas(rows);
+      else if (state.ahjLayout === "metric-matrix") body = renderMetricMatrixCanvas(rows);
+      else body = renderRankedAhjCanvas(rows);
+      const canvas = document.getElementById("ahjInvestigationCanvas");
+      canvas.innerHTML = selectedPairHtml(selected) + body;
+      canvas.querySelectorAll("[data-ahj-key]").forEach(item => {
+        item.addEventListener("click", () => setAhjSelection(item.dataset.ahjKey, item.dataset.campaign));
+      });
     }
 
     function renderAhjDetail(rows) {
@@ -4194,6 +4463,7 @@
       renderAhjFocusSelect(rows);
       renderAhjMetrics(rows);
       renderAhjInsights(rows);
+      renderAhjInvestigationCanvas(rows);
       renderAhjHeatmap(rows);
       renderAhjAllocationTable(rows);
       renderAhjDetail(rows);
@@ -4385,6 +4655,7 @@
         campaignDetail: state.campaignDetail,
         ahjObjective: state.ahjObjective,
         ahjCampaign: state.ahjCampaign,
+        ahjLayout: state.ahjLayout,
         ahjArea: state.ahjArea,
         selectedAhj: state.selectedAhj
       };
@@ -4548,6 +4819,7 @@
     document.getElementById("ahjCampaignSelect").addEventListener("change", e => { state.ahjCampaign = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjObjective").addEventListener("change", e => { state.ahjObjective = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjFocusSelect").addEventListener("change", e => { state.selectedAhj = e.target.value; renderAhjPlanner(); });
+    document.getElementById("ahjLayoutSelect").addEventListener("change", e => { state.ahjLayout = e.target.value; renderAhjPlanner(); });
     document.querySelectorAll("#ahjAreaTabs button").forEach(btn => {
       btn.addEventListener("click", () => {
         state.ahjArea = btn.dataset.ahjArea;

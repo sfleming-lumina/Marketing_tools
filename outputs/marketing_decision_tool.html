@@ -1915,11 +1915,7 @@
                     <option>Revenue per spend</option>
                     <option>Lowest cost per win</option>
                     <option>Lead to win rate</option>
-                    <option>AHJ readiness</option>
-                    <option>Capacity headroom</option>
-                    <option>Margin quality</option>
                     <option>Sample confidence</option>
-                    <option>Growth volume</option>
                   </select>
                 </div>
                 <div class="control">
@@ -1963,7 +1959,7 @@
           <div class="panel-head">
             <div>
               <h3>Campaign by AHJ heatmap</h3>
-              <p>Higher scores indicate stronger expected yield after permit, utility, survey, crew, and campaign-fit guardrails.</p>
+              <p>Higher scores indicate a stronger balanced decision score across cost per win, lead-to-win rate, and sample confidence.</p>
             </div>
           </div>
           <div class="heatmap ahj-heatmap" id="ahjHeatmap"></div>
@@ -1974,7 +1970,7 @@
             <div class="panel-head">
               <div>
                 <h3>Selected campaign AHJ performance</h3>
-                <p>Top AHJs for the selected campaign, including volume, cost, conversion, readiness, and decision gate.</p>
+                <p>Top AHJs for the selected campaign, including volume, cost, conversion, sample size, and decision gate.</p>
               </div>
             </div>
             <table class="table" id="ahjAllocationTable"></table>
@@ -1995,12 +1991,11 @@
           <div class="panel-head">
             <div>
               <h3>AHJ performance drilldown</h3>
-              <p>Investigate why a campaign/AHJ pair is attractive or risky across efficiency, quality, capacity, and growth.</p>
+              <p>Investigate why a campaign/AHJ pair is attractive or risky across efficiency, quality, and growth.</p>
             </div>
             <div class="segmented" id="ahjAreaTabs">
               <button class="active" data-ahj-area="efficiency">Efficiency</button>
               <button data-ahj-area="quality">Quality</button>
-              <button data-ahj-area="capacity">Capacity</button>
               <button data-ahj-area="growth">Growth</button>
             </div>
           </div>
@@ -2473,6 +2468,9 @@
       ahjArea: "efficiency",
       ahjLayout: "ranked-ahjs",
       selectedAhj: "All AHJs",
+      ahjRows: [],
+      ahjRowsFetchKey: null,
+      ahjFetchToken: 0,
       shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
     };
 

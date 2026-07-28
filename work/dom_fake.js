@@ -54,7 +54,7 @@ function installFakeDom(extraIds = []) {
   };
   global.window = {
     addEventListener() {},
-    LUMINA_NOTES_API_BASE: "http://fake-notes-api.test",
+    LUMINA_API_BASE: "http://fake-notes-api.test",
     google: {
       accounts: {
         id: {
@@ -74,6 +74,7 @@ function installFakeDom(extraIds = []) {
     "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
     "ahjCampaignSelect", "ahjObjective", "ahjFocusSelect", "ahjLayoutSelect", "ahjMetrics",
+    "ahjLoadError", "ahjLoadErrorText", "ahjRetryButton",
     "ahjImmediateInsights", "ahjHeatmap", "ahjAllocationTable", "ahjDetail",
     "ahjAreaTabs", "ahjPerformanceBreakdown", "ahjInvestigationCanvas",
     "refreshBqButton", "freshnessTitle", "freshnessMeta",

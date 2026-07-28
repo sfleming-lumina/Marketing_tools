@@ -1,4 +1,5 @@
 import sys
+from http import HTTPStatus
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -85,13 +86,19 @@ class FakeClient:
         return FakeQueryResult(self._rows)
 
 
+class ExplodingClient:
+    def query(self, query, job_config=None):
+        raise RuntimeError("BigQuery is unavailable")
+
+
 def test_ahj_performance_handler_shapes_rows(monkeypatch):
     fake_rows = [
         {"market": "Fairfax County, VA", "campaign": "Solar Reviews", "leads": 100, "wins": 10, "spend": 10000, "revenue": 50000},
     ]
     monkeypatch.setattr(DashboardHandler, "_client", FakeClient(fake_rows))
     handler = DashboardHandler.__new__(DashboardHandler)
-    result = handler._ahj_performance({})
+    status, result = handler._ahj_performance({})
+    assert status == HTTPStatus.OK
     assert result[0]["market"] == "Fairfax County, VA"
     assert result[0]["cpw"] == 1000
 
@@ -113,3 +120,19 @@ def test_ahj_performance_handler_passes_campaign_and_market_params(monkeypatch):
     param_names = [param.name for param in fake_client.last_job_config.query_parameters]
     assert "campaign" in param_names
     assert "market" in param_names
+
+
+def test_ahj_performance_handler_rejects_invalid_months(monkeypatch):
+    monkeypatch.setattr(DashboardHandler, "_client", FakeClient([]))
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, result = handler._ahj_performance({"months": ["not-a-number"]})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "detail" in result
+
+
+def test_ahj_performance_handler_reports_bigquery_failure(monkeypatch):
+    monkeypatch.setattr(DashboardHandler, "_client", ExplodingClient())
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, result = handler._ahj_performance({})
+    assert status == HTTPStatus.BAD_GATEWAY
+    assert "detail" in result

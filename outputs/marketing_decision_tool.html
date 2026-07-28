@@ -968,6 +968,18 @@
     .pill.warn { color: var(--warn); border-color: rgba(176,105,0,0.32); background: rgba(176,105,0,0.08); }
     .pill.bad { color: var(--bad); border-color: rgba(189,63,50,0.32); background: rgba(189,63,50,0.08); }
 
+    .ahj-load-error {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(189,63,50,0.32);
+      background: rgba(189,63,50,0.08);
+      color: var(--bad);
+    }
+
     .help-chip {
       position: absolute;
       top: 10px;
@@ -1892,6 +1904,10 @@
       </section>
 
       <section id="ahj" class="view hidden">
+        <div id="ahjLoadError" class="ahj-load-error hidden">
+          <span id="ahjLoadErrorText"></span>
+          <button type="button" id="ahjRetryButton">Retry</button>
+        </div>
         <div class="metric-grid" id="ahjMetrics"></div>
 
         <div class="grid-2">
@@ -2276,7 +2292,7 @@
 
     const rawData = generateData();
 
-    const NOTES_API_BASE = (typeof window !== "undefined" && window.LUMINA_NOTES_API_BASE) || "/api";
+    const API_BASE = (typeof window !== "undefined" && window.LUMINA_API_BASE) || "/api";
     const NOTES_QUEUE_KEY = "luminaMarketingNotesQueue";
     let allNotes = [];
     let latestFreshness = null;
@@ -2301,7 +2317,7 @@
 
     async function postNote(payload, options = {}) {
       const queueOnFailure = options.queueOnFailure !== false;
-      const response = await fetch(`${NOTES_API_BASE}/notes`, {
+      const response = await fetch(`${API_BASE}/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -2336,7 +2352,7 @@
 
     async function fetchNotes() {
       try {
-        const response = await fetch(`${NOTES_API_BASE}/notes`);
+        const response = await fetch(`${API_BASE}/notes`);
         if (!response.ok) throw new Error(`Notes fetch failed: ${response.status}`);
         allNotes = await response.json();
       } catch (error) {
@@ -2373,7 +2389,7 @@
       button.textContent = "Refreshing...";
       renderFreshnessBadge("Checking BQ freshness...");
       try {
-        const response = await fetch(`${NOTES_API_BASE}/freshness/refresh`, { method: "POST" });
+        const response = await fetch(`${API_BASE}/freshness/refresh`, { method: "POST" });
         if (!response.ok) throw new Error(`Freshness check failed: ${response.status}`);
         latestFreshness = await response.json();
         renderFreshnessBadge();
@@ -2457,6 +2473,7 @@
       ahjRows: [],
       ahjRowsFetchKey: null,
       ahjFetchToken: 0,
+      ahjLoadError: null,
       shifts: { "Paid Search": 10, "Referral": 18, "Events": -8, capacityBuffer: 8 }
     };
 
@@ -2759,7 +2776,7 @@
       submit.textContent = "Asking...";
       answer.textContent = "Claude is reading the current dashboard context...";
       try {
-        const response = await fetch(`${NOTES_API_BASE}/ask-claude`, {
+        const response = await fetch(`${API_BASE}/ask-claude`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -4288,21 +4305,35 @@
       if (state.ahjRowsFetchKey === fetchKey) return;
       const token = ++state.ahjFetchToken;
       try {
-        const response = await fetch(`${NOTES_API_BASE}/ahj-performance`);
+        const response = await fetch(`${API_BASE}/ahj-performance`);
         if (!response.ok) throw new Error(`AHJ performance fetch failed: ${response.status}`);
         const rows = await response.json();
         if (token !== state.ahjFetchToken) return;
         state.ahjRows = rows;
         state.ahjRowsFetchKey = fetchKey;
+        state.ahjLoadError = null;
       } catch (error) {
         if (token !== state.ahjFetchToken) return;
         state.ahjRows = state.ahjRows || [];
-        state.ahjRowsFetchKey = fetchKey;
+        state.ahjLoadError = error.message || "AHJ performance data is unavailable.";
+      }
+    }
+
+    function renderAhjLoadError() {
+      const banner = document.getElementById("ahjLoadError");
+      const text = document.getElementById("ahjLoadErrorText");
+      if (!banner || !text) return;
+      if (state.ahjLoadError) {
+        text.textContent = `AHJ data unavailable: ${state.ahjLoadError}`;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
       }
     }
 
     async function renderAhjPlanner() {
       await ensureAhjRowsLoaded();
+      renderAhjLoadError();
       const rows = ahjDecisionRows();
       renderAhjFocusSelect(rows);
       renderAhjMetrics(rows);
@@ -4664,6 +4695,7 @@
     document.getElementById("ahjObjective").addEventListener("change", e => { state.ahjObjective = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjFocusSelect").addEventListener("change", e => { state.selectedAhj = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjLayoutSelect").addEventListener("change", e => { state.ahjLayout = e.target.value; renderAhjPlanner(); });
+    document.getElementById("ahjRetryButton").addEventListener("click", () => { renderAhjPlanner(); });
     document.querySelectorAll("#ahjAreaTabs button").forEach(btn => {
       btn.addEventListener("click", () => {
         state.ahjArea = btn.dataset.ahjArea;

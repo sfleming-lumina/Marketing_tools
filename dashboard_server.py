@@ -152,7 +152,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/ahj-performance":
             params = parse_qs(parsed.query)
-            self._send_json(HTTPStatus.OK, self._ahj_performance(params))
+            status, result = self._ahj_performance(params)
+            self._send_json(status, result)
             return
         return super().do_GET()
 
@@ -235,7 +236,14 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         return created
 
     def _ahj_performance(self, params):
-        months = int((params.get("months", ["6"])[0]) or "6")
+        # campaign/market filters are supported and tested here, but the current
+        # frontend fetches this endpoint once per session with no query string
+        # (two-tier fetch: fetch all rows, then filter/render client-side), so
+        # they are never invoked in production today.
+        try:
+            months = int((params.get("months", ["6"])[0]) or "6")
+        except ValueError:
+            return HTTPStatus.BAD_REQUEST, {"detail": "months must be an integer."}
         campaign = (params.get("campaign", [None])[0] or None)
         market = (params.get("market", [None])[0] or None)
         query = build_ahj_performance_query(months=months, campaign=campaign, market=market)
@@ -245,8 +253,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if market:
             query_parameters.append(bigquery.ScalarQueryParameter("market", "STRING", market))
         job_config = bigquery.QueryJobConfig(query_parameters=query_parameters)
-        rows = self.client.query(query, job_config=job_config).result()
-        return [shape_ahj_row(row) for row in rows]
+        try:
+            rows = self.client.query(query, job_config=job_config).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"AHJ performance query failed: {exc}"}
+        return HTTPStatus.OK, [shape_ahj_row(row) for row in rows]
 
     def _source_freshness(self):
         checked_at = datetime.now(timezone.utc).isoformat()

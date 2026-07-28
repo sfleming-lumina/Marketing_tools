@@ -38,6 +38,9 @@ jobs:
       - name: Verify AHJ scoring logic
         run: node work/verify_ahj_scoring.js
 
+      - name: Verify AHJ load-error and retry state
+        run: node work/verify_ahj_error_state.js
+
       - name: Verify dashboard notes wiring
         run: node work/verify_dashboard_notes.js
 

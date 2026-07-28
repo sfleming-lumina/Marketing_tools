@@ -150,6 +150,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/freshness":
             self._send_json(HTTPStatus.OK, self._source_freshness())
             return
+        if parsed.path == "/api/ahj-performance":
+            params = parse_qs(parsed.query)
+            self._send_json(HTTPStatus.OK, self._ahj_performance(params))
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -229,6 +233,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(HTTPStatus.BAD_GATEWAY, {"detail": f"BigQuery insert failed: {errors}"})
             return
         return created
+
+    def _ahj_performance(self, params):
+        months = int((params.get("months", ["6"])[0]) or "6")
+        campaign = (params.get("campaign", [None])[0] or None)
+        market = (params.get("market", [None])[0] or None)
+        query = build_ahj_performance_query(months=months, campaign=campaign, market=market)
+        query_parameters = [bigquery.ScalarQueryParameter("months", "INT64", months)]
+        if campaign:
+            query_parameters.append(bigquery.ScalarQueryParameter("campaign", "STRING", campaign))
+        if market:
+            query_parameters.append(bigquery.ScalarQueryParameter("market", "STRING", market))
+        job_config = bigquery.QueryJobConfig(query_parameters=query_parameters)
+        rows = self.client.query(query, job_config=job_config).result()
+        return [shape_ahj_row(row) for row in rows]
 
     def _source_freshness(self):
         checked_at = datetime.now(timezone.utc).isoformat()

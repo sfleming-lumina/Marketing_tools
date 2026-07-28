@@ -14,6 +14,7 @@ state.ahjCampaign = "Solar Reviews";
 state.selectedAhj = "All AHJs";
 const benchmarks = ahjBenchmarks(state.ahjRows);
 const rows = ahjDecisionRows();
+const context = dashboardContextForClaude();
 return {
   benchmarks,
   rows,
@@ -21,7 +22,8 @@ return {
     sufficient: ahjSampleConfidenceRank("Sufficient Sample"),
     low: ahjSampleConfidenceRank("Low Sample"),
     none: ahjSampleConfidenceRank("No Same-Period Sample")
-  }
+  },
+  ahjPlannerContext: context.ahj_planner
 };`);
 
 const output = run();
@@ -46,6 +48,20 @@ if (!loudoun || loudoun.decision !== "Avoid") {
 if (output.sampleRanks.sufficient !== 2 || output.sampleRanks.low !== 1 || output.sampleRanks.none !== 0) {
   console.error("ahjSampleConfidenceRank did not map sample-size buckets to the expected ranks.");
   console.error(JSON.stringify(output.sampleRanks));
+  process.exit(1);
+}
+
+const contextMarkets = output.ahjPlannerContext.active_markets;
+if (!Array.isArray(contextMarkets) || !contextMarkets.includes("Fairfax County, VA") || !contextMarkets.includes("Loudoun County, VA")) {
+  console.error("ahj_planner.active_markets did not include the expected fixture markets.");
+  console.error(JSON.stringify(contextMarkets));
+  process.exit(1);
+}
+
+const topRecommendation = output.ahjPlannerContext.top_recommendations[0];
+if (!topRecommendation || typeof topRecommendation.cost_per_win === "undefined" || typeof topRecommendation.sample_size_bucket === "undefined") {
+  console.error("ahj_planner.top_recommendations did not include the expected live-data fields.");
+  console.error(JSON.stringify(topRecommendation));
   process.exit(1);
 }
 

@@ -35,6 +35,9 @@ jobs:
       - name: Verify dashboard rendering
         run: node work/verify_marketing_tool.js
 
+      - name: Verify AHJ scoring logic
+        run: node work/verify_ahj_scoring.js
+
       - name: Verify dashboard notes wiring
         run: node work/verify_dashboard_notes.js
 

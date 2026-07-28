@@ -19,6 +19,7 @@ PROJECT_ID = os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse")
 DATASET = os.environ.get("BQ_DATASET", "marketing_tool_ops")
 TABLE = os.environ.get("BQ_TABLE", "dashboard_notes")
 TABLE_REF = f"{PROJECT_ID}.{DATASET}.{TABLE}"
+AHJ_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_campaign_ahj_performance"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -43,6 +44,62 @@ SOURCE_OBJECTS = [
     "analytics_rpt.rpt_forecast_priority_queue_v1",
     "analytics_rpt.rpt_forecast_model_decision_recommendation_v1",
 ]
+
+
+def build_ahj_performance_query(months=6, campaign=None, market=None):
+    conditions = ["campaign_name IS NOT NULL", "reporting_market_label IS NOT NULL"]
+    if campaign:
+        conditions.append("campaign_name = @campaign")
+    if market:
+        conditions.append("reporting_market_label = @market")
+    where_clause = " AND ".join(conditions)
+    return f"""
+        WITH bounds AS (
+            SELECT MAX(period_start_date) AS latest_start
+            FROM `{AHJ_TABLE_REF}`
+            WHERE period_grain = 'MONTH'
+        )
+        SELECT
+            reporting_market_label AS market,
+            campaign_name AS campaign,
+            SUM(lead_count) AS leads,
+            SUM(win_count) AS wins,
+            SUM(allocated_spend_amount) AS spend,
+            SUM(win_revenue) AS revenue
+        FROM `{AHJ_TABLE_REF}`, bounds
+        WHERE period_grain = 'MONTH'
+            AND period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+            AND {where_clause}
+        GROUP BY market, campaign
+        HAVING SUM(allocated_spend_amount) > 0 OR SUM(lead_count) > 0
+        ORDER BY leads DESC, spend DESC
+        LIMIT 500
+    """
+
+
+def shape_ahj_row(row):
+    leads = row["leads"] or 0
+    wins = row["wins"] or 0
+    spend = row["spend"] or 0
+    revenue = row["revenue"] or 0
+    if leads == 0 and wins == 0:
+        sample_size_bucket = "No Same-Period Sample"
+    elif leads < 20 and wins < 3:
+        sample_size_bucket = "Low Sample"
+    else:
+        sample_size_bucket = "Sufficient Sample"
+    return {
+        "market": row["market"],
+        "campaign": row["campaign"],
+        "leads": leads,
+        "wins": wins,
+        "spend": spend,
+        "revenue": revenue,
+        "cpw": (spend / wins) if wins else None,
+        "revenuePerSpend": (revenue / spend) if spend else None,
+        "leadToWinRate": (wins / leads) if leads else None,
+        "sampleSizeBucket": sample_size_bucket,
+    }
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):

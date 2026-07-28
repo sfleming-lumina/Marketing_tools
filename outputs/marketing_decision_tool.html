@@ -2169,20 +2169,6 @@
       "Events": { "DC Metro": 1, "Northern Virginia": 5, "Maryland Suburbs": 4, "Baltimore": 6, "Central PA": 2, "Southeast PA": 5 },
       "Direct Mail": { "DC Metro": 4, "Northern Virginia": 5, "Maryland Suburbs": 7, "Baltimore": 3, "Central PA": 6, "Southeast PA": 8 }
     };
-    const ahjCountyProfiles = [
-      { key: "dc-district", county: "District of Columbia", ahj: "DCRA / DOB", region: "DC Metro", state: "DC", permit: 73, utility: 66, crew: 72, survey: 69, cancel: 48, demand: 1.08, mediaCost: 1.12, density: 88, reviewIntent: 76, mailFit: 54, partnerFit: 58, eventFit: 70, batteryFit: 72, capacitySlots: 46 },
-      { key: "montgomery-md", county: "Montgomery County", ahj: "Montgomery DPS", region: "Maryland Suburbs", state: "MD", permit: 79, utility: 73, crew: 79, survey: 76, cancel: 41, demand: 1.14, mediaCost: 1.02, density: 77, reviewIntent: 82, mailFit: 74, partnerFit: 70, eventFit: 66, batteryFit: 78, capacitySlots: 62 },
-      { key: "prince-georges-md", county: "Prince George's County", ahj: "PG County DPIE", region: "Maryland Suburbs", state: "MD", permit: 70, utility: 67, crew: 76, survey: 72, cancel: 47, demand: 1.02, mediaCost: 0.98, density: 73, reviewIntent: 69, mailFit: 80, partnerFit: 62, eventFit: 72, batteryFit: 64, capacitySlots: 55 },
-      { key: "fairfax-va", county: "Fairfax County", ahj: "Fairfax Land Development", region: "Northern Virginia", state: "VA", permit: 84, utility: 77, crew: 81, survey: 79, cancel: 38, demand: 1.2, mediaCost: 1.08, density: 80, reviewIntent: 88, mailFit: 70, partnerFit: 76, eventFit: 67, batteryFit: 81, capacitySlots: 68 },
-      { key: "loudoun-va", county: "Loudoun County", ahj: "Loudoun Building & Development", region: "Northern Virginia", state: "VA", permit: 81, utility: 76, crew: 78, survey: 77, cancel: 40, demand: 1.12, mediaCost: 1.01, density: 64, reviewIntent: 80, mailFit: 66, partnerFit: 84, eventFit: 58, batteryFit: 76, capacitySlots: 58 },
-      { key: "arlington-va", county: "Arlington County", ahj: "Arlington CPHD", region: "Northern Virginia", state: "VA", permit: 77, utility: 72, crew: 74, survey: 75, cancel: 43, demand: 1.06, mediaCost: 1.15, density: 86, reviewIntent: 79, mailFit: 58, partnerFit: 61, eventFit: 73, batteryFit: 73, capacitySlots: 42 },
-      { key: "baltimore-county-md", county: "Baltimore County", ahj: "Baltimore County Permits", region: "Baltimore", state: "MD", permit: 66, utility: 63, crew: 70, survey: 67, cancel: 53, demand: 0.95, mediaCost: 0.92, density: 67, reviewIntent: 63, mailFit: 78, partnerFit: 67, eventFit: 80, batteryFit: 59, capacitySlots: 48 },
-      { key: "baltimore-city-md", county: "Baltimore City", ahj: "Baltimore DHCD", region: "Baltimore", state: "MD", permit: 58, utility: 60, crew: 66, survey: 62, cancel: 59, demand: 0.88, mediaCost: 0.88, density: 82, reviewIntent: 57, mailFit: 60, partnerFit: 52, eventFit: 78, batteryFit: 55, capacitySlots: 36 },
-      { key: "chester-pa", county: "Chester County", ahj: "County / municipal AHJs", region: "Southeast PA", state: "PA", permit: 76, utility: 71, crew: 73, survey: 74, cancel: 44, demand: 1.07, mediaCost: 0.97, density: 63, reviewIntent: 74, mailFit: 82, partnerFit: 78, eventFit: 61, batteryFit: 75, capacitySlots: 54 },
-      { key: "bucks-pa", county: "Bucks County", ahj: "County / municipal AHJs", region: "Southeast PA", state: "PA", permit: 72, utility: 70, crew: 71, survey: 73, cancel: 46, demand: 1.03, mediaCost: 0.96, density: 66, reviewIntent: 71, mailFit: 84, partnerFit: 73, eventFit: 64, batteryFit: 70, capacitySlots: 50 },
-      { key: "lancaster-pa", county: "Lancaster County", ahj: "County / municipal AHJs", region: "Central PA", state: "PA", permit: 65, utility: 68, crew: 64, survey: 63, cancel: 51, demand: 0.9, mediaCost: 0.87, density: 48, reviewIntent: 58, mailFit: 86, partnerFit: 69, eventFit: 57, batteryFit: 62, capacitySlots: 39 },
-      { key: "dauphin-pa", county: "Dauphin County", ahj: "County / municipal AHJs", region: "Central PA", state: "PA", permit: 61, utility: 66, crew: 62, survey: 61, cancel: 54, demand: 0.84, mediaCost: 0.84, density: 52, reviewIntent: 54, mailFit: 78, partnerFit: 64, eventFit: 59, batteryFit: 58, capacitySlots: 34 }
-    ];
     const campaignTactics = {
       "Paid Search": {
         name: "High-intent capture",
@@ -3831,197 +3817,82 @@
       renderCampaignTable(planRows);
     }
 
-    function activeAhjProfiles() {
-      return ahjCountyProfiles.filter(profile => state.region === "All markets" || profile.region === state.region);
-    }
-
-    function ahjReadinessScore(profile) {
-      return Math.round(
-        profile.permit * 0.22 +
-        profile.utility * 0.17 +
-        profile.crew * 0.2 +
-        profile.survey * 0.18 +
-        (100 - profile.cancel) * 0.13 +
-        Math.min(100, profile.capacitySlots + 24) * 0.1
-      );
-    }
-
-    function ahjCampaignFit(item, profile) {
-      let fit = (sourceRegionFit[item.source]?.[profile.region] || 0) + campaignRegionFit(item, profile.region) * 0.65;
-      if (item.source === "Paid Search") fit += (profile.reviewIntent - 66) * 0.18 + (profile.density - 65) * 0.1;
-      if (item.source === "Referral") fit += (100 - profile.cancel - 48) * 0.18 + (profile.crew - 68) * 0.12;
-      if (item.source === "Partner") fit += (profile.partnerFit - 66) * 0.22 + (profile.utility - 66) * 0.1;
-      if (item.source === "Events") fit += (profile.eventFit - 64) * 0.2 + (profile.density - 64) * 0.08;
-      if (item.source === "Direct Mail") fit += (profile.mailFit - 68) * 0.22 + (profile.permit - 66) * 0.08;
-      if (item.campaign.includes("Solar Reviews")) fit += (profile.reviewIntent - 66) * 0.28;
-      if (item.campaign.includes("Battery")) fit += (profile.batteryFit - 64) * 0.32;
-      if (item.campaign.includes("Builder")) fit += (profile.partnerFit - 66) * 0.26;
-      if (item.campaign.includes("Home Shows") || item.campaign.includes("Community")) fit += (profile.eventFit - 65) * 0.24;
-      if (item.campaign.includes("Mailer") || item.campaign.includes("Neighborhood")) fit += (profile.mailFit - 68) * 0.26;
-      return Math.round(fit);
-    }
-
-    function ahjCpwBenchmark(source) {
+    function ahjBenchmarks(rows) {
+      const rowsWithWins = rows.filter(row => (row.wins || 0) > 0);
+      const totalWins = rowsWithWins.reduce((sum, row) => sum + (row.wins || 0), 0);
+      const totalSpend = rowsWithWins.reduce((sum, row) => sum + (row.spend || 0), 0);
+      const totalLeads = rowsWithWins.reduce((sum, row) => sum + (row.leads || 0), 0);
       return {
-        "Paid Search": 1250,
-        "Referral": 230,
-        "Partner": 620,
-        "Events": 1650,
-        "Direct Mail": 1300
-      }[source] || 1100;
+        cpw: totalWins > 0 ? totalSpend / totalWins : 1100,
+        leadToWinRate: totalLeads > 0 ? totalWins / totalLeads : 0.2
+      };
     }
 
     function ahjDecisionFor(row) {
-      const cpwBenchmark = ahjCpwBenchmark(row.source);
-      const hasEnoughSignal = row.sampleConfidence >= 2 && row.wins >= 1;
+      const cpwBenchmark = row.cpwBenchmark;
+      const leadToWinBenchmark = row.leadToWinBenchmark;
+      const hasSample = row.sampleSizeBucket !== "No Same-Period Sample";
+      if (!hasSample) return "Avoid";
+      const cpwRatio = row.cpw ? row.cpw / Math.max(1, cpwBenchmark) : Infinity;
+      const leadToWinRate = row.leadToWinRate || 0;
       if (
-        row.score >= 84 &&
-        row.readiness >= 73 &&
-        row.fit >= 18 &&
-        row.stress <= 0.08 &&
-        row.capacityAdjustedCpw <= cpwBenchmark &&
-        hasEnoughSignal
+        row.sampleSizeBucket === "Sufficient Sample" &&
+        cpwRatio <= 1 &&
+        leadToWinRate >= leadToWinBenchmark
       ) {
         return "Scale";
       }
-      if (
-        row.score >= 72 &&
-        row.readiness >= 66 &&
-        row.fit >= 8 &&
-        row.stress <= 0.16 &&
-        row.capacityAdjustedCpw <= cpwBenchmark * 1.45 &&
-        hasEnoughSignal
-      ) {
+      if (cpwRatio <= 1.45 && leadToWinRate >= leadToWinBenchmark * 0.7) {
         return "Test";
       }
-      if (row.score >= 58 && row.stress <= 0.24 && row.capacityAdjustedCpw <= cpwBenchmark * 2.15) {
+      if (cpwRatio <= 2.15) {
         return "Hold";
       }
       return "Avoid";
     }
 
     function ahjRankingValue(row, metric = state.ahjObjective) {
-      const cpwRatio = row.capacityAdjustedCpw / Math.max(1, row.cpwBenchmark);
-      if (metric === "Revenue per spend") return row.roi;
+      const cpwRatio = row.cpw ? row.cpw / Math.max(1, row.cpwBenchmark) : 2;
+      if (metric === "Revenue per spend") return row.revenuePerSpend || 0;
       if (metric === "Lowest cost per win") return 100 / Math.max(0.2, cpwRatio);
-      if (metric === "Lead to win rate") return row.winRate * 1000;
-      if (metric === "AHJ readiness") return row.readiness + Math.max(-12, Math.min(12, row.fit / 2));
-      if (metric === "Capacity headroom") return (1 - Math.min(0.8, row.stress)) * 100 + Math.min(20, row.profile.capacitySlots / 4);
-      if (metric === "Margin quality") return row.marginPerDollar * 18 + row.productLift * 130 + row.roi * 0.3;
-      if (metric === "Sample confidence") return row.sampleConfidence * 28 + Math.log1p(row.leads) * 4 + Math.log1p(row.wins) * 10;
-      if (metric === "Growth volume") return Math.log1p(row.wins) * 18 + Math.log1p(row.leads) * 6 + row.roi * 0.25;
-      return row.score * 0.55 +
-        Math.min(24, row.roi * 0.55) +
-        Math.max(0, 22 - cpwRatio * 12) +
-        row.winRate * 180 +
-        (1 - Math.min(0.6, row.stress)) * 12 +
-        Math.min(8, Math.log1p(row.wins) * 1.2);
+      if (metric === "Lead to win rate") return (row.leadToWinRate || 0) * 1000;
+      if (metric === "Sample confidence") return ahjSampleConfidenceRank(row.sampleSizeBucket) * 28 + Math.log1p(row.leads) * 4 + Math.log1p(row.wins) * 10;
+      return Math.max(0, 22 - cpwRatio * 12) +
+        (row.leadToWinRate || 0) * 180 +
+        Math.min(24, (row.revenuePerSpend || 0) * 0.55) +
+        ahjSampleConfidenceRank(row.sampleSizeBucket) * 6;
     }
 
     function ahjMetricDisplay(row, metric = state.ahjObjective) {
-      if (metric === "Revenue per spend") return `${row.roi.toFixed(1)}x rev/spend`;
-      if (metric === "Lowest cost per win") return `${fmtCurrency(row.capacityAdjustedCpw)} cap-adj CPW`;
-      if (metric === "Lead to win rate") return `${pct(row.winRate)} lead-to-win`;
-      if (metric === "AHJ readiness") return `${row.readiness}/100 ready, ${row.fit > 0 ? "+" : ""}${row.fit} fit`;
-      if (metric === "Capacity headroom") return `${pct(row.stress)} stress, ${row.profile.capacitySlots} slots`;
-      if (metric === "Margin quality") return `${row.marginPerDollar.toFixed(1)}x margin/$`;
+      if (metric === "Revenue per spend") return `${(row.revenuePerSpend || 0).toFixed(1)}x rev/spend`;
+      if (metric === "Lowest cost per win") return row.cpw ? `${fmtCurrency(row.cpw)} CPW` : "No wins yet";
+      if (metric === "Lead to win rate") return `${pct(row.leadToWinRate || 0)} lead-to-win`;
       if (metric === "Sample confidence") return row.sampleSizeBucket;
-      if (metric === "Growth volume") return `${fmtNum(row.leads)} leads, ${fmtNum(row.wins)} wins`;
-      return `${row.score} score`;
+      return `${Math.round(ahjRankingValue(row, "Balanced decision score"))} score`;
     }
 
-    function ahjSampleSizeBucket(leads, wins) {
-      if (leads >= 80 && wins >= 5) return "High Sample";
-      if (leads >= 25 && wins >= 2) return "Medium Sample";
-      if (leads >= 8 || wins >= 1) return "Low Sample";
-      return "No Same-Period Sample";
-    }
-
-    function ahjSampleConfidence(bucket) {
-      if (bucket === "High Sample") return 3;
-      if (bucket === "Medium Sample") return 2;
+    function ahjSampleConfidenceRank(bucket) {
+      if (bucket === "Sufficient Sample") return 2;
       if (bucket === "Low Sample") return 1;
       return 0;
     }
 
     function ahjBaseDecisionRows() {
-      const sourceRows = baseFilteredRows();
-      const items = campaignBaseRows();
-      return activeAhjProfiles().flatMap((profile, profileIndex) => {
-        return items.map((item, itemIndex) => {
-          const subset = sourceRows.filter(row => row.region === profile.region && row.source === item.source);
-          const sourceRevenue = aggregate(subset, "revenue");
-          const fit = ahjCampaignFit(item, profile);
-          const readiness = ahjReadinessScore(profile);
-          const demandFactor = profile.demand * Math.max(0.72, 1 + fit / 180);
-          const leads = aggregate(subset, "leads") * item.mix * item.leadLift * demandFactor / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length);
-          const spend = aggregate(subset, "spend") * item.mix * item.costIndex * profile.mediaCost / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length);
-          const wins = aggregate(subset, "wins") * item.mix * item.leadLift * item.winLift * demandFactor * (0.88 + readiness / 420) / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length);
-          const revenue = sourceRevenue * item.mix * item.leadLift * item.winLift * item.revenueLift * demandFactor * (0.92 + profile.batteryFit / 600) / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length);
-          const runs = aggregate(subset, "runs") * item.mix * item.leadLift * item.stressLift * demandFactor / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length);
-          const capacity = (aggregate(subset, "capacity") * item.mix / Math.max(1, ahjCountyProfiles.filter(p => p.region === profile.region).length)) + profile.capacitySlots;
-          const stress = Math.max(0, runs - capacity) / Math.max(1, runs);
-          const roi = revenue / Math.max(1, spend);
-          const cpw = spend / Math.max(1, wins);
-          const margin = subset.reduce((sum, row) => sum + row.revenue * row.marginPct, 0) / Math.max(1, sourceRevenue);
-          const productLift = campaignProductLift({ ...item, source: item.source }) + Math.max(0, profile.batteryFit - 64) / 1000;
-          const capacityAdjustedCpw = cpw * (1 + stress * 1.95 + Math.max(0, 70 - readiness) / 95 - Math.max(0, fit) / 260);
-          const grossMargin = revenue * (margin + productLift * 0.08);
-          const cpwBenchmark = ahjCpwBenchmark(item.source);
-          const sampleSizeBucket = ahjSampleSizeBucket(leads, wins);
-          const sampleConfidence = ahjSampleConfidence(sampleSizeBucket);
-          const score = Math.round(Math.max(24, Math.min(100,
-            24 +
-            Math.min(32, Math.log2(Math.max(1, roi)) * 5.8) +
-            (readiness - 55) * 0.72 +
-            fit * 0.72 +
-            Math.min(4, Math.log1p(Math.max(0, wins)) * 0.9) +
-            productLift * 30 -
-            stress * 70 -
-            Math.max(0, capacityAdjustedCpw / cpwBenchmark - 1) * 18
-          )));
-          const row = {
-            key: `${profile.key}:${item.key}`,
-            profile,
-            profileIndex,
-            itemIndex,
-            ahjKey: profile.key,
-            county: profile.county,
-            ahj: profile.ahj,
-            region: profile.region,
-            state: profile.state,
-            source: item.source,
-            campaign: item.campaign,
-            tactic: item.tactic,
-            guardrail: item.guardrail,
-            leads,
-            wins,
-            revenue,
-            spend,
-            runs,
-            capacity,
-            stress,
-            roi,
-            cpw,
-            readiness,
-            fit,
-            margin,
-            productLift,
-            capacityAdjustedCpw,
-            grossMargin,
-            cpwBenchmark,
-            sampleSizeBucket,
-            sampleConfidence,
-            winRate: wins / Math.max(1, leads),
-            score
-          };
-          return { ...row, decision: ahjDecisionFor(row) };
-        });
+      const benchmarks = ahjBenchmarks(state.ahjRows);
+      return state.ahjRows.map(row => {
+        const enriched = {
+          ...row,
+          ahjKey: row.market,
+          key: `${row.market}:${row.campaign}`,
+          cpwBenchmark: benchmarks.cpw,
+          leadToWinBenchmark: benchmarks.leadToWinRate
+        };
+        return { ...enriched, decision: ahjDecisionFor(enriched) };
       });
     }
 
     function ahjCampaignOptions() {
-      const options = campaignDetailOptions().filter(option => option !== "All campaign details");
+      const options = [...new Set(state.ahjRows.map(row => row.campaign))].sort();
       return ["All campaigns", ...options];
     }
 
@@ -4031,9 +3902,7 @@
     }
 
     function selectedAhjLabel() {
-      if (state.selectedAhj === "All AHJs") return "All AHJs";
-      const profile = activeAhjProfiles().find(item => item.key === state.selectedAhj);
-      return profile ? profile.county : "All AHJs";
+      return state.selectedAhj === "All AHJs" ? "All AHJs" : state.selectedAhj;
     }
 
     function setAhjSelection(ahjKey, campaign) {
@@ -4054,21 +3923,10 @@
           : row.decision === "Test"
             ? Math.min(30000, Math.max(8000, row.spend * 0.16))
             : 0;
-        const nextTenKWins = 10000 / Math.max(1, row.capacityAdjustedCpw);
-        const nextTenKRevenue = 10000 * row.roi * (1 - Math.min(0.32, row.stress * 0.7));
-        const marginPerDollar = row.grossMargin / Math.max(1, row.spend);
-        const enriched = {
-          ...row,
-          suggestedTestSpend,
-          marginPerDollar,
-          nextTenKWins,
-          nextTenKRevenue
-        };
-        return {
-          ...enriched,
-          metricValue: ahjRankingValue(enriched),
-          metricDisplay: ahjMetricDisplay(enriched)
-        };
+        const nextTenKWins = row.cpw ? 10000 / row.cpw : 0;
+        const nextTenKRevenue = 10000 * (row.revenuePerSpend || 0);
+        const enriched = { ...row, suggestedTestSpend, nextTenKWins, nextTenKRevenue };
+        return { ...enriched, metricValue: ahjRankingValue(enriched), metricDisplay: ahjMetricDisplay(enriched) };
       }).sort((a, b) => b.metricValue - a.metricValue);
     }
 

@@ -530,12 +530,17 @@
     const lookup=new Map(all.map(row=>[row.key,row])),metric=state.matrixMetric,def=matrixMetricDefs[metric];
     $("opportunityMatrix").innerHTML=`<thead><tr><th>Campaign</th>${ahjs.map(ahj=>`<th>${esc(ahj)}</th>`).join("")}</tr></thead><tbody>${campaigns.map(campaign=>`<tr><td><strong>${esc(campaign)}</strong><span class="sub">${fmtNum(campaignTotals.get(campaign))} leads</span></td>${ahjs.map(ahj=>{const row=lookup.get(`${campaign}|||${ahj}`);if(!row)return '<td><button class="matrix-cell neutral" disabled>—</button></td>';const value=metric==="estimatedWinImpact"?row.estimatedWinImpact:row[metric],highlight=row.key===state.selectedOpportunityKey?" is-selected":row.key===state.hoverOpportunityKey?" is-hovered":"";return `<td><button class="matrix-cell ${matrixTone(row,metric)}${highlight}" data-opportunity-key="${esc(row.key)}">${esc(value==null?"—":def.format(value))}<small>${esc(row.decisionType)} · ${row.confidence[0]}</small></button></td>`}).join("")}</tr>`).join("")}</tbody>`;
   }
-  const echartInstances=new WeakMap();
+  const echartInstances=new WeakMap(),echartResizeObservers=new WeakMap();
   const decisionColors={Scale:"#21864a",Recover:"#d75b47",Protect:"#bc4337",Test:"#e7a21a",Investigate:"#3478b8","Fix data":"#7d8a82"};
   function chartInstance(element){
     if(!element||!window.echarts)return null;
     let chart=echartInstances.get(element);
-    if(!chart){chart=window.echarts.init(element,null,{renderer:"canvas"});echartInstances.set(element,chart)}
+    if(!chart){
+      chart=window.echarts.init(element,null,{renderer:"canvas"});echartInstances.set(element,chart);
+      if(window.ResizeObserver){
+        const observer=new ResizeObserver(()=>chart.resize());observer.observe(element);echartResizeObservers.set(element,observer);
+      }
+    }
     return chart;
   }
   function baseChartOption(){
@@ -590,7 +595,8 @@
   }
   function renderOpportunityVisuals(){
     const rows=opportunityRows();
-    renderOpportunityQuadrant(rows);renderCampaignMultiples(rows);
+    renderCampaignMultiples(rows);renderOpportunityQuadrant(rows);
+    requestAnimationFrame(()=>chartInstance($("opportunityQuadrant"))?.resize());
   }
   function renderFunnelWaterfall(){
     const element=$("funnelWaterfall"),chart=chartInstance(element),selected=opportunityRows().find(row=>row.key===state.selectedOpportunityKey);

@@ -22,6 +22,11 @@ const funnelRows = [
     setNoRun30Plus:2, runNoWin60Plus:1, loadedAt:"2026-07-28T12:00:00Z"
   }
 ];
+const apiFunnelRows = [...funnelRows, {
+  month:"2026-07-01", campaign:"Jonathan Bissell Test", campaignRollup:"Jonathan Bissell",
+  campaignSubrollup:"Test", leads:999, sets:999, runs:999, wins:999, revenue:999,
+  effectiveSpend:1, recordedSpend:1, spendCompleteLeadShare:1, spendCoverageStatus:"Complete"
+}];
 const geoRows = [{
   ahj:"Fairfax County", geography:"Fairfax County", geographyType:"County", county:"Fairfax", state:"VA",
   campaign:"Efficient Search", campaignRollup:"3rd Party Vendors LSR", leads:55, sets:25,
@@ -51,9 +56,9 @@ global.fetch = url => {
     });
   }
   let payload = [];
-  if (path.includes("marketing-funnel")) payload = funnelRows;
+  if (path.includes("marketing-funnel")) payload = apiFunnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
-  else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search"],rollups:["Co-op","3rd Party Vendors LSR"],ahjs:["Fairfax County"]};
+  else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
   return Promise.resolve({ok:true,json:()=>Promise.resolve(payload)});
@@ -86,6 +91,7 @@ setImmediate(() => {
   assert(incomplete.leadFirst && incomplete.label === "Known incomplete", "Incomplete spend did not force lead-first semantics.");
   assert(getElement("mainFunnel").innerHTML.startsWith('<div class="stage"><small>Leads'), "Auto lens should omit spend when the selected portfolio is incomplete.");
   assert(output.includes("Efficient Search") && output.includes("Co-op Maryland"), "Campaign rows did not render.");
+  assert(!output.includes("Jonathan Bissell") && !getElement("rollupFilter").innerHTML.includes("Jonathan Bissell"), "Excluded Jonathan Bissell data leaked into the dashboard.");
   assert(getElement("campaignTable").innerHTML.includes('data-label="Sets"') && getElement("campaignTable").innerHTML.includes('data-label="Runs"'), "Campaign stage volumes did not render.");
   assert(getElement("campaignTable").innerHTML.includes("no set") && getElement("campaignTable").innerHTML.includes("no run") && getElement("campaignTable").innerHTML.includes("no win"), "Campaign fallout detail did not render.");
   assert(output.includes("Fairfax County") && output.includes("76.2"), "Geo opportunity ranking did not render.");

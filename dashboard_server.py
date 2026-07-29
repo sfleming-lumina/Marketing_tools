@@ -207,6 +207,16 @@ OPERATING_REGION_FILTERS = {
 MARKETING_WINDOWS = {"30d"}
 
 
+def _marketing_identity_exclusions(include_subrollup=True):
+    fields = ["campaign_name", "campaign_reporting_rollup_name"]
+    if include_subrollup:
+        fields.append("campaign_sub_rollup_name")
+    return [
+        f"NOT REGEXP_CONTAINS(LOWER(COALESCE({field}, '')), r'jonathan\\s+bissell')"
+        for field in fields
+    ]
+
+
 def _marketing_filter_conditions(
     campaign=None,
     rollup=None,
@@ -215,7 +225,7 @@ def _marketing_filter_conditions(
     ahj=None,
     region=None,
 ):
-    conditions = ["campaign_name IS NOT NULL"]
+    conditions = ["campaign_name IS NOT NULL", *_marketing_identity_exclusions()]
     if campaign:
         conditions.append("campaign_name = @campaign")
     if rollup:
@@ -401,7 +411,10 @@ def build_marketing_filter_options_query(months=7, window=None, region=None):
 
 
 def build_marketing_projection_query(campaign=None, rollup=None):
-    conditions = ["projection_period_grain = 'MONTH'"]
+    conditions = [
+        "projection_period_grain = 'MONTH'",
+        *_marketing_identity_exclusions(include_subrollup=False),
+    ]
     if campaign:
         conditions.append("campaign_name = @campaign")
     if rollup:

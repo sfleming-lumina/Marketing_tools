@@ -207,6 +207,8 @@
   const fmtMoney = value => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:Math.abs(value)>=1e6?"compact":"standard",maximumFractionDigits:Math.abs(value)>=1e6?1:0}).format(Number(value)||0);
   const fmtPct = value => value == null ? "—" : `${(Number(value)*100).toFixed(1)}%`;
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const isExcludedIdentity = value => /jonathan\s+bissell/i.test(String(value||""));
+  const isExcludedMarketingRow = row => isExcludedIdentity(row.campaign)||isExcludedIdentity(row.campaignRollup)||isExcludedIdentity(row.campaignSubrollup);
   const sum = (rows,key) => rows.reduce((total,row)=>total+(Number(row[key])||0),0);
   const weighted = (rows,key,weight="leads") => { const base=sum(rows,weight); return base?rows.reduce((t,r)=>t+(Number(r[key])||0)*(Number(r[weight])||0),0)/base:null; };
 
@@ -301,8 +303,8 @@
         fetchJson(`/api/freshness`).catch(()=>null),
         needsCatalog?fetchJson(`/api/marketing-filter-options?${catalogQueryString()}`).catch(()=>null):null
       ]);
-      state.funnelRows=funnel; state.geoRows=geo; state.projections=projection; state.reconciliation=reconciliation;
-      if(catalog)state.filterCatalog={campaigns:catalog.campaigns||[],rollups:catalog.rollups||[],ahjs:(catalog.ahjs||[]).filter(value=>value&&value!=="Unknown"&&!/^\(?[A-Z]{2}\)?$/.test(value.trim()))};
+      state.funnelRows=funnel.filter(row=>!isExcludedMarketingRow(row));state.geoRows=geo.filter(row=>!isExcludedMarketingRow(row));state.projections=projection.filter(row=>!isExcludedMarketingRow(row));state.reconciliation=reconciliation;
+      if(catalog)state.filterCatalog={campaigns:(catalog.campaigns||[]).filter(value=>!isExcludedIdentity(value)),rollups:(catalog.rollups||[]).filter(value=>!isExcludedIdentity(value)),ahjs:(catalog.ahjs||[]).filter(value=>value&&value!=="Unknown"&&!/^\(?[A-Z]{2}\)?$/.test(value.trim()))};
       populateFilters(); renderAll();
       if(freshness){$("freshnessLabel").textContent=`${freshness.objects_found}/${freshness.objects_checked} sources online`}
     }catch(error){state.error=error.message;renderError();renderAll()}

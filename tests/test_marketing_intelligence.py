@@ -115,6 +115,19 @@ def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     assert "INTERVAL @months MONTH" in query
 
 
+def test_marketing_queries_exclude_jonathan_bissell_from_data_and_filters():
+    for query in (
+        build_marketing_funnel_query(),
+        build_marketing_geo_query(),
+        build_marketing_filter_options_query(),
+        build_marketing_projection_query(),
+    ):
+        lowered = query.lower()
+        assert "jonathan\\s+bissell" in lowered
+        assert "campaign_name" in lowered
+        assert "campaign_reporting_rollup_name" in lowered
+
+
 def test_last_30d_uses_five_weekly_cohort_starts_without_month_parameter():
     for query in (
         build_marketing_funnel_query(window="30d"),

@@ -253,7 +253,7 @@
       const [funnel,geo,projection,reconciliation,freshness]=await Promise.all([
         fetchJson(`/api/marketing-funnel?months=${state.months}`),
         fetchJson(`/api/marketing-geo?months=${state.months}`),
-        fetchJson(`/api/marketing-projection`),
+        fetchJson(`/api/marketing-projection`).catch(()=>[]),
         state.reconciliation||fetchJson(`/api/marketing-reconciliation`),
         fetchJson(`/api/freshness`).catch(()=>null)
       ]);

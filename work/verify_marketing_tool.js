@@ -37,6 +37,13 @@ const reconciliation = {
 
 global.fetch = url => {
   const path = String(url);
+  if (path.includes("marketing-projection")) {
+    return Promise.resolve({
+      ok:false,
+      status:403,
+      json:()=>Promise.resolve({detail:"Projection source is not available to the runtime service account."})
+    });
+  }
   let payload = [];
   if (path.includes("marketing-funnel")) payload = funnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;

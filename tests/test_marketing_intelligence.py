@@ -110,7 +110,8 @@ def test_operating_footprint_filter_is_explicit_and_requires_no_region_parameter
 def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     query = build_marketing_filter_options_query(months=7, region="Operating footprint")
     assert "ARRAY_AGG(DISTINCT campaign_name" in query
-    assert "final_reporting_jurisdiction_label" in query
+    assert "resolved_county" in query
+    assert "reporting_market_county" in query
     assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
     assert "INTERVAL @months MONTH" in query
 
@@ -143,21 +144,39 @@ def test_geo_query_returns_normalized_region_dimensions():
     query = build_marketing_geo_query(region="Pennsylvania")
     assert "operating_region_group AS operatingRegion" in query
     assert "normalized_ops_region AS normalizedOpsRegion" in query
-    assert "normalized_operating_state AS normalizedState" in query
-    assert "final_reporting_jurisdiction_label AS ahj" in query
+    assert "normalized_operating_state" in query
+    assert "AS normalizedState" in query
+    assert "resolved_county" in query
+    assert "AS ahj" in query
+    assert "'County / operating market' AS geographyType" in query
 
 
-def test_geo_shaper_exposes_exact_ahj_for_filter_catalog():
+def test_geo_query_recombines_split_jurisdiction_labels_at_county_grain():
+    query = build_marketing_geo_query(campaign="SolarReviews", ahj="Baltimore (MD)")
+    # The defective source can hold lead-only "CO - Baltimore, MD" and
+    # outcome-bearing "Baltimore County (MD)" rows for the same county.
+    # Neither source jurisdiction label may remain in the GROUP BY grain.
+    group_by = query.split("GROUP BY", 1)[1].split("HAVING", 1)[0]
+    assert "final_reporting_jurisdiction_label" not in group_by
+    assert "resolved_county" in query
+    assert "= @ahj" in query
+    assert "resolvedAhjCount" in query
+    assert "benchmarkLeadShare" in query
+
+
+def test_geo_shaper_exposes_canonical_county_and_underlying_ahj_context():
     row = {
         "campaignId": "701-test",
         "campaign": "Summer Search",
         "campaignRollup": "3rd Party Vendors LSR",
-        "ahj": "Fairfax County",
-        "geography": "Fairfax County",
-        "geographyType": "COUNTY",
-        "county": "Fairfax",
+        "ahj": "Fairfax County (VA)",
+        "geography": "Fairfax County (VA)",
+        "geographyType": "County / operating market",
+        "county": "Fairfax County (VA)",
         "state": "VA",
-        "market": "DMV",
+        "market": "Fairfax County (VA)",
+        "resolvedAhjCount": 2,
+        "resolvedAhjExamples": ["Fairfax County (VA)", "Town of Vienna - Fairfax County (VA)"],
         "leads": 20,
         "sets": 8,
         "runs": 6,
@@ -167,13 +186,17 @@ def test_geo_shaper_exposes_exact_ahj_for_filter_catalog():
         "activePipeline": 4,
         "expectedRemainingWins": 1,
         "benchmarkLeadToWinRate": 0.12,
+        "benchmarkLeadShare": 0.75,
         "benchmarkRows": 1,
         "cohortRows": 1,
         "spendCompleteLeadShare": 1,
         "loadedAt": datetime(2026, 7, 28, tzinfo=timezone.utc),
     }
     shaped = shape_marketing_geo_row(row)
-    assert shaped["ahj"] == "Fairfax County"
+    assert shaped["ahj"] == "Fairfax County (VA)"
+    assert shaped["resolvedAhjCount"] == 2
+    assert shaped["resolvedAhjExamples"][1].startswith("Town of Vienna")
+    assert shaped["benchmarkCoverage"] == 0.75
     assert shaped["costPerWin"] == 3000
 
 

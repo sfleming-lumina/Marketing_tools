@@ -208,6 +208,33 @@ OPERATING_REGION_FILTERS = {
 MARKETING_WINDOWS = {"30d"}
 
 
+def _marketing_portfolio_state_sql():
+    return (
+        "COALESCE("
+        "NULLIF(TRIM(normalized_operating_state), ''), "
+        "NULLIF(TRIM(resolved_state), ''), "
+        "NULLIF(TRIM(reporting_market_state), ''), "
+        "'Unresolved'"
+        ")"
+    )
+
+
+def _marketing_portfolio_geography_sql():
+    state_sql = _marketing_portfolio_state_sql()
+    return (
+        "COALESCE("
+        "NULLIF(TRIM(resolved_county), ''), "
+        "IF("
+        "NULLIF(TRIM(reporting_market_county), '') IS NOT NULL, "
+        f"CONCAT(TRIM(reporting_market_county), IF({state_sql} = 'Unresolved', '', CONCAT(' (', {state_sql}, ')'))), "
+        "NULL"
+        "), "
+        "NULLIF(TRIM(reporting_market_label), ''), "
+        "'Unresolved'"
+        ")"
+    )
+
+
 def _marketing_identity_exclusions(include_subrollup=True):
     fields = ["campaign_name", "campaign_reporting_rollup_name"]
     if include_subrollup:
@@ -227,6 +254,7 @@ def _marketing_filter_conditions(
     region=None,
 ):
     conditions = ["campaign_name IS NOT NULL", *_marketing_identity_exclusions()]
+    portfolio_geography_sql = _marketing_portfolio_geography_sql()
     if campaign:
         conditions.append("campaign_name = @campaign")
     if rollup:
@@ -234,9 +262,12 @@ def _marketing_filter_conditions(
     if state:
         conditions.append("resolved_state = @state")
     if county:
-        conditions.append("resolved_county = @county")
+        conditions.append(f"{portfolio_geography_sql} = @county")
     if ahj:
-        conditions.append("final_reporting_jurisdiction_label = @ahj")
+        # The dashboard's portfolio geography selector intentionally uses a
+        # stable county/operating-market grain. The source's jurisdiction label
+        # splits lead attribution and downstream outcomes into separate rows.
+        conditions.append(f"{portfolio_geography_sql} = @ahj")
     if region == "Operating footprint":
         conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
     elif region:
@@ -337,6 +368,8 @@ def build_marketing_geo_query(
     conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
+    portfolio_geography_sql = _marketing_portfolio_geography_sql()
+    portfolio_state_sql = _marketing_portfolio_state_sql()
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
@@ -349,13 +382,30 @@ def build_marketing_geo_query(
             campaign_reporting_rollup_name AS campaignRollup,
             operating_region_group AS operatingRegion,
             normalized_ops_region AS normalizedOpsRegion,
-            normalized_operating_state AS normalizedState,
-            final_reporting_jurisdiction_label AS ahj,
-            COALESCE(NULLIF(final_reporting_jurisdiction_label, 'Unknown'), resolved_county, reporting_market_label, 'Unresolved') AS geography,
-            COALESCE(NULLIF(final_reporting_jurisdiction_type, 'UNKNOWN'), 'Market / County') AS geographyType,
-            resolved_county AS county,
-            resolved_state AS state,
-            reporting_market_label AS market,
+            {portfolio_state_sql} AS normalizedState,
+            {portfolio_geography_sql} AS ahj,
+            {portfolio_geography_sql} AS geography,
+            'County / operating market' AS geographyType,
+            {portfolio_geography_sql} AS county,
+            {portfolio_state_sql} AS state,
+            {portfolio_geography_sql} AS market,
+            COUNT(DISTINCT IF(
+                NULLIF(final_reporting_jurisdiction_label, 'Unknown') IS NOT NULL
+                    AND NOT STARTS_WITH(final_reporting_jurisdiction_label, 'CO - '),
+                final_reporting_jurisdiction_label,
+                NULL
+            )) AS resolvedAhjCount,
+            ARRAY_AGG(DISTINCT IF(
+                NULLIF(final_reporting_jurisdiction_label, 'Unknown') IS NOT NULL
+                    AND NOT STARTS_WITH(final_reporting_jurisdiction_label, 'CO - '),
+                final_reporting_jurisdiction_label,
+                NULL
+            ) IGNORE NULLS ORDER BY IF(
+                NULLIF(final_reporting_jurisdiction_label, 'Unknown') IS NOT NULL
+                    AND NOT STARTS_WITH(final_reporting_jurisdiction_label, 'CO - '),
+                final_reporting_jurisdiction_label,
+                NULL
+            ) LIMIT 3) AS resolvedAhjExamples,
             SUM(lead_count) AS leads,
             SUM(set_count) AS sets,
             SUM(run_count) AS runs,
@@ -368,6 +418,10 @@ def build_marketing_geo_query(
                 SUM(IF(has_reliable_benchmark, benchmark_lead_to_win_rate * lead_count, 0)),
                 SUM(IF(has_reliable_benchmark, lead_count, 0))
             ) AS benchmarkLeadToWinRate,
+            SAFE_DIVIDE(
+                SUM(IF(has_reliable_benchmark, lead_count, 0)),
+                NULLIF(SUM(lead_count), 0)
+            ) AS benchmarkLeadShare,
             SAFE_DIVIDE(
                 SUM(IF(spend_is_complete, lead_count, 0)),
                 NULLIF(SUM(lead_count), 0)
@@ -390,6 +444,7 @@ def build_marketing_filter_options_query(months=7, window=None, region=None):
     conditions = _marketing_filter_conditions(region=region)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
+    portfolio_geography_sql = _marketing_portfolio_geography_sql()
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
@@ -400,9 +455,9 @@ def build_marketing_filter_options_query(months=7, window=None, region=None):
             ARRAY_AGG(DISTINCT campaign_name IGNORE NULLS ORDER BY campaign_name) AS campaigns,
             ARRAY_AGG(DISTINCT campaign_reporting_rollup_name IGNORE NULLS ORDER BY campaign_reporting_rollup_name) AS rollups,
             ARRAY_AGG(
-                DISTINCT NULLIF(final_reporting_jurisdiction_label, 'Unknown')
+                DISTINCT NULLIF({portfolio_geography_sql}, 'Unresolved')
                 IGNORE NULLS
-                ORDER BY NULLIF(final_reporting_jurisdiction_label, 'Unknown')
+                ORDER BY NULLIF({portfolio_geography_sql}, 'Unresolved')
             ) AS ahjs
         FROM `{FUNNEL_TABLE_REF}`, bounds
         WHERE cohort_period_grain = '{period_grain}'
@@ -567,6 +622,8 @@ def shape_marketing_geo_row(row):
         "county": row["county"],
         "state": row["state"],
         "market": row["market"],
+        "resolvedAhjCount": row.get("resolvedAhjCount", 0) or 0,
+        "resolvedAhjExamples": list(row.get("resolvedAhjExamples", []) or []),
         "leads": leads,
         "sets": sets,
         "runs": runs,
@@ -576,7 +633,11 @@ def shape_marketing_geo_row(row):
         "activePipeline": row["activePipeline"] or 0,
         "expectedRemainingWins": row["expectedRemainingWins"] or 0,
         "benchmarkLeadToWinRate": row["benchmarkLeadToWinRate"],
-        "benchmarkCoverage": (row["benchmarkRows"] or 0) / max(1, row["cohortRows"] or 0),
+        "benchmarkCoverage": (
+            row.get("benchmarkLeadShare")
+            if row.get("benchmarkLeadShare") is not None
+            else (row["benchmarkRows"] or 0) / max(1, row["cohortRows"] or 0)
+        ),
         "spendCompleteLeadShare": row["spendCompleteLeadShare"] or 0,
         "setRate": sets / leads if leads else None,
         "runRateFromSets": runs / sets if sets else None,

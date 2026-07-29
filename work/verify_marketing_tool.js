@@ -113,9 +113,14 @@ setImmediate(() => {
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
   assert(dashboardHtml.includes('id="guideDrawer"') && dashboardHtml.includes("How to use this workspace"), "Usage guide overlay is missing.");
   assert(dashboardHtml.includes('<option value="Maryland">Maryland</option>') && !dashboardHtml.includes('<option value="DMV">'), "Operating-region options do not follow the MD/PA operational contract.");
-  assert(dashboardHtml.includes('yLabel:"Cohort volume"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
+  assert(dashboardHtml.includes('yLabel:"Leads"') && dashboardHtml.includes('rightYLabel:"Residential wins"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
   assert(dashboardHtml.includes("chart-tooltip") && dashboardHtml.includes('addEventListener("mousemove"'), "Chart hover details are missing.");
   assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
+  assert(dashboardHtml.includes('<script src="/assets/echarts.min.js"></script>') && dashboardHtml.includes("renderEchartTrend"), "The local ECharts runtime or trend renderer is missing.");
+  assert(dashboardHtml.includes('id="opportunityQuadrant"') && dashboardHtml.includes('id="funnelWaterfall"') && dashboardHtml.includes('id="campaignMultiples"'), "Decision quadrant, funnel waterfall, or campaign small multiples are missing.");
+  assert(dashboardHtml.includes("markLine") && dashboardHtml.includes("markArea") && dashboardHtml.includes("markPoint") && dashboardHtml.includes("aria:{enabled:true"), "Chart benchmarks, focus bands, annotations, or accessibility configuration are missing.");
+  assert(dashboardHtml.includes("selectedOpportunityKey") && dashboardHtml.includes("hoverOpportunityKey") && dashboardHtml.includes("setOpportunityHover"), "Cross-highlighting state is missing.");
+  assert(dashboardHtml.includes("chart-fallback") && dashboardHtml.includes("paintTrend"), "Graceful canvas chart fallback is missing.");
   assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");
   assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
   const opportunities = app.opportunityRows();

@@ -7,39 +7,42 @@
   <title>Lumina Marketing Intelligence</title>
   <style>
     :root {
-      --ink:#122019; --muted:#65736b; --line:#dfe7e1; --surface:#fff;
-      --canvas:#f3f6f3; --forest:#10231a; --green:#39b54a; --green-dark:#167a2d;
-      --green-soft:#e8f7ea; --amber:#f1a900; --amber-soft:#fff5d8; --red:#c84232;
-      --blue:#2777c7; --shadow:0 16px 45px rgba(24,50,34,.09); --radius:20px;
+      --ink:#142019; --ink-soft:#33443a; --muted:#6a766f; --line:#dce3dc; --line-strong:#cbd5cc;
+      --surface:#fffefb; --surface-2:#f8f8f3; --surface-3:#eff2eb; --canvas:#f4f3ed;
+      --forest:#10231a; --forest-2:#173427; --green:#39b54a; --green-dark:#167a2d;
+      --green-soft:#e5f5e6; --success:#21864a; --amber:#e7a21a; --amber-soft:#fff1cf;
+      --coral:#d75b47; --red:#bc4337; --blue:#3478b8; --blue-soft:#e6f0f8;
+      --shadow-sm:0 1px 2px rgba(16,35,26,.05),0 8px 22px rgba(16,35,26,.045);
+      --shadow:0 18px 48px rgba(16,35,26,.10); --radius:18px; --radius-sm:12px;
     }
     *{box-sizing:border-box} html{scroll-behavior:smooth}
-    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
     button,select,input,textarea{font:inherit} button{cursor:pointer}
     button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid rgba(57,181,74,.28);outline-offset:2px}
     .app{min-height:100vh;display:grid;grid-template-columns:244px minmax(0,1fr)}
-    .sidebar{position:sticky;top:0;height:100vh;padding:24px 18px;background:var(--forest);color:#dbe6df;display:flex;flex-direction:column;z-index:20}
+    .sidebar{position:sticky;top:0;height:100vh;padding:24px 18px;background:linear-gradient(180deg,var(--forest-2),var(--forest) 55%);color:#dbe6df;display:flex;flex-direction:column;z-index:20}
     .brand{height:36px;max-width:170px;object-fit:contain;object-position:left center;margin:0 8px 34px}
     .nav-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#81958a;margin:0 12px 10px}
     .nav{display:grid;gap:6px}.nav button{border:0;background:transparent;color:#b9c8c0;padding:12px 14px;border-radius:12px;text-align:left;display:flex;align-items:center;gap:11px;font-weight:650}
-    .nav button:hover{background:rgba(255,255,255,.06);color:#fff}.nav button.active{background:var(--green);color:#0b2412}
+    .nav button:hover{background:rgba(255,255,255,.07);color:#fff}.nav button.active{background:#f3f7f2;color:var(--forest);box-shadow:inset 3px 0 0 var(--green)}
     .nav-icon{width:22px;height:22px;display:grid;place-items:center;border:1px solid currentColor;border-radius:7px;font-size:11px}
     .side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:18px 10px 0}
     .live{display:flex;align-items:center;gap:8px;font-size:12px;color:#9db0a5}.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(57,181,74,.12)}
     .side-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:14px}.side-actions button{min-width:0;padding:9px 5px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:10px;font-size:11px}
-    main{min-width:0}.topbar{position:sticky;top:0;z-index:15;background:rgba(243,246,243,.9);backdrop-filter:blur(14px);border-bottom:1px solid rgba(219,228,221,.8);padding:14px 28px}
+    main{min-width:0}.topbar{position:sticky;top:0;z-index:15;background:rgba(244,243,237,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(203,213,204,.75);padding:14px 28px}
     .top-row{display:flex;align-items:center;gap:12px}.mobile-menu{display:none}.crumb{font-size:12px;color:var(--muted);white-space:nowrap}.crumb strong{color:var(--ink)}
     .filters{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}.select-wrap{position:relative}
-    select,.filter-input{appearance:none;border:1px solid var(--line);background:#fff;padding:9px 34px 9px 11px;border-radius:10px;color:var(--ink);max-width:210px}
+    select,.filter-input{appearance:none;border:1px solid var(--line-strong);background:var(--surface);padding:9px 34px 9px 11px;border-radius:10px;color:var(--ink);max-width:210px;box-shadow:0 1px 1px rgba(16,35,26,.025)}
     .select-wrap:after{content:"⌄";position:absolute;right:11px;top:7px;color:var(--muted);pointer-events:none}
     .select-wrap.ahj-filter:after{content:"⌕"}
     .icon-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:var(--ink)}
     .content{padding:32px 34px 64px;max-width:1680px;margin:auto}
     .view{display:none}.view.active{display:block}
     .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}.eyebrow{font-weight:750;color:var(--green-dark);font-size:11px;text-transform:uppercase;letter-spacing:.14em}
-    h1{font-size:clamp(28px,3vw,46px);line-height:1.05;letter-spacing:-.045em;margin:7px 0 8px;max-width:850px}h2{font-size:20px;letter-spacing:-.02em;margin:0}h3{margin:0;font-size:15px}
+    h1{font-size:clamp(30px,3vw,48px);line-height:1.02;letter-spacing:-.052em;margin:8px 0 10px;max-width:900px;font-weight:770}h2{font-size:20px;line-height:1.2;letter-spacing:-.026em;margin:0}h3{margin:0;font-size:15px}
     .hero p,.section-head p{color:var(--muted);margin:0;max-width:760px}.asof{color:var(--muted);font-size:12px;white-space:nowrap}
     .grid{display:grid;gap:18px;align-items:stretch}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid>.card{height:100%}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 0 rgba(20,44,29,.02);padding:22px;min-width:0}
+    .grid>.card{height:100%}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:22px;min-width:0}
     .card.elevated{box-shadow:var(--shadow)}.metric-label{color:var(--muted);font-size:12px}.metric-value{font-size:clamp(24px,2.5vw,36px);font-weight:780;letter-spacing:-.04em;margin:7px 0 5px}
     .metric-delta{font-size:12px}.positive{color:var(--green-dark)}.negative{color:var(--red)}.neutral{color:var(--muted)}
     .section{margin-top:26px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:16px}
@@ -85,6 +88,33 @@
     @media(max-width:760px){
       .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}.filters .rollup-filter{display:none}.filters .select-wrap,.filters select,.filters .filter-input{width:100%;max-width:none}.filters .icon-btn{position:absolute;right:14px;top:11px}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:17px;border-radius:17px}.chart-card{min-height:370px}.chart-card canvas{height:270px}.health-row{grid-template-columns:92px 58px 1fr}.health-delta{grid-column:2/-1;text-align:left}.portfolio-table{overflow:visible;border:0}.portfolio-table table,.portfolio-table tbody{display:block;min-width:0}.portfolio-table thead{display:none}.portfolio-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:#fff}.portfolio-table td,.portfolio-table th{display:block;width:auto!important;padding:0;border:0;text-align:left!important}.portfolio-table td:first-child{grid-column:1/-1;padding-bottom:4px}.portfolio-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.portfolio-table td:first-child:before{display:none}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}.decision-workspace.show{grid-template-columns:1fr}.workflow-steps{overflow:auto;padding-bottom:2px}.decision-actions{flex-wrap:wrap}.evidence-strip,.scenario-output{align-items:flex-start;flex-direction:column}.brief-grid{grid-template-columns:1fr}.opportunity-row{grid-template-columns:1fr 1fr}.opportunity-main{grid-column:1/-1}.opportunity-row .insight-action{justify-self:end}.target-grid{grid-template-columns:1fr 1fr}.target-grid>div:first-child{grid-column:1/-1}
     }
+    /* Lumina Intelligence analytical layer */
+    .chart-card{position:relative;height:auto;min-height:398px;overflow:visible}
+    .chart-host{width:100%;height:310px;display:block;margin-top:8px}
+    .chart-host>canvas.chart-fallback{width:100%;height:300px;display:block;cursor:crosshair}
+    .chart-card.compact{min-height:350px}.chart-card.compact .chart-host{height:265px}.chart-card.tall .chart-host{height:360px}
+    .decision-canvas{background:linear-gradient(145deg,#fffefb,#f8faf5);border-color:#d5dfd6}
+    .decision-canvas-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px}
+    .chart-note{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:11px;background:var(--surface-2);color:var(--muted);font-size:11px}
+    .chart-note strong{color:var(--ink)}
+    .small-multiples{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .mini-panel{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:13px;text-align:left;min-height:126px;transition:.16s}
+    .mini-panel:hover,.mini-panel.is-hovered{border-color:#9dcda5;transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+    .mini-panel.is-selected{border-color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+    .mini-panel .mini-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.mini-panel h3{font-size:12px;line-height:1.25}
+    .mini-panel p{margin:3px 0 10px;color:var(--muted);font-size:10px}.mini-value{font-size:21px;font-weight:780;letter-spacing:-.04em}
+    .mini-benchmark{margin-top:8px;height:5px;background:var(--surface-3);border-radius:99px;overflow:hidden}.mini-benchmark span{display:block;height:100%;border-radius:inherit}
+    .mini-foot{display:flex;justify-content:space-between;gap:8px;margin-top:7px;color:var(--muted);font-size:9px}
+    .opportunity-row{background:var(--surface);transition:border-color .16s,box-shadow .16s,transform .16s,background .16s}
+    .opportunity-row:hover,.opportunity-row.is-hovered{border-color:#9dcda5;box-shadow:0 8px 22px rgba(24,50,34,.08);transform:translateY(-1px)}
+    .opportunity-row.is-selected{border-color:var(--green);background:linear-gradient(90deg,var(--green-soft),var(--surface) 38%);box-shadow:inset 3px 0 0 var(--green)}
+    .matrix-cell.is-hovered{box-shadow:inset 0 0 0 2px currentColor}.matrix-cell.is-selected{box-shadow:inset 0 0 0 3px var(--forest),0 0 0 2px #fff}
+    .primary{box-shadow:0 4px 12px rgba(57,181,74,.18)}.primary:hover{background:#44c154}.secondary{border-color:var(--line-strong);background:var(--surface)}
+    .filters #monthsFilter{max-width:122px}.filters #campaignFilter{max-width:160px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
+    @media(max-width:1360px) and (min-width:761px){.crumb{display:none}.filters{margin-left:0;width:100%;flex-wrap:nowrap}}
+    @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:760px){.chart-host{height:280px}.small-multiples{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){.small-multiples{grid-template-columns:1fr}.chart-host{height:250px}}
   </style>
 </head>
 <body>
@@ -142,7 +172,14 @@
         <div class="grid grid-4 section" id="commandMetrics"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
         <div class="grid grid-2 section">
           <div class="card elevated"><div class="section-head"><div><div class="eyebrow">Portfolio opportunity queue</div><h2>Campaign × AHJ decisions worth attention</h2><p>Ranked by estimated win impact, evidence confidence, actionability, and recency.</p></div><div class="opportunity-toolbar"><select id="opportunityTypeFilter" aria-label="Decision type"><option value="All">All decisions</option><option value="Scale">Scale</option><option value="Recover">Recover</option><option value="Protect">Protect</option><option value="Test">Test</option><option value="Investigate">Investigate</option><option value="Fix data">Fix data</option></select></div></div><div class="opportunity-list" id="insightList"><div class="loading">Analyzing campaign and AHJ opportunities...</div></div></div>
-          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Cohort trend</div><h2>Leads and wins by month</h2></div><div class="legend"><span><i style="background:#39b54a"></i>Leads</span><span><i style="background:#10231a"></i>Wins</span></div></div><canvas id="commandTrend" role="img" aria-label="Monthly cohort leads and wins. Hover points for details."></canvas><div class="chart-tooltip" aria-hidden="true"></div></div>
+          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Cohort momentum</div><h2>Is demand translating into residential wins?</h2><p>Observed monthly cohorts with portfolio reference and the latest decision window.</p></div></div><div class="chart-host" id="commandTrend" role="img" aria-label="Monthly cohort leads and wins with reference lines and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
+        </div>
+        <div class="card decision-canvas section">
+          <div class="section-head"><div><div class="eyebrow">Decision canvas</div><h2>Where should the next marketing dollar—or conversion intervention—go?</h2><p>Compare acquisition cost with conversion, then use the campaign panels to ground the signal in volume, benchmark, and confidence.</p></div><div class="chart-note"><span>●</span><div><strong>One selection across every view.</strong><br>Hover to compare; click to investigate the exact campaign × AHJ pair.</div></div></div>
+          <div class="decision-canvas-grid">
+            <div class="chart-card compact"><div class="chart-host" id="opportunityQuadrant" role="img" aria-label="Campaign and AHJ customer acquisition cost versus lead-to-win conversion quadrant."></div></div>
+            <div><div class="small-multiples" id="campaignMultiples"></div></div>
+          </div>
         </div>
         <div class="card section"><div class="section-head"><div><div class="eyebrow">Portfolio scan</div><h2>Campaign × AHJ performance matrix</h2><p>Switch metrics, identify concentrated opportunities, and click any cell to open a grounded investigation.</p></div><div class="opportunity-toolbar"><select id="matrixMetric" aria-label="Matrix metric"><option value="leadToWinRate">Lead → win</option><option value="setRate">Lead → set</option><option value="runRateFromSets">Set → run</option><option value="winRateFromRuns">Run → win</option><option value="costPerWin">CAC</option><option value="estimatedWinImpact">Potential wins</option></select></div></div><div class="matrix-legend"><span><i style="background:#dff3e2"></i>Opportunity / strong</span><span><i style="background:#fff1c8"></i>Watch / developing</span><span><i style="background:#fde3de"></i>Focus</span><span><i style="background:#edf2ee"></i>Low confidence</span></div><div class="matrix-wrap" style="margin-top:12px"><table class="matrix" id="opportunityMatrix"></table></div></div>
       </section>
@@ -155,9 +192,10 @@
         <div class="grid grid-4 section" id="funnelMetrics"></div>
         <div class="card section"><div class="section-head"><div><div class="eyebrow">Focus scan</div><h2>Funnel health vs prior cohorts</h2><p>Color identifies where the latest cohort is improving, holding, or needs intervention.</p></div><div class="legend"><span><i style="background:#39b54a"></i>Healthy</span><span><i style="background:#f1a900"></i>Watch</span><span><i style="background:#c84232"></i>Focus</span></div></div><div class="health-grid"><div class="health-list" id="funnelHealth"></div><div id="funnelFocus"></div></div></div>
         <div class="grid grid-2 section">
-          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Flow over time</div><h2>Stage conversion trends</h2></div><div class="legend"><span><i style="background:#2777c7"></i>Lead → set</span><span><i style="background:#f1a900"></i>Set → run</span><span><i style="background:#39b54a"></i>Run → win</span><span><i style="background:#10231a"></i>Lead → win</span></div></div><canvas id="funnelTrend" role="img" aria-label="Monthly funnel conversion rates by stage. Hover points for details."></canvas><div class="chart-tooltip" aria-hidden="true"></div></div>
-          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Acquisition economics</div><h2>Customer acquisition cost trend</h2><p>Effective spend divided by cohort wins; interpret alongside spend coverage.</p></div><span class="badge" id="cacBadge">Evaluating</span></div><canvas id="cacTrend" role="img" aria-label="Monthly customer acquisition cost per cohort win. Hover points for details."></canvas><div class="chart-tooltip" aria-hidden="true"></div></div>
+          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Conversion movement</div><h2>Which funnel stage is changing the outcome?</h2><p>Observed conversion, reference level, and the latest cohort focus range.</p></div></div><div class="chart-host" id="funnelTrend" role="img" aria-label="Monthly funnel conversion rates by stage with reference levels and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
+          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Acquisition economics</div><h2>Is customer acquisition cost moving in the right direction?</h2><p>Effective spend divided by cohort wins; interpret alongside spend coverage.</p></div><span class="badge" id="cacBadge">Evaluating</span></div><div class="chart-host" id="cacTrend" role="img" aria-label="Monthly customer acquisition cost per cohort win with reference line and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
         </div>
+        <div class="card chart-card tall section"><div class="section-head"><div><div class="eyebrow">Funnel gap decomposition</div><h2>What separates observed wins from benchmark potential?</h2><p>Volume and stage conversion contributions reveal the intervention with the greatest recoverable impact.</p></div><span class="badge" id="waterfallBadge">Portfolio</span></div><div class="chart-host" id="funnelWaterfall" role="img" aria-label="Waterfall showing expected wins and funnel-stage gaps through observed wins."></div></div>
         <div class="card portfolio-card section"><div class="section-head"><div><div class="eyebrow">Campaign portfolio</div><h2>Where performance compounds—or falls out</h2><p>Stage volume, conversion, aged fallout, CAC, and spend coverage are shown on one cohort-consistent row.</p></div></div><div class="table-wrap portfolio-table"><table><thead><tr><th>Campaign</th><th>Leads</th><th>Sets</th><th>Runs</th><th>Wins</th><th>L → S</th><th>S → R</th><th>R → W</th><th>Aged fallout</th><th>CAC</th><th>Coverage</th></tr></thead><tbody id="campaignTable"></tbody></table></div></div>
       </section>
 
@@ -205,8 +243,8 @@
     <div class="guide-section"><h3>Discover → Investigate → Test → Implement</h3><ul><li><strong>Discover:</strong> choose an insight from the Command center priority queue.</li><li><strong>Investigate:</strong> the active question and filters follow you into Funnel lab or Geo intelligence; add the evidence you want carried forward.</li><li><strong>Test:</strong> Scenario studio opens with a relevant starting preset while preserving the same campaign, AHJ, region, and period.</li><li><strong>Implement:</strong> choose <strong>Track automatically</strong>. The tool captures the authenticated owner, decision, scope, baseline, assumptions, evidence, expected impact, and review window without forms or uploads.</li></ul></div>
     <div class="guide-section"><h3>Decision tracker</h3><p>Open <strong>Decisions</strong> from the sidebar to see every tracked choice. Current lakehouse cohorts are compared with each frozen baseline automatically. Spend changes are labeled as observed implementation signals; conversion improvements remain outcome signals unless an external execution system confirms the action.</p></div>
     <div class="guide-section"><h3>Filters and operating regions</h3><p>Campaign and AHJ selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
-    <div class="guide-section"><h3>Command center</h3><p>The opportunity queue ranks campaign × AHJ decisions by estimated win impact, confidence, actionability, and the active time window. Filter by Scale, Recover, Protect, Test, Investigate, or Fix data. The matrix shows the same portfolio by conversion, CAC, or potential wins; click any cell to investigate that exact pair.</p></div>
-    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
+    <div class="guide-section"><h3>Command center</h3><p>The opportunity queue ranks campaign × AHJ decisions by estimated win impact, confidence, actionability, and the active time window. The decision canvas plots CAC against lead-to-win conversion; bubble size represents lead volume and color represents the recommended decision type. Campaign panels add benchmark and confidence context. Hover any opportunity to highlight it everywhere, or click it to investigate the exact pair.</p></div>
+    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall decomposes benchmark win potential through each stage gap to observed wins. Positive bars are strengths to protect; negative bars are recoverable gaps.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
     <div class="guide-section"><h3>Source semantics</h3><p>Salesforce reports such as SolarReviews Leads by County use event/status-update dates and formulas like Converted ÷ member rows. This tool uses fixed lead-created cohorts, so use Data quality to understand definition differences before reconciling totals.</p></div>
@@ -235,6 +273,7 @@
   <div class="drawer-foot"><button class="secondary" id="refreshDecisions" style="width:100%">Refresh outcome monitoring</button></div>
 </aside>
 
+<script src="/assets/echarts.min.js"></script>
 <script>
 (() => {
   "use strict";
@@ -245,7 +284,7 @@
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     filterCatalog:{campaigns:[],rollups:[],ahjs:[]},
     loading:false, error:null, workflowStage:"discover", activeDecision:null, decisions:[], decisionProgress:{},
-    opportunityType:"All",matrixMetric:"leadToWinRate",
+    opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:"",
     scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
   };
   const viewTitles = {command:"Command center",funnel:"Funnel lab",geo:"Geo intelligence",scenario:"Scenario studio",quality:"Data quality"};
@@ -458,7 +497,7 @@
   function renderOpportunityQueue(){
     const rows=filteredOpportunityRows().slice(0,8);
     $("insightList").innerHTML=rows.length?rows.map(row=>`
-      <div class="opportunity-row">
+      <div class="opportunity-row ${row.key===state.selectedOpportunityKey?"is-selected":row.key===state.hoverOpportunityKey?"is-hovered":""}" data-opportunity-key="${esc(row.key)}">
         <div class="opportunity-main"><div class="opportunity-title">${badge(row.decisionType,opportunityTone(row.decisionType))}<h3>${esc(row.campaign)} × ${esc(row.ahj)}</h3></div><p>${esc(row.action)}</p><span class="confidence ${row.confidence.toLowerCase()}">${esc(row.confidence)} confidence · ${fmtNum(row.leads)} leads · ${esc(row.sampleSizeBucket)}</span></div>
         <div class="opportunity-stat"><small>Improvement point</small><strong>${esc(row.metricLabel)}</strong><span class="sub">${esc(opportunityMetricValue(row))} → ${esc(row.metricKey==="costPerWin"?fmtMoney(row.target):fmtPct(row.target))}</span></div>
         <div class="opportunity-stat"><small>Estimated impact</small><strong>${row.estimatedWinImpact?`+${fmtNum(row.estimatedWinImpact)} wins`:"Measurement first"}</strong><span class="sub">${row.estimatedRevenueImpact?fmtMoney(row.estimatedRevenueImpact):"Impact pending evidence"}</span></div>
@@ -487,10 +526,88 @@
     const campaigns=[...campaignTotals].sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]),ahjs=[...ahjTotals].sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
     if(!campaigns.length||!ahjs.length){$("opportunityMatrix").innerHTML='<tbody><tr><td class="empty">No campaign/AHJ matrix is available for this selection.</td></tr></tbody>';return}
     const lookup=new Map(all.map(row=>[row.key,row])),metric=state.matrixMetric,def=matrixMetricDefs[metric];
-    $("opportunityMatrix").innerHTML=`<thead><tr><th>Campaign</th>${ahjs.map(ahj=>`<th>${esc(ahj)}</th>`).join("")}</tr></thead><tbody>${campaigns.map(campaign=>`<tr><td><strong>${esc(campaign)}</strong><span class="sub">${fmtNum(campaignTotals.get(campaign))} leads</span></td>${ahjs.map(ahj=>{const row=lookup.get(`${campaign}|||${ahj}`);if(!row)return '<td><button class="matrix-cell neutral" disabled>—</button></td>';const value=metric==="estimatedWinImpact"?row.estimatedWinImpact:row[metric];return `<td><button class="matrix-cell ${matrixTone(row,metric)}" data-opportunity-key="${esc(row.key)}">${esc(value==null?"—":def.format(value))}<small>${esc(row.decisionType)} · ${row.confidence[0]}</small></button></td>`}).join("")}</tr>`).join("")}</tbody>`;
+    $("opportunityMatrix").innerHTML=`<thead><tr><th>Campaign</th>${ahjs.map(ahj=>`<th>${esc(ahj)}</th>`).join("")}</tr></thead><tbody>${campaigns.map(campaign=>`<tr><td><strong>${esc(campaign)}</strong><span class="sub">${fmtNum(campaignTotals.get(campaign))} leads</span></td>${ahjs.map(ahj=>{const row=lookup.get(`${campaign}|||${ahj}`);if(!row)return '<td><button class="matrix-cell neutral" disabled>—</button></td>';const value=metric==="estimatedWinImpact"?row.estimatedWinImpact:row[metric],highlight=row.key===state.selectedOpportunityKey?" is-selected":row.key===state.hoverOpportunityKey?" is-hovered":"";return `<td><button class="matrix-cell ${matrixTone(row,metric)}${highlight}" data-opportunity-key="${esc(row.key)}">${esc(value==null?"—":def.format(value))}<small>${esc(row.decisionType)} · ${row.confidence[0]}</small></button></td>`}).join("")}</tr>`).join("")}</tbody>`;
   }
+  const echartInstances=new WeakMap();
+  const decisionColors={Scale:"#21864a",Recover:"#d75b47",Protect:"#bc4337",Test:"#e7a21a",Investigate:"#3478b8","Fix data":"#7d8a82"};
+  function chartInstance(element){
+    if(!element||!window.echarts)return null;
+    let chart=echartInstances.get(element);
+    if(!chart){chart=window.echarts.init(element,null,{renderer:"canvas"});echartInstances.set(element,chart)}
+    return chart;
+  }
+  function baseChartOption(){
+    return {
+      animationDuration:420,animationEasing:"cubicOut",textStyle:{fontFamily:"Inter, system-ui, sans-serif",color:"#33443a"},
+      aria:{enabled:true,decal:{show:false}},
+      tooltip:{trigger:"item",backgroundColor:"#10231a",borderWidth:0,padding:[10,12],textStyle:{color:"#fff",fontSize:11},extraCssText:"border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.18)"},
+      grid:{left:62,right:24,top:28,bottom:50,containLabel:false}
+    };
+  }
+  function setOpportunityHover(key=""){
+    state.hoverOpportunityKey=key;
+    document.querySelectorAll?.("[data-opportunity-key]").forEach(element=>{
+      const selected=element.dataset.opportunityKey===state.selectedOpportunityKey,hovered=!selected&&element.dataset.opportunityKey===key;
+      element.classList.toggle("is-selected",selected);element.classList.toggle("is-hovered",hovered);
+    });
+    const quadrant=chartInstance($("opportunityQuadrant")),rows=opportunityRows().filter(row=>Number.isFinite(row.costPerWin)&&row.costPerWin>0);
+    if(quadrant){
+      quadrant.dispatchAction({type:"downplay",seriesIndex:0});
+      const active=key||state.selectedOpportunityKey,index=rows.findIndex(row=>row.key===active);
+      if(index>=0)quadrant.dispatchAction({type:"highlight",seriesIndex:0,dataIndex:index});
+    }
+  }
+  function renderCampaignMultiples(rows){
+    const target=$("campaignMultiples");if(!target)return;
+    const selected=state.selectedOpportunityKey,hovered=state.hoverOpportunityKey;
+    target.innerHTML=rows.slice(0,6).map(row=>{
+      const benchmark=row.benchmarks.leadToWinRate||0,ratio=benchmark?row.leadToWinRate/benchmark:0,tone=matrixTone(row,"leadToWinRate"),delta=row.leadToWinRate-benchmark,direction=delta>=.01?"↑":delta<=-.01?"↓":"→";
+      return `<button class="mini-panel ${row.key===selected?"is-selected":row.key===hovered?"is-hovered":""}" data-opportunity-key="${esc(row.key)}"><div class="mini-head"><h3>${esc(row.campaign)}</h3>${badge(row.decisionType,opportunityTone(row.decisionType))}</div><p>${esc(row.ahj)}</p><div class="mini-value">${fmtPct(row.leadToWinRate)} ${direction}</div><div class="sub">Lead → win · ${fmtNum(row.leads)} leads</div><div class="mini-benchmark"><span style="width:${Math.max(3,Math.min(100,ratio*65))}%;background:${tone==="good"?"#21864a":tone==="bad"?"#d75b47":"#e7a21a"}"></span></div><div class="mini-foot"><span>${direction} ${delta>=0?"+":""}${fmtPct(delta)} vs benchmark</span><span>${esc(row.confidence)} confidence</span></div></button>`;
+    }).join("")||'<div class="empty">No campaign panels are available for this selection.</div>';
+  }
+  function renderOpportunityQuadrant(rows){
+    const element=$("opportunityQuadrant"),chart=chartInstance(element);
+    const plotted=rows.filter(row=>Number.isFinite(row.costPerWin)&&row.costPerWin>0),benchmarks=opportunityBenchmarks(filteredGeoRows());
+    if(!chart){if(element)element.innerHTML='<div class="empty">Interactive CAC × conversion view loads when chart support is available.</div>';return}
+    const selected=state.selectedOpportunityKey;
+    chart.resize();chart.off("mouseover");chart.off("mouseout");chart.off("click");
+    chart.setOption({...baseChartOption(),graphic:plotted.length<rows.length?{type:"text",right:8,bottom:4,style:{text:`${rows.length-plotted.length} cohort${rows.length-plotted.length===1?"":"s"} shown lead-first; CAC unavailable`,fill:"#6a766f",font:"10px Inter, system-ui"}}:undefined,
+      tooltip:{...baseChartOption().tooltip,formatter:param=>{const d=param.data.value;return `<strong>${esc(d[4])}</strong><br>${esc(d[5])}<br>CAC <b>${fmtMoney(d[0])}</b><br>Lead → win <b>${fmtPct(d[1])}</b><br>${fmtNum(d[2])} leads · ${esc(d[6])} confidence`;}},
+      xAxis:{type:"value",name:"Customer acquisition cost",nameLocation:"middle",nameGap:34,axisLabel:{formatter:value=>fmtMoney(value)},splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
+      yAxis:{type:"value",name:"Lead → win conversion",nameLocation:"middle",nameGap:46,axisLabel:{formatter:value=>fmtPct(value)},splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
+      series:[{name:"Campaign × AHJ",type:"scatter",data:plotted.map(row=>({value:[row.costPerWin,row.leadToWinRate,row.leads,row.key,row.campaign,row.ahj,row.confidence],itemStyle:{color:decisionColors[row.decisionType]||"#3478b8",opacity:row.confidence==="High"?.92:row.confidence==="Medium"?.7:.45,borderColor:row.key===selected?"#10231a":"#fff",borderWidth:row.key===selected?3:1.5}})),symbolSize:value=>Math.max(12,Math.min(38,8+Math.sqrt(value[2])*2.4)),
+        emphasis:{scale:1.25,itemStyle:{borderColor:"#10231a",borderWidth:3}},
+        markLine:{silent:true,symbol:"none",label:{color:"#6a766f",fontSize:9,position:"insideEndTop"},lineStyle:{type:"dashed",color:"#9aa79e"},data:[{xAxis:benchmarks.costPerWin,label:{formatter:"Portfolio CAC"}},{yAxis:benchmarks.leadToWinRate,label:{formatter:"Portfolio conversion"}}]}
+      }]
+    },true);
+    chart.on("mouseover",params=>setOpportunityHover(params.data?.value?.[3]||""));chart.on("mouseout",()=>setOpportunityHover(""));
+    chart.on("click",params=>{const key=params.data?.value?.[3];if(key)beginOpportunity(key)});
+  }
+  function renderOpportunityVisuals(){
+    const rows=opportunityRows();
+    renderOpportunityQuadrant(rows);renderCampaignMultiples(rows);
+  }
+  function renderFunnelWaterfall(){
+    const element=$("funnelWaterfall"),chart=chartInstance(element),selected=opportunityRows().find(row=>row.key===state.selectedOpportunityKey);
+    const t=aggregate(filteredFunnelRows()),b=selected?.benchmarks||opportunityBenchmarks(filteredGeoRows());
+    const leads=selected?.leads??t.leads,sets=selected?.row?.sets??t.sets,runs=selected?.row?.runs??t.runs,wins=selected?.wins??t.wins;
+    const expected=leads*(b.setRate||0)*(b.runRateFromSets||0)*(b.winRateFromRuns||0);
+    const afterSet=sets*(b.runRateFromSets||0)*(b.winRateFromRuns||0),afterRun=runs*(b.winRateFromRuns||0);
+    const steps=[expected,afterSet-expected,afterRun-afterSet,wins-afterRun,wins],labels=["Benchmark potential","Lead → set gap","Set → run gap","Run → win gap","Observed wins"];
+    $("waterfallBadge").textContent=selected?`${selected.campaign} × ${selected.ahj}`:"Selected portfolio";
+    if(!chart){if(element)element.innerHTML=`<div class="empty">Observed ${fmtNum(wins)} wins versus ${fmtNum(expected)} benchmark potential.</div>`;return}
+    chart.resize();const bases=[],values=[],colors=[];let running=0;
+    steps.forEach((value,index)=>{if(index===0||index===steps.length-1){bases.push(0);values.push(Math.max(0,value));running=value;colors.push(index===0?"#3478b8":"#21864a")}else{const next=running+value;bases.push(Math.max(0,Math.min(running,next)));values.push(Math.abs(value));running=next;colors.push(value>=0?"#21864a":"#d75b47")}});
+    chart.setOption({...baseChartOption(),tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"},formatter:params=>{const item=params.find(p=>p.seriesName==="Contribution");const index=item?.dataIndex??0;return `<strong>${labels[index]}</strong><br>${index===0||index===labels.length-1?fmtNum(steps[index]):`${steps[index]>=0?"+":""}${fmtNum(steps[index])} wins`}`;}},
+      grid:{left:62,right:24,top:24,bottom:62},xAxis:{type:"category",data:labels,axisLabel:{interval:0,fontSize:10,color:"#5f6d64"},axisTick:{show:false},axisLine:{lineStyle:{color:"#cbd5cc"}}},
+      yAxis:{type:"value",name:"Cohort wins",nameLocation:"middle",nameGap:44,splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
+      series:[{name:"Base",type:"bar",stack:"total",silent:true,itemStyle:{color:"transparent"},emphasis:{disabled:true},data:bases},{name:"Contribution",type:"bar",stack:"total",barMaxWidth:62,data:values.map((value,index)=>({value,itemStyle:{color:colors[index],borderRadius:[6,6,0,0]}})),label:{show:true,position:"top",color:"#33443a",fontWeight:700,formatter:params=>indexSafeLabel(params.dataIndex,steps)}}]
+    },true);
+  }
+  function indexSafeLabel(index,values){const value=values[index]||0,rounded=Math.round(value);if(index===0||index===values.length-1)return fmtNum(value);return rounded===0?"0":`${value>=0?"+":""}${fmtNum(value)}`}
   function beginOpportunity(key){
     const opportunity=opportunityRows().find(row=>row.key===key);if(!opportunity)return;
+    state.selectedOpportunityKey=key;state.hoverOpportunityKey="";
     const preset=opportunity.decisionType==="Scale"||opportunity.decisionType==="Test"?"growth":opportunity.decisionType==="Protect"?"efficiency":opportunity.decisionType==="Recover"?"conversion":"baseline";
     const targetCopy=opportunity.metricKey==="costPerWin"?`${fmtMoney(opportunity.current)} to ${fmtMoney(opportunity.target)}`:`${fmtPct(opportunity.current)} to ${fmtPct(opportunity.target)}`;
     state.activeDecision={
@@ -599,11 +716,11 @@
       metric("Active pipeline",fmtNum(t.activePipeline),`${fmtMoney(t.activePipelineRevenue)} potential revenue`,"neutral"),
       metric(coverage.leadFirst?"Expected remaining wins":"Revenue / spend",coverage.leadFirst?fmtNum(t.expectedRemainingWins):`${(t.roi||0).toFixed(1)}×`,coverage.leadFirst?`${fmtMoney(t.expectedRemainingRevenue)} expected`:`${fmtMoney(t.cpw)} cost per win`,coverage.leadFirst?"neutral":"positive")
     ].join("");
-    renderOpportunityQueue();renderOpportunityMatrix();
+    renderOpportunityQueue();renderOpportunityMatrix();renderOpportunityVisuals();
     drawTrend($("commandTrend"),rows,[
       {key:"leads",label:"Leads",color:"#39b54a"},
-      {key:"wins",label:"Wins",color:"#10231a"}
-    ],{xLabel:"Cohort month",yLabel:"Cohort volume"});
+      {key:"wins",label:"Residential wins",color:"#10231a",axis:1}
+    ],{xLabel:"Cohort month",yLabel:"Leads",rightYLabel:"Residential wins",dualAxis:true});
   }
   function renderFunnel(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
@@ -634,10 +751,10 @@
     const primaryFocus=health.filter(item=>item.tone==="bad").sort((a,b)=>(a.current/(a.baseline||1))-(b.current/(b.baseline||1)))[0]||health.find(item=>item.tone==="warn")||health.find(item=>item.tone==="good")||health[0];
     $("funnelFocus").innerHTML=`<div class="focus-callout ${primaryFocus.tone}"><span class="badge ${primaryFocus.tone}">${toneLabel(primaryFocus.tone)}</span><strong>${esc(primaryFocus.label)}</strong><p>${primaryFocus.tone==="bad"?"This is the clearest intervention point in the latest cohort.":primaryFocus.tone==="good"?"This stage is outperforming the prior cohort baseline.":"Monitor this stage as more outcomes mature."}</p></div>`;
     drawTrend($("funnelTrend"),rows,[
-      {key:"setRate",label:"Lead → set",color:"#2777c7",rate:true},
-      {key:"runRateFromSets",label:"Set → run",color:"#f1a900",rate:true},
-      {key:"winRateFromRuns",label:"Run → win",color:"#39b54a",rate:true},
-      {key:"leadToWinRate",label:"Lead → win",color:"#10231a",rate:true}
+      {key:"setRate",label:"Lead → set",color:"#2777c7",rate:true,value:monthRows=>aggregate(monthRows).setRate},
+      {key:"runRateFromSets",label:"Set → run",color:"#f1a900",rate:true,value:monthRows=>aggregate(monthRows).runRate},
+      {key:"winRateFromRuns",label:"Run → win",color:"#39b54a",rate:true,value:monthRows=>aggregate(monthRows).winRate},
+      {key:"leadToWinRate",label:"Lead → win",color:"#10231a",rate:true,value:monthRows=>aggregate(monthRows).leadToWin}
     ],{xLabel:"Cohort month",yLabel:"Conversion rate",rate:true});
     const priorCac=prior?.cpw,latestCac=latest.cpw,cacTone=coverage.leadFirst?"warn":performanceTone(latestCac,priorCac,latest.wins>=3,true);
     $("cacBadge").className=`badge ${cacTone}`;$("cacBadge").textContent=coverage.leadFirst?`${coverage.label} · directional`:toneLabel(cacTone);
@@ -645,6 +762,7 @@
       {label:"CAC / cohort win",color:cacTone==="bad"?"#c84232":cacTone==="warn"?"#f1a900":"#39b54a",money:true,value:monthRows=>{const wins=sum(monthRows,"wins"),spend=sum(monthRows,"effectiveSpend");return wins&&spend?spend/wins:null}},
       {label:"Prior-period reference",color:"#91a097",money:true,value:()=>priorCac}
     ],{xLabel:"Cohort month",yLabel:"Cost per cohort win",money:true});
+    renderFunnelWaterfall();
     const campaigns=group(rows,"campaign").sort((a,b)=>b.totals.leads-a.totals.leads).slice(0,20);
     $("campaignTable").innerHTML=campaigns.length?campaigns.map(c=>{const x=c.totals,cv=coverageInfo(x);return `<tr><td data-label="Campaign"><span class="strong">${esc(c.name)}</span><span class="sub">${esc(c.items[0]?.campaignRollup||"")}</span></td><td data-label="Leads">${fmtNum(x.leads)}</td><td data-label="Sets">${fmtNum(x.sets)}</td><td data-label="Runs">${fmtNum(x.runs)}</td><td data-label="Wins">${fmtNum(x.wins)}</td><td data-label="Lead → set">${fmtPct(x.setRate)}</td><td data-label="Set → run">${fmtPct(x.runRate)}</td><td data-label="Run → win">${fmtPct(x.winRate)}</td><td data-label="Aged fallout"><span class="fallout-count">${fmtNum(x.agedFallout)}</span><span class="fallout-detail">${fmtNum(x.openNoSet30Plus)} no set · ${fmtNum(x.setNoRun30Plus)} no run · ${fmtNum(x.runNoWin60Plus)} no win</span></td><td data-label="CAC">${x.cpw?fmtMoney(x.cpw):"—"}</td><td data-label="Coverage">${badge(cv.label,cv.tone)}</td></tr>`}).join(""):`<tr><td colspan="11" class="empty">No campaign cohorts match these filters.</td></tr>`;
   }
@@ -749,8 +867,40 @@
       const point=points[model.hoverIndex];c.strokeStyle="rgba(16,35,26,.25)";c.lineWidth=1;c.beginPath();c.moveTo(point.x,pad.t);c.lineTo(point.x,h-pad.b);c.stroke();
     }
   }
+  function renderEchartTrend(element,rows,series,options={}){
+    const chart=chartInstance(element);if(!chart)return false;
+    chart.resize();
+    const months=[...new Set(rows.map(row=>row.month))].sort();
+    if(!months.length){chart.clear();chart.setOption({graphic:{type:"text",left:"center",top:"middle",style:{text:"No trend data for this selection",fill:"#6a766f",font:"12px system-ui"}}});return true}
+    const values=series.map(item=>months.map(month=>{const monthRows=rows.filter(row=>row.month===month);return item.value?item.value(monthRows):item.rate?weighted(monthRows,item.key):sum(monthRows,item.key)}));
+    const formatValue=(value,item)=>value==null?"—":trendValue(value,item),latestMonth=months.at(-1),axisFormatter=value=>options.rate?fmtPct(value):options.money?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1}).format(value):new Intl.NumberFormat("en-US",{notation:value>=1000?"compact":"standard",maximumFractionDigits:1}).format(value);
+    const firstValues=values[0],inflectionIndex=firstValues.length>1?firstValues.slice(1).reduce((best,value,index)=>Math.abs(value-firstValues[index])>Math.abs(firstValues[best+1]-firstValues[best])?index:best,0)+1:0;
+    const dual=Boolean(options.dualAxis||series.some(item=>item.axis===1));
+    const chartSeries=series.map((item,index)=>{
+      const finite=values[index].filter(Number.isFinite),reference=item.reference??(finite.length?finite.reduce((a,b)=>a+b,0)/finite.length:0);
+      return {name:item.label||item.key,type:"line",data:values[index],yAxisIndex:item.axis||0,smooth:.28,showSymbol:true,symbol:"circle",symbolSize:6,connectNulls:false,
+        lineStyle:{width:index===0?3:2.2,color:item.color},itemStyle:{color:item.color,borderColor:"#fff",borderWidth:1.5},emphasis:{focus:"series",lineStyle:{width:4}},
+        markLine:{silent:true,symbol:"none",lineStyle:{type:"dashed",color:item.color,opacity:.32},label:{show:index===0,formatter:options.target!=null?"Target":"Reference",color:"#6a766f",fontSize:9},data:[{yAxis:options.target??reference}]},
+        markArea:index===0?{silent:true,itemStyle:{color:"rgba(57,181,74,.055)"},label:{show:true,formatter:"Decision window",color:"#7a877f",fontSize:9},data:[[{xAxis:latestMonth},{xAxis:latestMonth}]]}:undefined,
+        markPoint:index===0&&inflectionIndex?{symbol:"pin",symbolSize:34,itemStyle:{color:"#10231a"},label:{show:false},data:[{coord:[months[inflectionIndex],firstValues[inflectionIndex]],name:"Largest change"}]}:undefined
+      };
+    });
+    const common=baseChartOption();
+    chart.setOption({...common,
+      tooltip:{...common.tooltip,trigger:"axis",axisPointer:{type:"line",lineStyle:{color:"#9aa79e",type:"dashed"}},formatter:params=>`<strong>${trendMonth(params[0].axisValue)}</strong><br>${params.map(param=>`${param.marker}${esc(param.seriesName)} <b style="float:right;margin-left:16px">${formatValue(param.value,series[param.seriesIndex])}</b>`).join("<br>")}`},
+      legend:{type:"scroll",top:0,right:0,itemWidth:14,itemHeight:7,textStyle:{fontSize:10,color:"#66736b"}},
+      grid:{left:64,right:dual?64:24,top:42,bottom:54},
+      xAxis:{type:"category",data:months,axisLabel:{formatter:value=>trendMonth(value).replace(" 20"," ’"),color:"#66736b",fontSize:10},axisTick:{show:false},axisLine:{lineStyle:{color:"#cbd5cc"}},name:options.xLabel||"Cohort month",nameLocation:"middle",nameGap:34,nameTextStyle:{fontWeight:600,color:"#526159"}},
+      yAxis:[{type:"value",name:options.yLabel||"Value",nameLocation:"middle",nameGap:48,axisLabel:{formatter:axisFormatter,color:"#66736b"},splitLine:{lineStyle:{color:"#e4e9e3"}},axisLine:{show:false},nameTextStyle:{fontWeight:600,color:"#526159"}},...(dual?[{type:"value",name:options.rightYLabel||"Wins",nameLocation:"middle",nameGap:42,axisLabel:{formatter:axisFormatter,color:"#66736b"},splitLine:{show:false},axisLine:{show:false},nameTextStyle:{fontWeight:600,color:"#526159"}}]:[])],
+      series:chartSeries
+    },true);
+    return true;
+  }
   function drawTrend(canvas,rows,series,options={}){
     if(!canvas)return;
+    if(window.echarts&&canvas.classList?.contains("chart-host")&&renderEchartTrend(canvas,rows,series,options))return;
+    canvas=canvas.getContext?canvas:canvas.querySelector?.("canvas");
+    if(!canvas?.getContext)return;
     const dpr=window.devicePixelRatio||1,w=canvas.clientWidth||600,h=canvas.clientHeight||280;
     canvas.width=w*dpr;canvas.height=h*dpr;
     const c=canvas.getContext("2d");c.scale(dpr,dpr);
@@ -944,6 +1094,11 @@
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",closeDrawers));$("drawerBackdrop").addEventListener("click",closeDrawers);
   $("insightList").addEventListener("click",event=>{const key=event.target?.dataset?.opportunityKey,id=event.target?.dataset?.investigate;if(key)beginOpportunity(key);else if(id)beginInvestigation(id)});
   $("opportunityMatrix").addEventListener("click",event=>{const key=event.target?.closest?.("[data-opportunity-key]")?.dataset?.opportunityKey||event.target?.dataset?.opportunityKey;if(key)beginOpportunity(key)});
+  $("campaignMultiples").addEventListener("click",event=>{const key=event.target?.closest?.("[data-opportunity-key]")?.dataset?.opportunityKey;if(key)beginOpportunity(key)});
+  [$("insightList"),$("opportunityMatrix"),$("campaignMultiples")].forEach(surface=>{
+    surface.addEventListener("mouseover",event=>{const key=event.target?.closest?.("[data-opportunity-key]")?.dataset?.opportunityKey;if(key)setOpportunityHover(key)});
+    surface.addEventListener("mouseout",event=>{const from=event.target?.closest?.("[data-opportunity-key]"),to=event.relatedTarget?.closest?.("[data-opportunity-key]");if(from&&!to)setOpportunityHover("")});
+  });
   $("opportunityTypeFilter").addEventListener("change",event=>{state.opportunityType=event.target.value;renderOpportunityQueue()});
   $("matrixMetric").addEventListener("change",event=>{state.matrixMetric=event.target.value;renderOpportunityMatrix()});
   $("clearDecision").addEventListener("click",clearDecision);
@@ -971,8 +1126,8 @@
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("saveNote").addEventListener("click",saveNote);$("askAssistant").addEventListener("click",askAssistant);
-  window.addEventListener("resize",()=>{if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
-  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderAll,loadData};
+  window.addEventListener("resize",()=>{echartInstances.forEach?.(chart=>chart.resize());if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
+  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderAll,loadData};
   renderScenario(); loadData();
 })();
 </script>

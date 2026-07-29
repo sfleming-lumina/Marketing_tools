@@ -198,7 +198,7 @@ def shape_campaign_row(row):
 
 
 OPERATING_REGION_FILTERS = {
-    "DMV",
+    "Maryland",
     "Pennsylvania",
     "Outside operating footprint",
     "Unresolved",
@@ -226,7 +226,7 @@ def _marketing_filter_conditions(
     if ahj:
         conditions.append("final_reporting_jurisdiction_label = @ahj")
     if region == "Operating footprint":
-        conditions.append("operating_region_group IN ('DMV', 'Pennsylvania')")
+        conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
     elif region:
         conditions.append("operating_region_group = @region")
     return conditions
@@ -317,6 +317,7 @@ def build_marketing_geo_query(
             campaign_name AS campaign,
             campaign_reporting_rollup_name AS campaignRollup,
             operating_region_group AS operatingRegion,
+            normalized_ops_region AS normalizedOpsRegion,
             normalized_operating_state AS normalizedState,
             COALESCE(NULLIF(final_reporting_jurisdiction_label, 'Unknown'), resolved_county, reporting_market_label, 'Unresolved') AS geography,
             COALESCE(NULLIF(final_reporting_jurisdiction_type, 'UNKNOWN'), 'Market / County') AS geographyType,
@@ -346,7 +347,7 @@ def build_marketing_geo_query(
         WHERE cohort_period_grain = 'MONTH'
             AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
             AND {where_clause}
-        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedState, geography, geographyType, county, state, market
+        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, geography, geographyType, county, state, market
         HAVING SUM(lead_count) > 0
         ORDER BY leads DESC, wins DESC
         LIMIT 2000

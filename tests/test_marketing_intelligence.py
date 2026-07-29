@@ -84,7 +84,7 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
         "state": "VA",
         "county": "Fairfax",
         "ahj": "Fairfax County",
-        "region": "DMV",
+        "region": "Maryland",
     }
     for query in (build_marketing_funnel_query(**values), build_marketing_geo_query(**values)):
         assert "rpt_marketing_funnel_analysis_runtime" in query
@@ -98,14 +98,25 @@ def test_operating_footprint_filter_is_explicit_and_requires_no_region_parameter
         build_marketing_funnel_query(region="Operating footprint"),
         build_marketing_geo_query(region="Operating footprint"),
     ):
-        assert "operating_region_group IN ('DMV', 'Pennsylvania')" in query
+        assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
         assert "@region" not in query
 
 
 def test_geo_query_returns_normalized_region_dimensions():
     query = build_marketing_geo_query(region="Pennsylvania")
     assert "operating_region_group AS operatingRegion" in query
+    assert "normalized_ops_region AS normalizedOpsRegion" in query
     assert "normalized_operating_state AS normalizedState" in query
+
+
+def test_lakehouse_regions_follow_operational_md_pa_contract():
+    sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+    assert "resolved_ops_region" in sql
+    assert "END AS normalized_ops_region" in sql
+    assert "THEN 'Maryland'" in sql
+    assert "'PA/DE'" in sql
+    assert "THEN 'DMV'" not in sql
 
 
 def test_projection_query_uses_confidence_and_current_month():
@@ -147,7 +158,7 @@ def test_funnel_handler_validates_range_and_binds_parameters(monkeypatch):
         "months": ["12"],
         "campaign": ["Summer Search"],
         "state": ["VA"],
-        "region": ["DMV"],
+        "region": ["Maryland"],
     })
     assert status == HTTPStatus.OK
     assert payload[0]["campaign"] == "Summer Search"
@@ -179,7 +190,7 @@ def test_operating_footprint_handler_binds_only_months(monkeypatch):
     status, _ = handler._marketing_geo({"region": ["Operating footprint"]})
     assert status == HTTPStatus.OK
     assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["months"]
-    assert "operating_region_group IN ('DMV', 'Pennsylvania')" in fake.last_query
+    assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in fake.last_query
 
 
 def test_marketing_query_errors_are_returned_as_bad_gateway(monkeypatch):

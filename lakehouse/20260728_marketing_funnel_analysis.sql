@@ -189,11 +189,53 @@ SELECT
       'WASHINGTON, DC'
     ) THEN 'DC'
     WHEN UPPER(TRIM(c.resolved_state)) IN ('PA', 'PENNSYLVANIA') THEN 'PA'
+    WHEN UPPER(TRIM(c.resolved_state)) IN ('DE', 'DELAWARE') THEN 'DE'
     WHEN NULLIF(TRIM(c.resolved_state), '') IS NULL THEN NULL
     ELSE UPPER(TRIM(c.resolved_state))
   END AS normalized_operating_state,
   CASE
-    WHEN UPPER(TRIM(c.resolved_state)) IN (
+    WHEN UPPER(TRIM(c.resolved_ops_region)) IN (
+      'MD',
+      'MARYLAND',
+      'MD OPS',
+      'MD OPS REGION',
+      'MD/DC/VA'
+    ) THEN 'MD'
+    WHEN UPPER(TRIM(c.resolved_ops_region)) IN (
+      'PA',
+      'PENNSYLVANIA',
+      'PA OPS',
+      'PA OPS REGION',
+      'PA/DE'
+    ) THEN 'PA'
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND UPPER(TRIM(c.resolved_state)) IN (
+        'MD', 'MARYLAND', 'VA', 'VIRGINIA', 'DC', 'D.C.',
+        'DISTRICT OF COLUMBIA', 'WASHINGTON DC', 'WASHINGTON, DC'
+      ) THEN 'MD'
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND UPPER(TRIM(c.resolved_state)) IN (
+        'PA', 'PENNSYLVANIA', 'DE', 'DELAWARE'
+      ) THEN 'PA'
+    ELSE NULL
+  END AS normalized_ops_region,
+  CASE
+    WHEN UPPER(TRIM(c.resolved_ops_region)) IN (
+      'MD',
+      'MARYLAND',
+      'MD OPS',
+      'MD OPS REGION',
+      'MD/DC/VA'
+    ) THEN 'Maryland'
+    WHEN UPPER(TRIM(c.resolved_ops_region)) IN (
+      'PA',
+      'PENNSYLVANIA',
+      'PA OPS',
+      'PA OPS REGION',
+      'PA/DE'
+    ) THEN 'Pennsylvania'
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND UPPER(TRIM(c.resolved_state)) IN (
       'MD',
       'MARYLAND',
       'VA',
@@ -203,15 +245,32 @@ SELECT
       'DISTRICT OF COLUMBIA',
       'WASHINGTON DC',
       'WASHINGTON, DC'
-    ) THEN 'DMV'
-    WHEN UPPER(TRIM(c.resolved_state)) IN ('PA', 'PENNSYLVANIA')
+    ) THEN 'Maryland'
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND UPPER(TRIM(c.resolved_state)) IN (
+        'PA', 'PENNSYLVANIA', 'DE', 'DELAWARE'
+      )
       THEN 'Pennsylvania'
-    WHEN NULLIF(TRIM(c.resolved_state), '') IS NULL
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND NULLIF(TRIM(c.resolved_state), '') IS NULL
       THEN 'Unresolved'
     ELSE 'Outside operating footprint'
   END AS operating_region_group,
   CASE
-    WHEN UPPER(TRIM(c.resolved_state)) IN (
+    WHEN UPPER(TRIM(c.resolved_ops_region)) IN (
+      'MD',
+      'MARYLAND',
+      'MD OPS',
+      'MD OPS REGION',
+      'MD/DC/VA',
+      'PA',
+      'PENNSYLVANIA',
+      'PA OPS',
+      'PA OPS REGION',
+      'PA/DE'
+    ) THEN TRUE
+    WHEN NULLIF(TRIM(c.resolved_ops_region), '') IS NULL
+      AND UPPER(TRIM(c.resolved_state)) IN (
       'MD',
       'MARYLAND',
       'VA',
@@ -222,7 +281,9 @@ SELECT
       'WASHINGTON DC',
       'WASHINGTON, DC',
       'PA',
-      'PENNSYLVANIA'
+      'PENNSYLVANIA',
+      'DE',
+      'DELAWARE'
     ) THEN TRUE
     ELSE FALSE
   END AS is_operating_footprint,

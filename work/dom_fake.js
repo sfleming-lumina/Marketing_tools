@@ -36,14 +36,19 @@ class FakeElement {
     return true;
   }
   querySelectorAll() { return []; }
+  querySelector() { return null; }
   setAttribute() {}
   focus() {}
+  getBoundingClientRect() {
+    return { left: 0, top: 0, width: this.clientWidth, height: this.clientHeight };
+  }
   getContext() {
     return {
       scale() {}, clearRect() {}, fillText() {}, beginPath() {}, moveTo() {},
-      lineTo() {}, stroke() {}, fill() {},
+      lineTo() {}, stroke() {}, fill() {}, arc() {}, save() {}, restore() {},
+      translate() {}, rotate() {},
       set fillStyle(_) {}, set strokeStyle(_) {}, set lineWidth(_) {},
-      set lineJoin(_) {}, set font(_) {},
+      set lineJoin(_) {}, set font(_) {}, set textAlign(_) {},
     };
   }
 }

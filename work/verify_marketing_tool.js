@@ -1,5 +1,7 @@
 const vm = require("vm");
+const fs = require("fs");
 const { installFakeDom, loadDashboardScript } = require("./dom_fake");
+const dashboardHtml = fs.readFileSync("outputs/marketing_decision_tool.html", "utf8");
 
 const { getElement } = installFakeDom();
 const funnelRows = [
@@ -83,12 +85,17 @@ setImmediate(() => {
   assert(getElement("qualityMetrics").innerHTML.includes("Marketing Report 2026_Official.xlsx"), "Workbook reconciliation did not render.");
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
+  assert(dashboardHtml.includes('id="guideDrawer"') && dashboardHtml.includes("How to use this workspace"), "Usage guide overlay is missing.");
+  assert(dashboardHtml.includes('<option value="Maryland">Maryland</option>') && !dashboardHtml.includes('<option value="DMV">'), "Operating-region options do not follow the MD/PA operational contract.");
+  assert(dashboardHtml.includes('yLabel:"Cohort volume"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
+  assert(dashboardHtml.includes("chart-tooltip") && dashboardHtml.includes('addEventListener("mousemove"'), "Chart hover details are missing.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
-  getElement("stateFilter").value = "DMV";
+  getElement("stateFilter").value = "Maryland";
   getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
   setImmediate(() => {
-    assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=DMV")), "Changing operating region did not reload funnel data.");
-    assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=DMV")), "Changing operating region did not reload geography data.");
+    assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=Maryland")), "Changing operating region did not reload funnel data.");
+    assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=Maryland")), "Changing operating region did not reload geography data.");
+    assert(getElement("campaignTable").innerHTML.includes("Efficient Search"), "Expanded campaign portfolio did not render.");
     console.log("Marketing Intelligence workspace verified OK.");
   });
 });

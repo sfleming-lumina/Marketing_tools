@@ -12,6 +12,7 @@ class FakeElement {
     this.clientHeight = 245;
     this.style = {};
     this.dataset = {};
+    this._listeners = new Map();
     this._classes = new Set();
     this.classList = {
       add: name => this._classes.add(name),
@@ -24,7 +25,16 @@ class FakeElement {
       contains: name => this._classes.has(name),
     };
   }
-  addEventListener() {}
+  addEventListener(type, callback) {
+    if (!this._listeners.has(type)) this._listeners.set(type, []);
+    this._listeners.get(type).push(callback);
+  }
+  dispatchEvent(event) {
+    const normalized = event || {};
+    normalized.target = normalized.target || this;
+    for (const callback of this._listeners.get(normalized.type) || []) callback(normalized);
+    return true;
+  }
   querySelectorAll() { return []; }
   setAttribute() {}
   focus() {}

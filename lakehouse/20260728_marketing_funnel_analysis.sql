@@ -1,4 +1,68 @@
 CREATE OR REPLACE VIEW
+  `lumina-lakehouse.marketing_tool_ops.rpt_marketing_test_record_exclusions`
+AS
+
+SELECT
+  lead_funnel_sk,
+  campaign_member_id,
+  selected_opportunity_id,
+  campaign_name,
+  official_reporting_campaign_name,
+  sf_opp_name,
+  campaign_member_created_date,
+  resolved_state,
+  'Explicit test/demo marker in campaign or opportunity metadata' AS exclusion_reason,
+  fact_loaded_at AS source_loaded_at
+FROM `lumina-lakehouse.analytics_fact.fact_lead_funnel_attributed`
+WHERE REGEXP_CONTAINS(
+  LOWER(CONCAT(
+    COALESCE(campaign_name, ''), ' ',
+    COALESCE(parent_campaign_name, ''), ' ',
+    COALESCE(grandparent_campaign_name, ''), ' ',
+    COALESCE(official_reporting_campaign_name, ''), ' ',
+    COALESCE(touchpoint_campaign_name, ''), ' ',
+    COALESCE(sf_opp_name, ''), ' ',
+    COALESCE(lead_source_name, ''), ' ',
+    COALESCE(lead_utm_campaign, ''), ' ',
+    COALESCE(opportunity_utm_campaign, '')
+  )),
+  r'(^|[^a-z])(test|testing|demo|training|dummy|fake|sandbox|do not use)([^a-z]|$)'
+);
+
+CREATE OR REPLACE VIEW
+  `lumina-lakehouse.marketing_tool_ops.fact_lead_funnel_attributed_clean`
+AS
+
+SELECT source_fact.*
+FROM `lumina-lakehouse.analytics_fact.fact_lead_funnel_attributed` source_fact
+LEFT JOIN `lumina-lakehouse.marketing_tool_ops.rpt_marketing_test_record_exclusions` exclusions
+  ON exclusions.lead_funnel_sk = source_fact.lead_funnel_sk
+WHERE exclusions.lead_funnel_sk IS NULL;
+
+BEGIN
+  DECLARE upstream_cohort_sql STRING;
+
+  SET upstream_cohort_sql = (
+    SELECT view_definition
+    FROM `lumina-lakehouse.analytics_rpt.INFORMATION_SCHEMA.VIEWS`
+    WHERE table_name = 'rpt_marketing_lead_cohort_performance'
+  );
+
+  ASSERT upstream_cohort_sql IS NOT NULL
+    AS 'Unable to read analytics_rpt.rpt_marketing_lead_cohort_performance definition';
+
+  SET upstream_cohort_sql = REPLACE(
+    upstream_cohort_sql,
+    '`lumina-lakehouse.analytics_fact.fact_lead_funnel_attributed` flfa',
+    '`lumina-lakehouse.marketing_tool_ops.fact_lead_funnel_attributed_clean` flfa'
+  );
+
+  EXECUTE IMMEDIATE
+    'CREATE OR REPLACE VIEW `lumina-lakehouse.marketing_tool_ops.rpt_marketing_lead_cohort_performance_clean` AS '
+    || upstream_cohort_sql;
+END;
+
+CREATE OR REPLACE VIEW
   `lumina-lakehouse.marketing_tool_ops.rpt_marketing_cohort_performance_with_yield`
 AS
 
@@ -13,7 +77,12 @@ WITH yield_selected AS (
       resolved_zip_code,
       cohort_period_grain,
       cohort_period_start_date
-    ORDER BY benchmark_candidate_priority ASC
+    ORDER BY
+      benchmark_candidate_priority ASC,
+      benchmark_confidence_score DESC,
+      benchmark_level ASC,
+      benchmark_lead_to_win_rate DESC,
+      benchmark_revenue_per_win DESC
   ) = 1
 )
 
@@ -94,7 +163,7 @@ SELECT
   y.expected_yield_usability,
   y.campaign_sf_id IS NOT NULL AS has_reliable_benchmark,
   p.rpt_loaded_at
-FROM `lumina-lakehouse.analytics_rpt.rpt_marketing_lead_cohort_performance` p
+FROM `lumina-lakehouse.marketing_tool_ops.rpt_marketing_lead_cohort_performance_clean` p
 LEFT JOIN yield_selected y
   ON y.campaign_sf_id = p.campaign_sf_id
   AND y.final_reporting_jurisdiction_key = p.final_reporting_jurisdiction_key
@@ -109,6 +178,54 @@ AS
 
 SELECT
   c.*,
+  CASE
+    WHEN UPPER(TRIM(c.resolved_state)) IN ('MD', 'MARYLAND') THEN 'MD'
+    WHEN UPPER(TRIM(c.resolved_state)) IN ('VA', 'VIRGINIA') THEN 'VA'
+    WHEN UPPER(TRIM(c.resolved_state)) IN (
+      'DC',
+      'D.C.',
+      'DISTRICT OF COLUMBIA',
+      'WASHINGTON DC',
+      'WASHINGTON, DC'
+    ) THEN 'DC'
+    WHEN UPPER(TRIM(c.resolved_state)) IN ('PA', 'PENNSYLVANIA') THEN 'PA'
+    WHEN NULLIF(TRIM(c.resolved_state), '') IS NULL THEN NULL
+    ELSE UPPER(TRIM(c.resolved_state))
+  END AS normalized_operating_state,
+  CASE
+    WHEN UPPER(TRIM(c.resolved_state)) IN (
+      'MD',
+      'MARYLAND',
+      'VA',
+      'VIRGINIA',
+      'DC',
+      'D.C.',
+      'DISTRICT OF COLUMBIA',
+      'WASHINGTON DC',
+      'WASHINGTON, DC'
+    ) THEN 'DMV'
+    WHEN UPPER(TRIM(c.resolved_state)) IN ('PA', 'PENNSYLVANIA')
+      THEN 'Pennsylvania'
+    WHEN NULLIF(TRIM(c.resolved_state), '') IS NULL
+      THEN 'Unresolved'
+    ELSE 'Outside operating footprint'
+  END AS operating_region_group,
+  CASE
+    WHEN UPPER(TRIM(c.resolved_state)) IN (
+      'MD',
+      'MARYLAND',
+      'VA',
+      'VIRGINIA',
+      'DC',
+      'D.C.',
+      'DISTRICT OF COLUMBIA',
+      'WASHINGTON DC',
+      'WASHINGTON, DC',
+      'PA',
+      'PENNSYLVANIA'
+    ) THEN TRUE
+    ELSE FALSE
+  END AS is_operating_footprint,
   CASE
     WHEN c.campaign_reporting_rollup_name = 'Pay Per Install LSR'
       AND c.campaign_sub_rollup_name IN (

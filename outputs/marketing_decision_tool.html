@@ -67,9 +67,9 @@
     textarea{width:100%;min-height:115px;padding:12px;border:1px solid var(--line);border-radius:12px;resize:vertical}.primary{border:0;background:var(--green);color:#0c2612;font-weight:750;padding:10px 15px;border-radius:11px}.secondary{border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:10px}.close{border:0;background:transparent;font-size:20px;color:var(--muted)}
     .assistant-answer{white-space:pre-wrap;background:#f7f9f7;border-radius:14px;padding:16px;margin-top:14px}.note-item{padding:14px 0;border-bottom:1px solid var(--line)}.note-item p{margin:5px 0}.note-item small{color:var(--muted)}
     .mobile-brand{display:none}.tooltip{border-bottom:1px dotted #7a8b81}
-    @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.filters .geo-filter{display:none}.content{padding:28px 24px 55px}.scenario-compare{grid-template-columns:1fr}}
+    @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.filters .campaign-filter,.filters .rollup-filter{display:none}.content{padding:28px 24px 55px}.scenario-compare{grid-template-columns:1fr}}
     @media(max-width:760px){
-      .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.filters{overflow:auto;margin-left:0;flex:1}.filters .campaign-filter,.filters .rollup-filter{display:none}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:16px;border-radius:17px}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}
+      .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;overflow:visible;margin-left:0}.filters .campaign-filter,.filters .rollup-filter{display:none}.filters .geo-filter{flex:1}.filters .geo-filter select{width:100%;max-width:none}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:16px;border-radius:17px}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}
     }
   </style>
 </head>
@@ -100,7 +100,7 @@
           <div class="select-wrap"><select id="monthsFilter" aria-label="Trailing months"><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
           <div class="select-wrap campaign-filter"><select id="campaignFilter" aria-label="Campaign"><option value="">All campaigns</option></select></div>
           <div class="select-wrap rollup-filter"><select id="rollupFilter" aria-label="Campaign rollup"><option value="">All rollups</option></select></div>
-          <div class="select-wrap geo-filter"><select id="stateFilter" aria-label="State"><option value="">All states</option></select></div>
+          <div class="select-wrap geo-filter"><select id="stateFilter" aria-label="Operating region"><option value="Operating footprint" selected>Operating footprint</option><option value="DMV">DMV</option><option value="Pennsylvania">Pennsylvania</option><option value="Outside operating footprint">Outside operating footprint</option><option value="Unresolved">Unresolved</option><option value="">All data</option></select></div>
           <button class="icon-btn" id="refreshButton" aria-label="Refresh data">↻</button>
         </div>
       </div>
@@ -179,7 +179,7 @@
   const API_BASE = "";
   const $ = id => document.getElementById(id);
   const state = {
-    view:"command", months:7, campaign:"", rollup:"", state:"",
+    view:"command", months:7, campaign:"", rollup:"", region:"Operating footprint",
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     loading:false, error:null, scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
   };
@@ -209,7 +209,7 @@
     return state.funnelRows.filter(r=>(!state.campaign||r.campaign===state.campaign)&&(!state.rollup||r.campaignRollup===state.rollup));
   }
   function filteredGeoRows(){
-    return state.geoRows.filter(r=>(!state.campaign||r.campaign===state.campaign)&&(!state.rollup||r.campaignRollup===state.rollup)&&(!state.state||r.state===state.state));
+    return state.geoRows.filter(r=>(!state.campaign||r.campaign===state.campaign)&&(!state.rollup||r.campaignRollup===state.rollup));
   }
   function group(rows,key){
     const map=new Map(); rows.forEach(row=>{const value=row[key]||"Unresolved"; if(!map.has(value))map.set(value,[]); map.get(value).push(row)}); return [...map].map(([name,items])=>({name,items,totals:aggregate(items)}));
@@ -244,15 +244,15 @@
   }
   function queryString(){
     const q=new URLSearchParams({months:String(state.months)});
-    if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.state)q.set("state",state.state);
+    if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.region)q.set("region",state.region);
     return q.toString();
   }
   async function loadData(){
     if(state.loading)return; state.loading=true; state.error=null; renderError();
     try{
       const [funnel,geo,projection,reconciliation,freshness]=await Promise.all([
-        fetchJson(`/api/marketing-funnel?months=${state.months}`),
-        fetchJson(`/api/marketing-geo?months=${state.months}`),
+        fetchJson(`/api/marketing-funnel?${queryString()}`),
+        fetchJson(`/api/marketing-geo?${queryString()}`),
         fetchJson(`/api/marketing-projection`).catch(()=>[]),
         state.reconciliation||fetchJson(`/api/marketing-reconciliation`),
         fetchJson(`/api/freshness`).catch(()=>null)
@@ -272,7 +272,6 @@
   function populateFilters(){
     populateSelect($("campaignFilter"),[...new Set(state.funnelRows.map(r=>r.campaign).filter(Boolean))],"All campaigns",state.campaign);
     populateSelect($("rollupFilter"),[...new Set(state.funnelRows.map(r=>r.campaignRollup).filter(Boolean))],"All rollups",state.rollup);
-    populateSelect($("stateFilter"),[...new Set(state.geoRows.map(r=>r.state).filter(Boolean))],"All states",state.state);
   }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
@@ -391,7 +390,7 @@
     const text=$("noteText").value.trim();if(!text)return;
     try{await fetchJson("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({view:state.view,element_key:`${state.view}-workspace`,element_label:viewTitles[state.view],target_type:"view",feedback_type:"decision",note_text:text,context:assistantContext()})});$("noteText").value="";loadNotes()}catch(e){alert(e.message)}
   }
-  function assistantContext(){return {view:state.view,filters:{months:state.months,campaign:state.campaign||"All",rollup:state.rollup||"All",state:state.state||"All"},funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
+  function assistantContext(){return {view:state.view,filters:{months:state.months,campaign:state.campaign||"All",rollup:state.rollup||"All",operatingRegion:state.region||"All data"},funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
   async function askAssistant(){
     const question=$("assistantQuestion").value.trim();if(!question)return;const out=$("assistantAnswer");out.hidden=false;out.textContent="Analyzing the current decision context...";
     try{const result=await fetchJson("/api/ask-claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,view:state.view,context:assistantContext()})});out.textContent=result.answer||result.summary||JSON.stringify(result,null,2)}catch(e){out.textContent=e.message}
@@ -407,7 +406,7 @@
   $("monthsFilter").addEventListener("change",e=>{state.months=Number(e.target.value);loadData()});
   $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;renderAll()});
   $("rollupFilter").addEventListener("change",e=>{state.rollup=e.target.value;renderAll()});
-  $("stateFilter").addEventListener("change",e=>{state.state=e.target.value;renderAll()});
+  $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;loadData()});
   $("refreshButton").addEventListener("click",loadData);$("retryButton").addEventListener("click",loadData);
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));

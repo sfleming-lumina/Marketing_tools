@@ -197,7 +197,23 @@ def shape_campaign_row(row):
     }
 
 
-def _marketing_filter_conditions(campaign=None, rollup=None, state=None, county=None, ahj=None):
+OPERATING_REGION_FILTERS = {
+    "DMV",
+    "Pennsylvania",
+    "Outside operating footprint",
+    "Unresolved",
+    "Operating footprint",
+}
+
+
+def _marketing_filter_conditions(
+    campaign=None,
+    rollup=None,
+    state=None,
+    county=None,
+    ahj=None,
+    region=None,
+):
     conditions = ["campaign_name IS NOT NULL"]
     if campaign:
         conditions.append("campaign_name = @campaign")
@@ -209,6 +225,10 @@ def _marketing_filter_conditions(campaign=None, rollup=None, state=None, county=
         conditions.append("resolved_county = @county")
     if ahj:
         conditions.append("final_reporting_jurisdiction_label = @ahj")
+    if region == "Operating footprint":
+        conditions.append("operating_region_group IN ('DMV', 'Pennsylvania')")
+    elif region:
+        conditions.append("operating_region_group = @region")
     return conditions
 
 
@@ -219,8 +239,9 @@ def build_marketing_funnel_query(
     state=None,
     county=None,
     ahj=None,
+    region=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj)
+    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
     return f"""
         WITH bounds AS (
@@ -281,8 +302,9 @@ def build_marketing_geo_query(
     state=None,
     county=None,
     ahj=None,
+    region=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj)
+    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
     return f"""
         WITH bounds AS (
@@ -294,6 +316,8 @@ def build_marketing_geo_query(
             campaign_sf_id AS campaignId,
             campaign_name AS campaign,
             campaign_reporting_rollup_name AS campaignRollup,
+            operating_region_group AS operatingRegion,
+            normalized_operating_state AS normalizedState,
             COALESCE(NULLIF(final_reporting_jurisdiction_label, 'Unknown'), resolved_county, reporting_market_label, 'Unresolved') AS geography,
             COALESCE(NULLIF(final_reporting_jurisdiction_type, 'UNKNOWN'), 'Market / County') AS geographyType,
             resolved_county AS county,
@@ -322,7 +346,7 @@ def build_marketing_geo_query(
         WHERE cohort_period_grain = 'MONTH'
             AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
             AND {where_clause}
-        GROUP BY campaignId, campaign, campaignRollup, geography, geographyType, county, state, market
+        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedState, geography, geographyType, county, state, market
         HAVING SUM(lead_count) > 0
         ORDER BY leads DESC, wins DESC
         LIMIT 2000
@@ -739,7 +763,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "state": params.get("state", [None])[0] or None,
                 "county": params.get("county", [None])[0] or None,
                 "ahj": params.get("ahj", [None])[0] or None,
+                "region": params.get("region", [None])[0] or None,
             })
+        if values.get("region") and values["region"] not in OPERATING_REGION_FILTERS:
+            raise ValueError("region is not a supported operating-region filter.")
         return values
 
     @staticmethod
@@ -747,7 +774,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         parameters = []
         if include_months:
             parameters.append(bigquery.ScalarQueryParameter("months", "INT64", values["months"]))
-        for name in ("campaign", "rollup", "state", "county", "ahj"):
+        for name in ("campaign", "rollup", "state", "county", "ahj", "region"):
+            if name == "region" and values.get(name) == "Operating footprint":
+                continue
             if values.get(name):
                 parameters.append(bigquery.ScalarQueryParameter(name, "STRING", values[name]))
         return parameters

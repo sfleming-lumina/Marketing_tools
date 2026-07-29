@@ -37,6 +37,8 @@ const reconciliation = {
 
 global.fetch = url => {
   const path = String(url);
+  global.requestedUrls = global.requestedUrls || [];
+  global.requestedUrls.push(path);
   if (path.includes("marketing-projection")) {
     return Promise.resolve({
       ok:false,
@@ -81,5 +83,12 @@ setImmediate(() => {
   assert(getElement("qualityMetrics").innerHTML.includes("Marketing Report 2026_Official.xlsx"), "Workbook reconciliation did not render.");
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
-  console.log("Marketing Intelligence workspace verified OK.");
+  assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
+  getElement("stateFilter").value = "DMV";
+  getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
+  setImmediate(() => {
+    assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=DMV")), "Changing operating region did not reload funnel data.");
+    assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=DMV")), "Changing operating region did not reload geography data.");
+    console.log("Marketing Intelligence workspace verified OK.");
+  });
 });

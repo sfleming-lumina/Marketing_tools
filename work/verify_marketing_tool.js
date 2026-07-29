@@ -44,7 +44,7 @@ const reconciliation = {
   }]
 };
 
-global.fetch = url => {
+global.fetch = (url, options = {}) => {
   const path = String(url);
   global.requestedUrls = global.requestedUrls || [];
   global.requestedUrls.push(path);
@@ -55,12 +55,24 @@ global.fetch = url => {
       json:()=>Promise.resolve({detail:"Projection source is not available to the runtime service account."})
     });
   }
+  if (path.includes("marketing-decisions") && options.method === "POST") {
+    const request = JSON.parse(options.body);
+    return Promise.resolve({ok:true,json:()=>Promise.resolve({
+      decision_id:"decision-1",created_at:"2026-07-29T12:00:00Z",created_by_name:"Test User",
+      question:request.question,action:request.action,status:"Monitoring",campaign:request.filters.campaign,
+      ahj:request.filters.ahj,operating_region:request.filters.operatingRegion,review_after:"2026-08-28"
+    })});
+  }
+  if (path.includes("marketing-decision-progress")) {
+    return Promise.resolve({ok:true,json:()=>Promise.resolve({decisionId:"decision-1",status:"Maturing",implementationSignal:"Outcome monitoring",progressToTarget:null})});
+  }
   let payload = [];
   if (path.includes("marketing-funnel")) payload = apiFunnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
   else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
+  else if (path.includes("marketing-decisions")) payload = [];
   return Promise.resolve({ok:true,json:()=>Promise.resolve(payload)});
 };
 
@@ -120,6 +132,10 @@ setImmediate(() => {
   app.openDecisionBrief();
   assert(app.state.workflowStage === "implement" && getElement("decisionBriefBody").innerHTML.includes("Expected impact"), "Scenario did not produce an implementation brief.");
   assert(app.decisionBriefText().includes("LUMINA MARKETING DECISION BRIEF") && app.decisionBriefText().includes("Evidence:"), "Copyable decision output is incomplete.");
+  const trackingPayload = app.decisionTrackingPayload();
+  assert(trackingPayload.baseline.wins === 28 && trackingPayload.expected.wins > trackingPayload.baseline.wins, "Automatic tracking did not freeze baseline and expected outcomes.");
+  assert(trackingPayload.filters.operatingRegion === "Operating footprint" && trackingPayload.horizonDays >= 30, "Automatic tracking did not retain scope and review horizon.");
+  assert(dashboardHtml.includes('id="decisionsDrawer"') && dashboardHtml.includes("No uploads or status entry required"), "Automatic decision tracker surface is missing.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
   getElement("stateFilter").value = "Maryland";

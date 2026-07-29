@@ -3,7 +3,7 @@ import os
 import re
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,6 +19,7 @@ PROJECT_ID = os.environ.get("BQ_PROJECT_ID", "lumina-lakehouse")
 DATASET = os.environ.get("BQ_DATASET", "marketing_tool_ops")
 TABLE = os.environ.get("BQ_TABLE", "dashboard_notes")
 TABLE_REF = f"{PROJECT_ID}.{DATASET}.{TABLE}"
+DECISIONS_TABLE_REF = f"{PROJECT_ID}.{DATASET}.marketing_decisions"
 AHJ_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_campaign_ahj_performance"
 FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime"
 PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_projection_runtime"
@@ -614,6 +615,92 @@ def shape_marketing_projection_row(row):
     }
 
 
+def aggregate_marketing_funnel_rows(rows):
+    leads = sum(float(row.get("leads") or 0) for row in rows)
+    sets = sum(float(row.get("sets") or 0) for row in rows)
+    runs = sum(float(row.get("runs") or 0) for row in rows)
+    wins = sum(float(row.get("wins") or 0) for row in rows)
+    revenue = sum(float(row.get("revenue") or 0) for row in rows)
+    spend = sum(float(row.get("effectiveSpend") or 0) for row in rows)
+    return {
+        "leads": leads,
+        "sets": sets,
+        "runs": runs,
+        "wins": wins,
+        "revenue": revenue,
+        "spend": spend,
+        "setRate": sets / leads if leads else 0,
+        "runRate": runs / sets if sets else 0,
+        "winRate": wins / runs if runs else 0,
+        "leadToWin": wins / leads if leads else 0,
+        "cpl": spend / leads if spend and leads else None,
+        "cpw": spend / wins if spend and wins else None,
+    }
+
+
+def evaluate_marketing_decision_progress(decision, current, now=None):
+    now = now or datetime.now(timezone.utc)
+    baseline = decision.get("baseline") or {}
+    expected = decision.get("expected") or {}
+    metric = decision.get("primary_metric") or "wins"
+    inverse = metric in {"cpl", "cpw"}
+    baseline_value = baseline.get(metric)
+    target_value = expected.get(metric)
+    current_value = current.get(metric)
+    progress = None
+    if all(value is not None for value in (baseline_value, target_value, current_value)):
+        target_delta = float(target_value) - float(baseline_value)
+        current_delta = float(current_value) - float(baseline_value)
+        if inverse:
+            target_delta *= -1
+            current_delta *= -1
+        if abs(target_delta) > 1e-9:
+            progress = current_delta / target_delta
+    created_at = datetime.fromisoformat(str(decision["created_at"]).replace("Z", "+00:00"))
+    age_days = max(0, (now - created_at).days)
+    if age_days < 7:
+        status = "Maturing"
+    elif progress is None:
+        status = "Monitoring"
+    elif progress >= 1:
+        status = "Target reached"
+    elif progress >= 0.25:
+        status = "Improving"
+    elif progress <= -0.2:
+        status = "Needs attention"
+    else:
+        status = "Monitoring"
+    budget_change = float((decision.get("scenario") or {}).get("budget") or 0) / 100
+    baseline_spend = float(baseline.get("spend") or 0)
+    current_spend = float(current.get("spend") or 0)
+    spend_change = (current_spend / baseline_spend - 1) if baseline_spend else None
+    matching_spend_change = (
+        spend_change is not None
+        and abs(budget_change) >= 0.05
+        and abs(spend_change) >= 0.05
+        and (budget_change > 0) == (spend_change > 0)
+    )
+    implementation_signal = (
+        "Spend change detected"
+        if matching_spend_change
+        else "No spend change detected"
+        if abs(budget_change) >= 0.05
+        else "Outcome monitoring"
+    )
+    return {
+        "decisionId": decision["decision_id"],
+        "status": status,
+        "implementationSignal": implementation_signal,
+        "primaryMetric": metric,
+        "progressToTarget": progress,
+        "ageDays": age_days,
+        "baseline": baseline,
+        "current": current,
+        "expected": expected,
+        "evaluatedAt": now.isoformat(),
+    }
+
+
 class DashboardHandler(SimpleHTTPRequestHandler):
     _client = None
 
@@ -659,6 +746,14 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             params = parse_qs(parsed.query)
             self._send_json(HTTPStatus.OK, self._list_notes(params.get("view", [None])[0]))
             return
+        if parsed.path == "/api/marketing-decisions":
+            status, result = self._list_marketing_decisions(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
+        if parsed.path == "/api/marketing-decision-progress":
+            status, result = self._marketing_decision_progress(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
         if parsed.path == "/api/freshness":
             self._send_json(HTTPStatus.OK, self._source_freshness())
             return
@@ -699,6 +794,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/notes":
             payload = self._read_json_body()
             self._send_json(HTTPStatus.CREATED, self._create_note(payload))
+            return
+        if parsed.path == "/api/marketing-decisions":
+            status, result = self._create_marketing_decision(self._read_json_body())
+            self._send_json(status, result)
             return
         if parsed.path == "/api/freshness/refresh":
             result = self._source_freshness()
@@ -771,6 +870,155 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(HTTPStatus.BAD_GATEWAY, {"detail": f"BigQuery insert failed: {errors}"})
             return
         return created
+
+    @staticmethod
+    def _shape_marketing_decision(row):
+        def parsed_json(name, fallback):
+            value = row[name]
+            if not value:
+                return fallback
+            return json.loads(value) if isinstance(value, str) else value
+
+        return {
+            "decision_id": row["decision_id"],
+            "created_at": row["created_at"].isoformat(),
+            "created_by_email": row["created_by_email"],
+            "created_by_name": row["created_by_name"],
+            "decision_type": row["decision_type"],
+            "question": row["question"],
+            "action": row["action"],
+            "status": row["status"],
+            "source_view": row["source_view"],
+            "campaign": row["campaign"] or "",
+            "rollup": row["rollup"] or "",
+            "ahj": row["ahj"] or "",
+            "operating_region": row["operating_region"] or "",
+            "months": row["months"] or 7,
+            "window": row["window"] or "",
+            "primary_metric": row["primary_metric"],
+            "review_after": row["review_after"].isoformat(),
+            "baseline": parsed_json("baseline", {}),
+            "scenario": parsed_json("scenario", {}),
+            "expected": parsed_json("expected", {}),
+            "evidence": parsed_json("evidence", []),
+            "data_confidence": row["data_confidence"] or "Developing",
+        }
+
+    def _list_marketing_decisions(self, params):
+        try:
+            limit = min(100, max(1, int((params.get("limit", ["30"])[0]) or "30")))
+        except ValueError:
+            return HTTPStatus.BAD_REQUEST, {"detail": "limit must be an integer."}
+        query = f"""
+            SELECT *
+            FROM `{DECISIONS_TABLE_REF}`
+            ORDER BY created_at DESC
+            LIMIT @limit
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("limit", "INT64", limit)]
+        )
+        try:
+            rows = self.client.query(query, job_config=job_config).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision ledger query failed: {exc}"}
+        return HTTPStatus.OK, [self._shape_marketing_decision(row) for row in rows]
+
+    def _create_marketing_decision(self, payload):
+        question = str(payload.get("question") or "").strip()
+        if not question:
+            return HTTPStatus.BAD_REQUEST, {"detail": "question is required."}
+        primary_metric = str(payload.get("primaryMetric") or "wins")
+        if primary_metric not in {"leads", "wins", "revenue", "spend", "setRate", "runRate", "winRate", "leadToWin", "cpl", "cpw"}:
+            return HTTPStatus.BAD_REQUEST, {"detail": "primaryMetric is not supported."}
+        filters = payload.get("filters") or {}
+        baseline = payload.get("baseline") or {}
+        scenario = payload.get("scenario") or {}
+        expected = payload.get("expected") or {}
+        evidence = payload.get("evidence") or []
+        if not isinstance(baseline, dict) or not isinstance(scenario, dict) or not isinstance(expected, dict):
+            return HTTPStatus.BAD_REQUEST, {"detail": "baseline, scenario, and expected must be objects."}
+        if not isinstance(evidence, list):
+            return HTTPStatus.BAD_REQUEST, {"detail": "evidence must be an array."}
+        now = datetime.now(timezone.utc)
+        try:
+            horizon_days = min(120, max(7, int(payload.get("horizonDays") or 30)))
+            months = min(36, max(1, int(filters.get("months") or 7)))
+        except (TypeError, ValueError):
+            return HTTPStatus.BAD_REQUEST, {"detail": "horizonDays and filters.months must be integers."}
+        created = {
+            "decision_id": str(uuid.uuid4()),
+            "created_at": now.isoformat(),
+            "created_by_email": self._iap_user(),
+            "created_by_name": self._author_name(),
+            "decision_type": str(payload.get("decisionType") or "Test")[:50],
+            "question": question[:500],
+            "action": str(payload.get("action") or question)[:1000],
+            "status": "Monitoring",
+            "source_view": str(payload.get("sourceView") or "scenario")[:50],
+            "campaign": str(filters.get("campaign") or "")[:500],
+            "rollup": str(filters.get("rollup") or "")[:500],
+            "ahj": str(filters.get("ahj") or "")[:500],
+            "operating_region": str(filters.get("operatingRegion") or "")[:100],
+            "months": months,
+            "window": str(filters.get("window") or "")[:20],
+            "primary_metric": primary_metric,
+            "review_after": (now + timedelta(days=horizon_days)).date().isoformat(),
+            "baseline": json.dumps(baseline),
+            "scenario": json.dumps(scenario),
+            "expected": json.dumps(expected),
+            "evidence": json.dumps([str(item)[:1000] for item in evidence[:20]]),
+            "data_confidence": str(payload.get("dataConfidence") or "Developing")[:50],
+        }
+        try:
+            errors = self.client.insert_rows_json(DECISIONS_TABLE_REF, [created])
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision ledger insert failed: {exc}"}
+        if errors:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision ledger insert failed: {errors}"}
+        response = dict(created)
+        for name in ("baseline", "scenario", "expected", "evidence"):
+            response[name] = json.loads(response[name])
+        return HTTPStatus.CREATED, response
+
+    def _get_marketing_decision(self, decision_id):
+        query = f"""
+            SELECT *
+            FROM `{DECISIONS_TABLE_REF}`
+            WHERE decision_id = @decision_id
+            LIMIT 1
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("decision_id", "STRING", decision_id)]
+        )
+        row = next(iter(self.client.query(query, job_config=job_config).result()), None)
+        return self._shape_marketing_decision(row) if row else None
+
+    def _marketing_decision_progress(self, params):
+        decision_id = str((params.get("id", [""])[0]) or "").strip()
+        if not decision_id:
+            return HTTPStatus.BAD_REQUEST, {"detail": "id is required."}
+        try:
+            decision = self._get_marketing_decision(decision_id)
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision lookup failed: {exc}"}
+        if not decision:
+            return HTTPStatus.NOT_FOUND, {"detail": "Decision not found."}
+        filter_params = {"months": [str(decision["months"])]}
+        for key, value in (
+            ("window", decision["window"]),
+            ("campaign", decision["campaign"]),
+            ("rollup", decision["rollup"]),
+            ("ahj", decision["ahj"]),
+            ("region", decision["operating_region"]),
+        ):
+            if value:
+                filter_params[key] = [value]
+        status, rows = self._marketing_funnel(filter_params)
+        if status != HTTPStatus.OK:
+            return status, rows
+        current = aggregate_marketing_funnel_rows(rows)
+        return HTTPStatus.OK, evaluate_marketing_decision_progress(decision, current)
 
     def _ahj_performance(self, params):
         # campaign/market filters are supported and tested here, but the current

@@ -32,7 +32,8 @@ const geoRows = [{
   campaign:"Efficient Search", campaignRollup:"3rd Party Vendors LSR", leads:55, sets:25,
   runs:20, wins:10, revenue:450000, effectiveSpend:20000, activePipeline:9,
   expectedRemainingWins:2, benchmarkLeadToWinRate:.14, leadToWinRate:10/55,
-  conversionDeltaVsBenchmark:10/55-.14, costPerWin:2000, opportunityScore:76.2
+  conversionDeltaVsBenchmark:10/55-.14, costPerWin:2000, opportunityScore:76.2,
+  benchmarkCoverage:1,spendCompleteLeadShare:1,sampleSizeBucket:"Sufficient Sample"
 }];
 const reconciliation = {
   workbook:"Marketing Report 2026_Official.xlsx", period:"2026-01-01 through 2026-07-31",
@@ -117,6 +118,12 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
   assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");
   assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
+  const opportunities = app.opportunityRows();
+  assert(opportunities.length === 1 && opportunities[0].campaign === "Efficient Search" && opportunities[0].ahj === "Fairfax County", "Campaign/AHJ opportunity rows were not created.");
+  assert(opportunities[0].decisionType === "Scale" && opportunities[0].confidence === "High" && opportunities[0].estimatedWinImpact > 0, "Opportunity decision type, confidence, or impact is incorrect.");
+  assert(getElement("insightList").innerHTML.includes("Efficient Search") && getElement("insightList").innerHTML.includes("Fairfax County"), "Multi-campaign/AHJ opportunity queue did not render.");
+  assert(getElement("opportunityMatrix").innerHTML.includes("matrix-cell") && getElement("opportunityMatrix").innerHTML.includes("Fairfax County"), "Clickable Campaign/AHJ matrix did not render.");
+  assert(dashboardHtml.includes('id="matrixMetric"') && dashboardHtml.includes('id="improvementTarget"'), "Metric switching or improvement-target modeling is missing.");
   const decisions = app.decisionInsights();
   assert(decisions.length === 3 && decisions.every(item => item.question && item.view && item.evidence.length), "Command-center insights are not actionable decision objects.");
   assert(getElement("insightList").innerHTML.includes("Investigate") && dashboardHtml.includes("Discover → Investigate → Test → Implement"), "Guided decision workflow is not visible.");
@@ -149,6 +156,11 @@ setImmediate(() => {
     setImmediate(() => {
       assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("ahj=Fairfax+County")), "Changing AHJ did not re-query funnel data.");
       assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("ahj=Fairfax+County")), "Changing AHJ did not re-query geography data.");
+      const selectedOpportunity = app.opportunityRows()[0];
+      app.beginOpportunity(selectedOpportunity.key);
+      assert(app.state.activeDecision.improvementTarget.metricKey === "leadToWinRate", "Selected opportunity did not carry its improvement target.");
+      assert(getElement("improvementTarget").classList.contains("show") && getElement("improvementTarget").innerHTML.includes("Potential wins"), "Improvement target did not render in Funnel lab.");
+      assert(app.decisionTrackingPayload().primaryMetric === "leadToWin", "Improvement target did not carry into automatic tracking.");
       console.log("Marketing Intelligence workspace verified OK.");
     });
   });

@@ -20,8 +20,8 @@ DATASET = os.environ.get("BQ_DATASET", "marketing_tool_ops")
 TABLE = os.environ.get("BQ_TABLE", "dashboard_notes")
 TABLE_REF = f"{PROJECT_ID}.{DATASET}.{TABLE}"
 AHJ_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_campaign_ahj_performance"
-FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analysis"
-PROJECTION_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_period_projection"
+FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime"
+PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_projection_runtime"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -30,6 +30,8 @@ SOURCE_OBJECTS = [
     "analytics_rpt.rpt_marketing_lead_cohort_performance",
     "analytics_rpt.rpt_marketing_cohort_expected_yield",
     "analytics_rpt.rpt_marketing_period_projection",
+    "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime",
+    "marketing_tool_ops.rpt_marketing_period_projection_runtime",
     "analytics_rpt.rpt_marketing_campaign_ahj_performance",
     "analytics_rpt.rpt_campaign_ahj_performance",
     "analytics_rpt.rpt_pipeline_funnel",

@@ -182,3 +182,26 @@ SELECT
   END AS spend_coverage_note
 FROM
   `lumina-lakehouse.marketing_tool_ops.rpt_marketing_cohort_performance_with_yield` c;
+
+-- Runtime-safe reporting copies.
+--
+-- The Cloud Run service is intentionally not granted direct access to the
+-- analytics_dim or analytics_fact source datasets. These tables expose only
+-- the curated reporting contracts needed by the application.
+CREATE OR REPLACE TABLE
+  `lumina-lakehouse.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime`
+OPTIONS (
+  description = 'Runtime-safe copy of the marketing cohort funnel. Refresh with this deployment script.'
+)
+AS
+SELECT *
+FROM `lumina-lakehouse.marketing_tool_ops.rpt_marketing_funnel_analysis`;
+
+CREATE OR REPLACE TABLE
+  `lumina-lakehouse.marketing_tool_ops.rpt_marketing_period_projection_runtime`
+OPTIONS (
+  description = 'Runtime-safe copy of the current marketing period projections. Refresh with this deployment script.'
+)
+AS
+SELECT *
+FROM `lumina-lakehouse.analytics_rpt.rpt_marketing_period_projection`;

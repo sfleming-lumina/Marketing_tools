@@ -86,6 +86,7 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
         "ahj": "Fairfax County",
     }
     for query in (build_marketing_funnel_query(**values), build_marketing_geo_query(**values)):
+        assert "rpt_marketing_funnel_analysis_runtime" in query
         for name in ("campaign", "rollup", "state", "county", "ahj"):
             assert f"@{name}" in query
         assert "INTERVAL @months MONTH" in query
@@ -93,6 +94,7 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
 
 def test_projection_query_uses_confidence_and_current_month():
     query = build_marketing_projection_query(campaign="Summer Search")
+    assert "rpt_marketing_period_projection_runtime" in query
     assert "MAX(projection_confidence)" in query
     assert "projection_period_start_date = latest.latest_start" in query
     assert "campaign_name = @campaign" in query

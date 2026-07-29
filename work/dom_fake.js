@@ -71,8 +71,10 @@ function installFakeDom(extraIds = []) {
   };
 
   [
-    "appShell", "sideToggle", "campaignBudget", "campaignObjective", "campaignGrain",
+    "appShell", "sideToggle", "campaignObjective", "campaignMetrics",
     "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
+    "campaignLoadError", "campaignLoadErrorText", "campaignRetryButton",
+    "campaignRecommendations", "campaignCards", "campaignTrendChart", "campaignTable",
     "ahjCampaignSelect", "ahjObjective", "ahjFocusSelect", "ahjLayoutSelect", "ahjMetrics",
     "ahjLoadError", "ahjLoadErrorText", "ahjRetryButton",
     "ahjImmediateInsights", "ahjHeatmap", "ahjAllocationTable", "ahjDetail",

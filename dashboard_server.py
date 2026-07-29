@@ -102,6 +102,62 @@ def shape_ahj_row(row):
     }
 
 
+def build_campaign_performance_query(months=6, campaign=None):
+    conditions = ["campaign_name IS NOT NULL"]
+    if campaign:
+        conditions.append("campaign_name = @campaign")
+    where_clause = " AND ".join(conditions)
+    return f"""
+        WITH bounds AS (
+            SELECT MAX(period_start_date) AS latest_start
+            FROM `{AHJ_TABLE_REF}`
+            WHERE period_grain = 'MONTH'
+        )
+        SELECT
+            campaign_name AS campaign,
+            campaign_reporting_rollup_name AS campaignRollup,
+            period_start_date AS month,
+            SUM(lead_count) AS leads,
+            SUM(win_count) AS wins,
+            SUM(allocated_spend_amount) AS spend,
+            SUM(win_revenue) AS revenue
+        FROM `{AHJ_TABLE_REF}`, bounds
+        WHERE period_grain = 'MONTH'
+            AND period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+            AND {where_clause}
+        GROUP BY campaign, campaignRollup, month
+        HAVING SUM(allocated_spend_amount) > 0 OR SUM(lead_count) > 0
+        ORDER BY month, leads DESC, spend DESC
+        LIMIT 2000
+    """
+
+
+def shape_campaign_row(row):
+    leads = row["leads"] or 0
+    wins = row["wins"] or 0
+    spend = row["spend"] or 0
+    revenue = row["revenue"] or 0
+    if leads == 0 and wins == 0:
+        sample_size_bucket = "No Same-Period Sample"
+    elif leads < 20 and wins < 3:
+        sample_size_bucket = "Low Sample"
+    else:
+        sample_size_bucket = "Sufficient Sample"
+    return {
+        "campaign": row["campaign"],
+        "campaignRollup": row["campaignRollup"],
+        "month": row["month"].isoformat(),
+        "leads": leads,
+        "wins": wins,
+        "spend": spend,
+        "revenue": revenue,
+        "cpw": (spend / wins) if wins else None,
+        "revenuePerSpend": (revenue / spend) if spend else None,
+        "leadToWinRate": (wins / leads) if leads else None,
+        "sampleSizeBucket": sample_size_bucket,
+    }
+
+
 class DashboardHandler(SimpleHTTPRequestHandler):
     _client = None
 
@@ -153,6 +209,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/ahj-performance":
             params = parse_qs(parsed.query)
             status, result = self._ahj_performance(params)
+            self._send_json(status, result)
+            return
+        if parsed.path == "/api/campaign-performance":
+            params = parse_qs(parsed.query)
+            status, result = self._campaign_performance(params)
             self._send_json(status, result)
             return
         return super().do_GET()
@@ -259,6 +320,23 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_GATEWAY, {"detail": f"AHJ performance query failed: {exc}"}
         return HTTPStatus.OK, [shape_ahj_row(row) for row in rows]
 
+    def _campaign_performance(self, params):
+        try:
+            months = int((params.get("months", ["6"])[0]) or "6")
+        except ValueError:
+            return HTTPStatus.BAD_REQUEST, {"detail": "months must be an integer."}
+        campaign = (params.get("campaign", [None])[0] or None)
+        query = build_campaign_performance_query(months=months, campaign=campaign)
+        query_parameters = [bigquery.ScalarQueryParameter("months", "INT64", months)]
+        if campaign:
+            query_parameters.append(bigquery.ScalarQueryParameter("campaign", "STRING", campaign))
+        job_config = bigquery.QueryJobConfig(query_parameters=query_parameters)
+        try:
+            rows = self.client.query(query, job_config=job_config).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Campaign performance query failed: {exc}"}
+        return HTTPStatus.OK, [shape_campaign_row(row) for row in rows]
+
     def _source_freshness(self):
         checked_at = datetime.now(timezone.utc).isoformat()
         objects = []
@@ -327,17 +405,21 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
     def _fallback_insights(self, question, context, reason):
         planner = context.get("campaign_planner", {}) if isinstance(context, dict) else {}
-        diagnostics = planner.get("cost_spend_diagnostics", {}) if isinstance(planner, dict) else {}
+        top_rows = planner.get("top_recommendations", []) if isinstance(planner, dict) else []
+        top_rows = [row for row in top_rows if isinstance(row, dict)]
         summary = context.get("summary_metrics", {}) if isinstance(context, dict) else {}
         filters = context.get("filters", {}) if isinstance(context, dict) else {}
-        blended_cpw = self._num(diagnostics.get("blended_planned_cpw")) or self._num(summary.get("cost_per_win")) or 0
-        total_spend = self._num(diagnostics.get("total_planned_spend")) or self._num(summary.get("spend")) or 0
-        highest_cpw = self._first(diagnostics.get("highest_capacity_adjusted_cpw"))
-        highest_spend = self._first(diagnostics.get("highest_spend"))
-        weakest_roi = self._first(diagnostics.get("weakest_revenue_per_spend"))
-        full_table = diagnostics.get("full_campaign_table") or planner.get("campaigns") or []
+        total_spend = sum(self._num(row.get("spend")) for row in top_rows) or self._num(summary.get("spend"))
+        total_wins = sum(self._num(row.get("wins")) for row in top_rows)
+        blended_cpw = total_spend / total_wins if total_wins else self._num(summary.get("cost_per_win"))
+        risk_rows = [row for row in top_rows if row.get("decision") in {"Hold", "Avoid"}]
+        highest_cpw = max(
+            (row for row in (risk_rows or top_rows) if self._num(row.get("cost_per_win")) > 0),
+            key=lambda row: self._num(row.get("cost_per_win")),
+            default={},
+        )
         best_efficiency = max(
-            (row for row in full_table if isinstance(row, dict)),
+            top_rows,
             key=lambda row: self._num(row.get("revenue_per_spend")),
             default={},
         )
@@ -346,74 +428,50 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if highest_cpw:
             weak_spots.append({
                 "name": self._label(highest_cpw),
-                "metric": "Highest capacity-adjusted CPW",
+                "metric": f"{highest_cpw.get('decision', 'Review')} campaign cost per win",
                 "evidence": (
-                    f"{self._label(highest_cpw)} shows capacity-adjusted CPW of "
-                    f"{self._currency(highest_cpw.get('capacity_adjusted_cpw'))} versus blended planned CPW of "
+                    f"{self._label(highest_cpw)} shows cost per win of "
+                    f"{self._currency(highest_cpw.get('cost_per_win'))} versus blended CPW of "
                     f"{self._currency(blended_cpw)}."
                 ),
                 "why_it_matters": (
-                    f"Stress is {self._percent(highest_cpw.get('stress'))}; spend here can look efficient before "
-                    "downstream capacity friction is included."
+                    f"Lead-to-win is {self._percent(highest_cpw.get('lead_to_win_rate'))} with "
+                    f"{highest_cpw.get('sample_size_bucket', 'unknown')} confidence."
                 ),
-                "severity": "high" if self._num(highest_cpw.get("capacity_adjusted_cpw")) > blended_cpw * 1.25 else "medium",
-            })
-        if highest_spend:
-            weak_spots.append({
-                "name": self._label(highest_spend),
-                "metric": "Largest spend concentration",
-                "evidence": (
-                    f"{self._label(highest_spend)} carries planned spend of "
-                    f"{self._currency(highest_spend.get('planned_spend'))}, "
-                    f"{self._percent(highest_spend.get('spend_share'))} of the selected budget."
-                ),
-                "why_it_matters": "Large budget share deserves extra scrutiny when CPW or revenue-per-spend is not also best in class.",
-                "severity": "medium",
-            })
-        if weakest_roi:
-            weak_spots.append({
-                "name": self._label(weakest_roi),
-                "metric": "Weakest revenue per spend",
-                "evidence": (
-                    f"{self._label(weakest_roi)} has revenue per spend of "
-                    f"{self._num(weakest_roi.get('revenue_per_spend')):.1f}x."
-                ),
-                "why_it_matters": "This is the first place to question marginal dollars if cost per win is also elevated.",
-                "severity": "medium",
+                "severity": "high" if highest_cpw.get("decision") == "Avoid" else "medium",
             })
 
         recommendations = []
         if highest_cpw:
             recommendations.append({
-                "action": f"Pressure-test spend on {self._label(highest_cpw)}",
-                "rationale": "It is the clearest cost-per-win weak spot after capacity adjustment.",
-                "expected_impact": "Reduces the chance that paid growth creates expensive downstream bottlenecks.",
+                "action": f"Keep {self._label(highest_cpw)} in {highest_cpw.get('decision', 'review')}",
+                "rationale": "Its live cost-per-win and conversion gates do not support scaling yet.",
+                "expected_impact": "Protects budget while the campaign builds a stronger same-period sample.",
                 "confidence": "medium",
             })
         if best_efficiency:
             recommendations.append({
-                "action": f"Move marginal dollars toward {self._label(best_efficiency)} if capacity holds",
+                "action": f"Prioritize the next review of {self._label(best_efficiency)}",
                 "rationale": (
                     f"It has stronger revenue per spend at {self._num(best_efficiency.get('revenue_per_spend')):.1f}x "
-                    "inside the selected context."
+                    f"and is currently gated as {best_efficiency.get('decision', 'Review')}."
                 ),
-                "expected_impact": "Improves budget quality without requiring a full-plan reset.",
+                "expected_impact": "Focuses decision time on the strongest evidence-backed campaign.",
                 "confidence": "medium",
             })
         recommendations.append({
-            "action": "Review CPW and spend together in the next planning meeting",
-            "rationale": "High spend alone is not a problem; high spend plus weak CPW or weak revenue-per-spend is the decision trigger.",
-            "expected_impact": "Creates a cleaner scale, test, hold, or cut decision for each campaign.",
+            "action": "Review Scale, Test, Hold, and Avoid gates in the next planning meeting",
+            "rationale": "The campaign ranking combines live CPW, lead-to-win rate, and same-period sample confidence.",
+            "expected_impact": "Keeps spend decisions tied to observed performance rather than synthetic allocations.",
             "confidence": "high",
         })
 
         return {
-            "headline": "Cost and spend weak spots need budget guardrails",
+            "headline": "Live campaign gates identify the next decisions",
             "executive_summary": (
                 f"For {filters.get('market', 'the selected market')} / {filters.get('source', 'the selected source')}, "
-                f"the selected context shows {self._currency(total_spend)} in planned spend and blended CPW of "
-                f"{self._currency(blended_cpw)}. The weak spots are the campaigns where CPW, capacity-adjusted CPW, "
-                "or spend concentration are out of line with that blended benchmark."
+                f"the ranked live campaign rows show {self._currency(total_spend)} in actual spend and blended CPW of "
+                f"{self._currency(blended_cpw)}. Scale and Test recommendations require both efficient CPW and credible conversion."
             ),
             "weak_spots": weak_spots,
             "recommendations": recommendations,
@@ -422,9 +480,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 f"Fallback insight mode was used because Claude returned no usable structured text: {reason}.",
             ],
             "next_actions": [
-                "Open the Campaign Planner and compare the weak spot against the best revenue-per-spend campaign.",
+                "Open Campaign Performance and compare the weak spot against the highest-ranked campaign.",
                 "Add a note on any campaign whose CPW looks directionally wrong so the data team can validate source data.",
-                "Use the next budget review to decide whether the weak spot should be capped, re-tested, or shifted.",
+                "Use the next budget review to decide whether each campaign should scale, test, hold, or avoid.",
             ],
         }
 
@@ -433,11 +491,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return float(value)
         except (TypeError, ValueError):
             return 0.0
-
-    def _first(self, value):
-        if isinstance(value, list) and value:
-            return value[0] if isinstance(value[0], dict) else {}
-        return {}
 
     def _label(self, row):
         return str(row.get("campaign") or row.get("source") or row.get("name") or "Selected campaign")

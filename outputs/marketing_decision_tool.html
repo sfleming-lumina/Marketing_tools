@@ -555,18 +555,6 @@
       gap: 13px;
     }
 
-    .budget-total {
-      display: grid;
-      grid-template-columns: minmax(170px, 1fr) auto;
-      gap: 12px;
-      align-items: end;
-      padding-bottom: 4px;
-    }
-
-    .budget-total strong {
-      font-size: 24px;
-      color: var(--accent);
-    }
 
     .heatmap {
       display: grid;
@@ -1772,61 +1760,43 @@
       </section>
 
       <section id="campaigns" class="view hidden">
+        <div id="campaignLoadError" class="ahj-load-error hidden">
+          <span id="campaignLoadErrorText"></span>
+          <button type="button" id="campaignRetryButton">Retry</button>
+        </div>
         <div class="metric-grid" id="campaignMetrics"></div>
-        <article class="panel">
-          <div class="panel-head">
-            <div>
-              <h3>Decision metric suite</h3>
-              <p>Derived from cohort yield, campaign/AHJ performance, project economics, and capacity planning objects.</p>
-            </div>
-          </div>
-          <div class="decision-list" id="decisionMetricSuite"></div>
-        </article>
+
         <div class="grid-2">
           <article class="panel">
             <div class="panel-head">
               <div>
-                <h3>Campaign budget allocator</h3>
-                <p>Choose an objective, set total dollars, and tune channel allocation for the selected market/window.</p>
+                <h3>Campaign performance controls</h3>
+                <p>Rank live campaign actuals with the same CPW, conversion, and sample-confidence gates used in the AHJ view.</p>
               </div>
             </div>
             <div class="campaign-controls">
-              <div class="budget-total">
-                <div class="control">
-                  <label for="campaignBudget">Total budget</label>
-                  <input id="campaignBudget" type="range" min="50000" max="750000" step="25000" value="250000">
-                </div>
-                <strong id="campaignBudgetOut">$250K</strong>
-              </div>
               <div class="control">
-                <label for="campaignObjective">Decision objective</label>
+                <label for="campaignObjective">Ranking metric</label>
                 <select id="campaignObjective">
-                  <option>Balanced growth</option>
-                  <option>Max revenue</option>
+                  <option>Balanced decision score</option>
+                  <option>Revenue per spend</option>
                   <option>Lowest cost per win</option>
-                  <option>Capacity safe</option>
-                </select>
-              </div>
-              <div class="control">
-                <label for="campaignGrain">Campaign grain</label>
-                <select id="campaignGrain">
-                  <option value="Detail">Named campaign detail</option>
-                  <option value="Source">Source roll-up</option>
+                  <option>Lead to win rate</option>
+                  <option>Sample confidence</option>
                 </select>
               </div>
               <div class="control">
                 <label for="campaignDetailSelect">Campaign detail</label>
                 <select id="campaignDetailSelect"></select>
               </div>
-              <div id="campaignAllocationControls"></div>
             </div>
           </article>
 
           <article class="panel">
             <div class="panel-head">
               <div>
-                <h3>Recommended campaign buys</h3>
-                <p>Ranked next-dollar decisions, with economics and operational fit together.</p>
+                <h3>Ranked campaign recommendations</h3>
+                <p>Scale, test, hold, or avoid based on live campaign performance and evidence quality.</p>
               </div>
             </div>
             <div class="decision-list" id="campaignRecommendations"></div>
@@ -1837,66 +1807,32 @@
           <div class="panel-head">
             <div>
               <h3>Campaign cards</h3>
-              <p>Named spend packages the team can compare and defend.</p>
+              <p>Actual leads, wins, spend, revenue, efficiency, and decision status by campaign.</p>
             </div>
           </div>
           <div class="campaign-card-grid" id="campaignCards"></div>
         </article>
 
-        <div class="grid-2">
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h3>Selected campaign trend</h3>
-                <p>Monthly lead, win, and revenue movement for the best or selected campaign detail.</p>
-              </div>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Selected campaign trend</h3>
+              <p>Monthly revenue, spend, and win movement for the top or selected live campaign.</p>
             </div>
-            <svg class="chart" id="campaignTrendChart" role="img" aria-label="Selected campaign trend chart"></svg>
-            <div class="legend">
-              <span><i style="background:#39b54a"></i>Revenue</span>
-              <span><i style="background:#7d8580"></i>Wins</span>
-              <span><i style="background:#167a2d"></i>Cost per win</span>
-            </div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h3>Budget transfer assistant</h3>
-                <p>Concrete reallocations from weaker campaigns into stronger ones.</p>
-              </div>
-            </div>
-            <div class="decision-list" id="campaignMoves"></div>
-          </article>
-        </div>
-
-        <div class="grid-2">
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h3>Spend frontier</h3>
-                <p>Expected revenue and capacity stress by campaign detail.</p>
-              </div>
-            </div>
-            <svg class="chart" id="campaignSpendChart" role="img" aria-label="Campaign spend frontier chart"></svg>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h3>Where to spend</h3>
-                <p>Market and campaign heatmap based on expected yield, cost, AHJ fit, and capacity readiness.</p>
-              </div>
-            </div>
-            <div class="heatmap" id="campaignHeatmap"></div>
-          </article>
-        </div>
+          </div>
+          <svg class="chart" id="campaignTrendChart" role="img" aria-label="Selected campaign trend chart"></svg>
+          <div class="legend">
+            <span><i style="background:#39b54a"></i>Revenue</span>
+            <span><i style="background:#167a2d"></i>Spend</span>
+            <span><i style="background:#7d8580"></i>Wins</span>
+          </div>
+        </article>
 
         <article class="panel">
           <div class="panel-head">
             <div>
               <h3>Campaign decision table</h3>
-              <p>Use this to explain the why behind each spend recommendation.</p>
+              <p>Live actuals and benchmark gates behind every campaign recommendation.</p>
             </div>
           </div>
           <table class="table" id="campaignTable"></table>
@@ -2178,63 +2114,10 @@
       "Southeast PA": { lift: 1.02, readiness: 5, permit: 71, utility: 69, crew: 70, survey: 72, cancel: 48, systemKw: 9.1, marginAdj: 0.008, capacityOffset: 3 }
     };
     const regionReadiness = Object.fromEntries(regions.map(region => [region, regionProfiles[region].readiness]));
-    const sourceRegionFit = {
-      "Paid Search": { "DC Metro": 5, "Northern Virginia": 8, "Maryland Suburbs": 7, "Baltimore": 2, "Central PA": -2, "Southeast PA": 4 },
-      "Referral": { "DC Metro": 6, "Northern Virginia": 9, "Maryland Suburbs": 8, "Baltimore": 3, "Central PA": 2, "Southeast PA": 6 },
-      "Partner": { "DC Metro": 3, "Northern Virginia": 7, "Maryland Suburbs": 6, "Baltimore": 5, "Central PA": 4, "Southeast PA": 7 },
-      "Events": { "DC Metro": 1, "Northern Virginia": 5, "Maryland Suburbs": 4, "Baltimore": 6, "Central PA": 2, "Southeast PA": 5 },
-      "Direct Mail": { "DC Metro": 4, "Northern Virginia": 5, "Maryland Suburbs": 7, "Baltimore": 3, "Central PA": 6, "Southeast PA": 8 }
-    };
-    const campaignTactics = {
-      "Paid Search": {
-        name: "High-intent capture",
-        tactic: "Concentrate bids on serviceable AHJs and high-margin battery attach keywords.",
-        guardrail: "Pause if survey stress exceeds 18%."
-      },
-      "Referral": {
-        name: "Customer referral acceleration",
-        tactic: "Fund referral boosts in markets with strong first-pass survey performance.",
-        guardrail: "Keep incentive cost below blended cost per set."
-      },
-      "Partner": {
-        name: "Partner channel expansion",
-        tactic: "Shift co-op dollars to partners producing larger systems and clean handoffs.",
-        guardrail: "Require source-level quote coverage."
-      },
-      "Events": {
-        name: "Local event selectivity",
-        tactic: "Run fewer events, only where AHJ readiness and install coverage are favorable.",
-        guardrail: "Cap spend unless run rate improves."
-      },
-      "Direct Mail": {
-        name: "Neighborhood reactivation",
-        tactic: "Use targeted mail for prior-interest ZIPs with low sales follow-up friction.",
-        guardrail: "Suppress low win-rate territories."
-      }
-    };
-    const campaignSegments = [
-      { source: "Paid Search", campaign: "Google Nonbrand Search", mix: 0.33, leadLift: 1.04, costIndex: 1.10, winLift: 1.05, revenueLift: 1.02, stressLift: 1.04, tactic: "Fund nonbrand solar intent terms only in AHJs with fast cycle time.", guardrail: "Cap when cost per set rises two weeks in a row." },
-      { source: "Paid Search", campaign: "Google Brand Defense", mix: 0.16, leadLift: 0.92, costIndex: 0.72, winLift: 1.18, revenueLift: 1.00, stressLift: 0.86, tactic: "Protect branded demand and competitor conquest leakage.", guardrail: "Maintain floor spend; do not over-scale low-incrementality clicks." },
-      { source: "Paid Search", campaign: "Solar Reviews", mix: 0.29, leadLift: 1.16, costIndex: 0.94, winLift: 1.12, revenueLift: 1.04, stressLift: 0.95, tactic: "Scale Solar Reviews where lead quality and survey conversion stay above blended average.", guardrail: "Hold out AHJs with poor first-pass survey performance." },
-      { source: "Paid Search", campaign: "Local Services Ads", mix: 0.22, leadLift: 0.98, costIndex: 1.06, winLift: 0.96, revenueLift: 0.98, stressLift: 1.08, tactic: "Use local service capture for near-term appointment volume.", guardrail: "Throttle if same-week appointment capacity is constrained." },
-      { source: "Referral", campaign: "Customer Referral Bonus", mix: 0.48, leadLift: 0.84, costIndex: 0.58, winLift: 1.28, revenueLift: 1.04, stressLift: 0.78, tactic: "Increase referral bonus in markets with strong install experience.", guardrail: "Keep incentive below marginal commission savings." },
-      { source: "Referral", campaign: "Ambassador Program", mix: 0.30, leadLift: 0.74, costIndex: 0.67, winLift: 1.18, revenueLift: 1.01, stressLift: 0.82, tactic: "Recruit top advocates around high-density neighborhoods.", guardrail: "Review partner attribution overlap before payout." },
-      { source: "Referral", campaign: "Employee Referral", mix: 0.22, leadLift: 0.52, costIndex: 0.42, winLift: 1.09, revenueLift: 0.98, stressLift: 0.75, tactic: "Run low-cost employee referral pushes during capacity-friendly weeks.", guardrail: "Keep campaign lightweight and time boxed." },
-      { source: "Partner", campaign: "EnergySage", mix: 0.31, leadLift: 1.08, costIndex: 0.88, winLift: 1.08, revenueLift: 1.02, stressLift: 0.98, tactic: "Scale marketplace bids on larger-system segments.", guardrail: "Require quote margin coverage before increasing bids." },
-      { source: "Partner", campaign: "Builder Partner", mix: 0.28, leadLift: 0.70, costIndex: 0.76, winLift: 1.22, revenueLift: 1.10, stressLift: 0.88, tactic: "Fund co-marketing with builders producing clean handoffs.", guardrail: "Pause partners with high cancelled-project share." },
-      { source: "Partner", campaign: "Retail Dealer Co-op", mix: 0.22, leadLift: 0.82, costIndex: 0.91, winLift: 0.96, revenueLift: 0.98, stressLift: 1.02, tactic: "Use co-op dollars for stores with proven appointment show rate.", guardrail: "Require weekly lead disposition coverage." },
-      { source: "Partner", campaign: "Affiliate Marketplace", mix: 0.19, leadLift: 1.18, costIndex: 1.18, winLift: 0.86, revenueLift: 0.96, stressLift: 1.10, tactic: "Treat as volume filler only when capacity is available.", guardrail: "Cut if lead-to-run rate falls below baseline." },
-      { source: "Events", campaign: "Home Shows", mix: 0.44, leadLift: 1.04, costIndex: 1.22, winLift: 0.92, revenueLift: 1.01, stressLift: 1.15, tactic: "Select fewer shows in AHJs with strong permit throughput.", guardrail: "No expansion without post-show run-rate proof." },
-      { source: "Events", campaign: "Community Events", mix: 0.32, leadLift: 0.78, costIndex: 0.96, winLift: 0.88, revenueLift: 0.96, stressLift: 1.04, tactic: "Use for local awareness, not primary win volume.", guardrail: "Bundle with referral capture to justify spend." },
-      { source: "Events", campaign: "Webinar / Education", mix: 0.24, leadLift: 0.62, costIndex: 0.70, winLift: 1.02, revenueLift: 0.99, stressLift: 0.84, tactic: "Use low-cost education for nurture and battery attach messaging.", guardrail: "Score success on assisted pipeline, not raw lead count." },
-      { source: "Direct Mail", campaign: "Neighborhood Reactivation", mix: 0.42, leadLift: 0.86, costIndex: 0.93, winLift: 0.94, revenueLift: 1.01, stressLift: 0.92, tactic: "Mail prior-interest neighborhoods near active crews.", guardrail: "Suppress territories with weak set rate." },
-      { source: "Direct Mail", campaign: "Permit-AHJ Mailer", mix: 0.30, leadLift: 0.72, costIndex: 0.86, winLift: 1.06, revenueLift: 0.98, stressLift: 0.80, tactic: "Target AHJs with simpler permitting and faster install flow.", guardrail: "Refresh AHJ list monthly." },
-      { source: "Direct Mail", campaign: "Battery Upgrade Mailer", mix: 0.28, leadLift: 0.58, costIndex: 0.82, winLift: 0.92, revenueLift: 1.16, stressLift: 0.76, tactic: "Target homeowners likely to add battery value.", guardrail: "Track attach-rate and margin, not lead count alone." }
-    ];
     const titleMap = {
       overview: ["Marketing performance command center", "See where demand is working, whether downstream capacity can absorb it, and which source mix changes are likely worth taking to the marketing team."],
       cohorts: ["Cohort and campaign quality", "Compare source quality from lead through win, with AHJ readiness so growth decisions stay grounded."],
-      campaigns: ["Campaign spend planner", "Decide where and how to spend marketing dollars by source, market, expected yield, cost, and downstream capacity."],
+      campaigns: ["Live campaign performance", "Rank actual campaign results by cost per win, revenue efficiency, conversion quality, and sample confidence."],
       ahj: ["AHJ spend planner", "Allocate campaign spend at the county/AHJ level with immediate recommendations, guardrails, and drill-down context."],
       scenario: ["Scenario planner", "Use budget and capacity assumptions to turn report-ready metrics into clear decisions."],
       objects: ["Lakehouse object map", "Identified report-ready BQ objects that can support the marketing decision demo."],
@@ -2459,12 +2342,12 @@
       objectDomain: "All",
       feedbackFilter: "All",
       feedbackTypeFilter: "All",
-      campaignBudget: 250000,
-      campaignObjective: "Balanced growth",
-      campaignGrain: "Detail",
+      campaignObjective: "Balanced decision score",
       campaignDetail: "All campaign details",
-      campaignAllocations: { "Paid Search": 32, "Referral": 24, "Partner": 20, "Events": 12, "Direct Mail": 12 },
-      campaignDetailAllocations: {},
+      campaignRows: [],
+      campaignRowsFetchKey: null,
+      campaignFetchToken: 0,
+      campaignLoadError: null,
       ahjObjective: "Balanced decision score",
       ahjCampaign: "Solar Reviews",
       ahjArea: "efficiency",
@@ -2486,28 +2369,8 @@
       );
     }
 
-    function selectedCampaignSegment() {
-      if (state.campaignDetail === "All campaign details") return null;
-      return campaignSegments.find(segment => segment.campaign === state.campaignDetail) || null;
-    }
-
     function filteredRows() {
-      const rows = baseFilteredRows();
-      const segment = selectedCampaignSegment();
-      if (!segment) return rows;
-      return rows
-        .filter(row => row.source === segment.source)
-        .map(row => ({
-          ...row,
-          campaign: segment.campaign,
-          leads: row.leads * segment.mix * segment.leadLift,
-          spend: row.spend * segment.mix * segment.costIndex,
-          sets: row.sets * segment.mix * segment.leadLift,
-          runs: row.runs * segment.mix * segment.leadLift * segment.stressLift,
-          wins: row.wins * segment.mix * segment.leadLift * segment.winLift,
-          revenue: row.revenue * segment.mix * segment.leadLift * segment.winLift * segment.revenueLift,
-          capacity: row.capacity * segment.mix
-        }));
+      return baseFilteredRows();
     }
 
     function aggregate(rows, key) {
@@ -2528,40 +2391,6 @@
       return (value * 100).toFixed(digits) + "%";
     }
 
-    function campaignCostSpendDiagnostics(planRows) {
-      const totalSpend = planRows.reduce((sum, row) => sum + row.plannedSpend, 0);
-      const totalWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
-      const blendedPlannedCpw = totalSpend / Math.max(1, totalWins);
-      const totalRevenue = planRows.reduce((sum, row) => sum + row.expectedRevenue, 0);
-      const rows = planRows.map(row => ({
-        campaign: row.campaign,
-        source: row.source,
-        decision: row.decision,
-        planned_spend: Math.round(row.plannedSpend),
-        spend_share: row.plannedSpend / Math.max(1, totalSpend),
-        expected_wins: Number(row.expectedWins.toFixed(2)),
-        expected_revenue: Math.round(row.expectedRevenue),
-        planned_cpw: row.plannedSpend / Math.max(1, row.expectedWins),
-        source_cpw: row.cpw,
-        capacity_adjusted_cpw: row.capacityAdjustedCpw,
-        revenue_per_spend: row.marginalRoi,
-        stress: row.stress,
-        score: row.score,
-        above_blended_cpw_pct: (row.plannedSpend / Math.max(1, row.expectedWins) - blendedPlannedCpw) / Math.max(1, blendedPlannedCpw)
-      }));
-      return {
-        blended_planned_cpw: blendedPlannedCpw,
-        total_planned_spend: totalSpend,
-        total_expected_wins: totalWins,
-        total_expected_revenue: totalRevenue,
-        highest_planned_cpw: [...rows].sort((a, b) => b.planned_cpw - a.planned_cpw).slice(0, 5),
-        highest_capacity_adjusted_cpw: [...rows].sort((a, b) => b.capacity_adjusted_cpw - a.capacity_adjusted_cpw).slice(0, 5),
-        highest_spend: [...rows].sort((a, b) => b.planned_spend - a.planned_spend).slice(0, 5),
-        weakest_revenue_per_spend: [...rows].sort((a, b) => a.revenue_per_spend - b.revenue_per_spend).slice(0, 5),
-        full_campaign_table: rows
-      };
-    }
-
     function dashboardContextForClaude() {
       const rows = filteredRows();
       const revenue = aggregate(rows, "revenue");
@@ -2574,12 +2403,8 @@
       const series = trendSeries(state.trendExplorerMetric);
       const comparison = series.map(item => comparisonValue(series, item, state.trendCompareMode));
       const latestTrend = series[series.length - 1] || {};
-      const planRows = campaignPlanRows();
-      const focusCampaign = state.campaignDetail !== "All campaign details"
-        ? planRows.find(row => row.campaign === state.campaignDetail)
-        : planRows[0];
-      const focusTrend = focusCampaign ? campaignRowsByMonth(focusCampaign) : [];
-      const costSpend = campaignCostSpendDiagnostics(planRows);
+      const campaignRowsForContext = campaignDecisionRows();
+      const focusTrend = campaignTrendRows(campaignRowsForContext);
       const ahjRowsForContext = ahjDecisionRows();
       return {
         data_scope: {
@@ -2614,31 +2439,29 @@
           }))
         },
         campaign_planner: {
-          grain: state.campaignGrain,
           selected_campaign: state.campaignDetail,
-          budget: state.campaignBudget,
-          objective: state.campaignObjective,
-          cost_spend_diagnostics: costSpend,
-          campaigns: planRows.map(row => ({
+          rank_metric: state.campaignObjective,
+          active_campaigns: [...new Set(state.campaignRows.map(row => row.campaign))],
+          top_recommendations: campaignRowsForContext.slice(0, 12).map(row => ({
             campaign: row.campaign,
-            source: row.source,
+            source: row.campaignRollup,
             decision: row.decision,
-            score: row.score,
-            planned_spend: row.plannedSpend,
-            expected_revenue: row.expectedRevenue,
-            expected_wins: row.expectedWins,
-            planned_cpw: row.plannedSpend / Math.max(1, row.expectedWins),
-            source_cpw: row.cpw,
-            capacity_adjusted_cpw: row.capacityAdjustedCpw,
-            revenue_per_spend: row.marginalRoi,
-            stress: row.stress,
-            tactic: row.tactic,
-            guardrail: row.guardrail
+            selected_metric: row.metricDisplay,
+            selected_metric_value: row.metricValue,
+            spend: row.spend,
+            wins: row.wins,
+            revenue: row.revenue,
+            lead_volume: row.leads,
+            lead_to_win_rate: row.leadToWinRate,
+            sample_size_bucket: row.sampleSizeBucket,
+            cost_per_win: row.cpw,
+            revenue_per_spend: row.revenuePerSpend
           })),
           selected_campaign_trend: focusTrend.map(row => ({
             month: row.month,
             leads: row.leads,
             wins: row.wins,
+            spend: row.spend,
             revenue: row.revenue,
             cost_per_win: row.cpw
           }))
@@ -2804,16 +2627,9 @@
       "Lead volume": "Lead count in the selected window. Useful for pacing, but it should be read with conversion and win quality.",
       "Spend": "Marketing spend represented in the reporting layer. Use it as the denominator for ROI and cost-per-win decisions.",
       "Survey capacity": "Available downstream survey capacity linked to marketing demand. Use it to time campaigns around operational bandwidth.",
-      "Budget": "Total campaign dollars in the allocator. Move this slider to test how spend level changes expected wins and revenue.",
-      "Weighted stress": "Expected capacity stress after weighting each campaign by its planned win contribution.",
       "Market readiness": "Composite DMV/PA market score using permit speed, utility fit, crew coverage, survey access, and cancellation risk.",
-      "Capacity-adj CPW": "Cost per win adjusted for market readiness and survey/install pressure. This is the safer CPW for campaign decisions.",
-      "Gross margin / $": "Expected gross margin generated for each marketing dollar. Use it to compare campaign quality beyond revenue.",
-      "Next $10K yield": "Projected wins and revenue from the next incremental $10K placed into the best current campaigns.",
       "Top campaign": "The highest ranked campaign under the current objective, market, source, and allocation settings.",
       "Decision coverage": "How many campaign options are being ranked in the current view.",
-      "Best next dollar": "Adjusted return on the current best incremental spend opportunity.",
-      "Hold/Cut count": "Number of campaigns that should be reviewed before adding more budget.",
       "Revenue delta": "Scenario revenue change versus the current baseline after applying the budget mix sliders.",
       "Win delta": "Scenario closed-won movement versus baseline. Use this to quantify whether a spend shift is worth the disruption.",
       "Spend delta": "Scenario investment change versus baseline.",
@@ -2827,15 +2643,10 @@
       "Cohort quality by source": "Shows lead-to-set, lead-to-run, and lead-to-win conversion by source.",
       "Expected yield table": "Tabular source view of leads, wins, revenue, conversion, and cost per win.",
       "AHJ and campaign readiness": "Operational readiness view for the selected DMV/PA market, including utility, permitting, crew, survey, and cancellation signals.",
-      "Decision metric suite": "Explains the derived decision metrics used in campaign ranking: readiness, adjusted CPW, margin, product lift, and saturation.",
-      "Campaign budget allocator": "Use the budget, objective, grain, campaign selector, and sliders to simulate where marketing dollars should go.",
-      "Recommended campaign buys": "Ranked campaign recommendations with planned spend, adjusted economics, expected wins, and stress.",
-      "Campaign cards": "Compact campaign packages for comparison. Use them to talk through spend, wins, and next-$10K impact.",
+      "Ranked campaign recommendations": "Live campaign recommendations gated by cost per win, lead-to-win rate, and sample confidence.",
+      "Campaign cards": "Compact live campaign actuals for comparing spend, wins, revenue, conversion, and decision status.",
       "Selected campaign trend": "Monthly revenue, wins, and cost-per-win trend for the top or selected campaign.",
-      "Budget transfer assistant": "Concrete reallocations from weaker campaigns to stronger campaigns based on marginal yield.",
-      "Spend frontier": "Plots campaign yield against capacity stress. Favor upper-left opportunities with high yield and lower stress.",
-      "Where to spend": "Market-by-campaign heatmap. Higher scores indicate better economics and operational fit.",
-      "Campaign decision table": "Detailed campaign ranking table for defending why each campaign should scale, test, hold, or cut.",
+      "Campaign decision table": "Detailed live campaign ranking table for defending why each campaign should scale, test, hold, or avoid.",
       "Campaign AHJ controls": "Controls for comparing county/AHJ performance for a selected campaign, objective lens, and AHJ focus.",
       "Immediate AHJ insights": "Plain-English county/AHJ recommendations for the selected campaign, using strict scale gates and guardrails.",
       "Campaign by AHJ heatmap": "County/AHJ-by-campaign heatmap. Higher scores indicate better next-dollar fit after operational guardrails.",
@@ -2856,7 +2667,6 @@
       if (helpCopy[text]) return helpCopy[text];
       if (text.startsWith("Expected revenue")) return "Expected revenue under the current campaign allocation. Use it with margin and stress before scaling.";
       if (text.startsWith("Market readiness")) return helpCopy["Market readiness"];
-      if (text.startsWith("Capacity-adjusted CPW")) return helpCopy["Capacity-adj CPW"];
       if (text.startsWith("Next $10K efficiency")) return helpCopy["Next $10K yield"];
       if (text.startsWith("Gross margin per $")) return helpCopy["Gross margin / $"];
       if (text.startsWith("Product mix lift")) return "Estimated lift from campaigns that tend to produce richer system size, partner/builder demand, or battery attach upside.";
@@ -2924,34 +2734,6 @@
           <div class="impact">${pills.map(pill => `<span class="pill ${tone}">${pill}</span>`).join("")}</div>
         </div>
       `;
-    }
-
-    function activeMarketProfiles() {
-      return state.region === "All markets"
-        ? regions.map(region => regionProfiles[region])
-        : [regionProfiles[state.region]];
-    }
-
-    function marketReadinessScore() {
-      const profiles = activeMarketProfiles();
-      const total = profiles.reduce((sum, profile) => {
-        return sum + profile.utility * 0.18 + profile.permit * 0.24 + profile.crew * 0.22 + profile.survey * 0.2 + (100 - profile.cancel) * 0.16;
-      }, 0);
-      return Math.round(total / Math.max(1, profiles.length));
-    }
-
-    function marketReadinessTone(score) {
-      if (score >= 72) return "good";
-      if (score >= 64) return "warn";
-      return "bad";
-    }
-
-    function campaignProductLift(row) {
-      let lift = row.source === "Partner" ? 0.08 : row.source === "Referral" ? 0.06 : row.source === "Paid Search" ? 0.04 : row.source === "Direct Mail" ? 0.03 : 0.01;
-      if (row.campaign.includes("Battery")) lift += 0.14;
-      if (row.campaign.includes("Builder") || row.campaign.includes("EnergySage")) lift += 0.06;
-      if (row.campaign.includes("Home Shows") || row.campaign.includes("Community")) lift -= 0.02;
-      return Math.max(0, lift);
     }
 
     function groupedByMonth(rows) {
@@ -3321,498 +3103,338 @@
     }
 
     function campaignDetailOptions() {
-      const sourceFiltered = campaignSegments.filter(segment => state.source === "All sources" || segment.source === state.source);
-      return ["All campaign details", ...sourceFiltered.map(segment => segment.campaign)];
+      const rows = state.campaignRows.filter(row =>
+        state.source === "All sources" || row.campaignRollup === state.source
+      );
+      return ["All campaign details", ...new Set(rows.map(row => row.campaign).filter(Boolean))];
     }
 
     function renderGlobalCampaignSelect() {
       const select = document.getElementById("globalCampaignSelect");
       const options = campaignDetailOptions();
       if (!options.includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
-      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
+      select.innerHTML = options.map(option => `<option value="${escapeAttr(option)}"${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
     }
 
     function renderCampaignDetailSelect() {
       const select = document.getElementById("campaignDetailSelect");
       const options = campaignDetailOptions();
       if (!options.includes(state.campaignDetail)) state.campaignDetail = "All campaign details";
-      select.innerHTML = options.map(option => `<option${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
-      select.disabled = state.campaignGrain !== "Detail";
-      document.getElementById("campaignGrain").value = state.campaignGrain;
+      select.innerHTML = options.map(option => `<option value="${escapeAttr(option)}"${option === state.campaignDetail ? " selected" : ""}>${escapeAttr(option)}</option>`).join("");
     }
 
-    function campaignBaseRows() {
-      if (state.campaignGrain === "Source") {
-        return (state.source === "All sources" ? sources : [state.source]).map(source => ({
-          key: source,
-          source,
-          campaign: campaignTactics[source].name,
-          rollupLabel: source,
-          mix: 1,
-          leadLift: 1,
-          costIndex: 1,
-          winLift: 1,
-          revenueLift: 1,
-          stressLift: 1,
-          tactic: campaignTactics[source].tactic,
-          guardrail: campaignTactics[source].guardrail
-        }));
-      }
-      return campaignSegments
-        .filter(segment => state.source === "All sources" || segment.source === state.source)
-        .filter(segment => state.campaignDetail === "All campaign details" || segment.campaign === state.campaignDetail)
-        .map(segment => ({
-          ...segment,
-          key: segment.campaign,
-          rollupLabel: segment.source
-        }));
-    }
-
-    function allocationStore() {
-      return state.campaignGrain === "Source" ? state.campaignAllocations : state.campaignDetailAllocations;
-    }
-
-    function defaultAllocation(item) {
-      return state.campaignGrain === "Source" ? (state.campaignAllocations[item.source] || 0) : Math.max(4, Math.round(item.mix * 100));
-    }
-
-    function normalizedCampaignShare(item, activeItems) {
-      const store = allocationStore();
-      activeItems.forEach(active => {
-        if (store[active.key] == null) store[active.key] = defaultAllocation(active);
+    function campaignAggregateRows(inputRows = state.campaignRows) {
+      const grouped = new Map();
+      inputRows.forEach(row => {
+        const key = `${row.campaignRollup || "Unmapped"}:${row.campaign}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            key,
+            campaign: row.campaign,
+            campaignRollup: row.campaignRollup || "Unmapped",
+            leads: 0,
+            wins: 0,
+            spend: 0,
+            revenue: 0
+          });
+        }
+        const aggregateRow = grouped.get(key);
+        aggregateRow.leads += Number(row.leads) || 0;
+        aggregateRow.wins += Number(row.wins) || 0;
+        aggregateRow.spend += Number(row.spend) || 0;
+        aggregateRow.revenue += Number(row.revenue) || 0;
       });
-      const total = activeItems.reduce((sum, active) => sum + (store[active.key] || 0), 0) || 1;
-      return (store[item.key] || 0) / total;
-    }
-
-    function objectiveFactor(source, stress, roi) {
-      if (state.campaignObjective === "Max revenue") {
-        return source === "Paid Search" || source === "Partner" ? 1.12 : 1.0;
-      }
-      if (state.campaignObjective === "Lowest cost per win") {
-        return source === "Referral" || source === "Partner" ? 1.16 : 0.93;
-      }
-      if (state.campaignObjective === "Capacity safe") {
-        return Math.max(0.72, 1.12 - stress * 1.8);
-      }
-      return roi > 7 ? 1.06 : 1.0;
-    }
-
-    function campaignPlanRows() {
-      const rows = baseFilteredRows();
-      const activeItems = campaignBaseRows();
-      return activeItems.map((item, index) => {
-        const source = item.source;
-        const subset = rows.filter(row => row.source === source);
-        const sourceRevenue = aggregate(subset, "revenue");
-        const leads = aggregate(subset, "leads") * item.mix * item.leadLift;
-        const spend = aggregate(subset, "spend") * item.mix * item.costIndex;
-        const wins = aggregate(subset, "wins") * item.mix * item.leadLift * item.winLift;
-        const revenue = sourceRevenue * item.mix * item.leadLift * item.winLift * item.revenueLift;
-        const runs = aggregate(subset, "runs") * item.mix * item.leadLift * item.stressLift;
-        const capacity = aggregate(subset, "capacity") * item.mix;
-        const margin = subset.reduce((sum, row) => sum + row.revenue * row.marginPct, 0) / Math.max(1, sourceRevenue);
-        const stress = Math.max(0, runs - capacity) / Math.max(1, runs);
-        const roi = revenue / Math.max(1, spend);
-        const cpw = spend / Math.max(1, wins);
-        const share = normalizedCampaignShare(item, activeItems);
-        const plannedSpend = state.campaignBudget * share;
-        const saturation = Math.max(0.74, 1 - Math.max(0, share - 0.22) * 0.9);
-        const factor = objectiveFactor(source, stress, roi) * saturation;
-        const expectedWins = plannedSpend / Math.max(1, cpw) * factor;
-        const expectedRevenue = plannedSpend * roi * factor;
-        const marginalRoi = expectedRevenue / Math.max(1, plannedSpend);
-        const readiness = marketReadinessScore();
-        const capacityAdjustedCpw = cpw * (1 + stress * 1.85 + Math.max(0, 68 - readiness) / 120);
-        const expectedGrossMargin = expectedRevenue * margin;
-        const marginPerDollar = expectedGrossMargin / Math.max(1, plannedSpend);
-        const marginCac = plannedSpend / Math.max(1, expectedGrossMargin);
-        const nextDollarEfficiency = marginalRoi * (1 - Math.min(0.42, stress * 0.75)) * (0.92 + readiness / 220);
-        const nextTenKWins = 10000 / Math.max(1, capacityAdjustedCpw) * objectiveFactor(source, stress, roi);
-        const nextTenKRevenue = 10000 * nextDollarEfficiency;
-        const ahjFrictionTax = Math.max(0, capacityAdjustedCpw - cpw);
-        const productMixLift = campaignProductLift({ ...item, source });
-        const paybackMonths = Math.max(1, Math.min(18, 12 * marginCac));
-        const score = Math.round(Math.max(0, Math.min(100, marginalRoi * 7 + marginPerDollar * 11 + readiness * 0.18 - stress * 35 + (1 - capacityAdjustedCpw / 9500) * 20)));
-        const decision = score >= 78 ? "Scale" : score >= 62 ? "Test" : score >= 48 ? "Hold" : "Cut";
+      return [...grouped.values()].map(row => {
+        const sampleSizeBucket = row.leads === 0 && row.wins === 0
+          ? "No Same-Period Sample"
+          : row.leads < 20 && row.wins < 3
+            ? "Low Sample"
+            : "Sufficient Sample";
         return {
-          key: item.key,
-          source,
-          color: palette[index % palette.length],
-          campaign: item.campaign,
-          rollupLabel: item.rollupLabel,
-          mix: item.mix,
-          leadLift: item.leadLift,
-          costIndex: item.costIndex,
-          winLift: item.winLift,
-          revenueLift: item.revenueLift,
-          stressLift: item.stressLift,
-          tactic: item.tactic,
-          guardrail: item.guardrail,
-          leads,
-          wins,
-          revenue,
-          spend,
-          margin,
-          stress,
-          roi,
-          cpw,
-          share,
-          plannedSpend,
-          expectedWins,
-          expectedRevenue,
-          marginalRoi,
-          readiness,
-          capacityAdjustedCpw,
-          expectedGrossMargin,
-          marginPerDollar,
-          marginCac,
-          nextDollarEfficiency,
-          nextTenKWins,
-          nextTenKRevenue,
-          ahjFrictionTax,
-          productMixLift,
-          paybackMonths,
-          score,
-          decision
+          ...row,
+          cpw: row.wins ? row.spend / row.wins : null,
+          revenuePerSpend: row.spend ? row.revenue / row.spend : null,
+          leadToWinRate: row.leads ? row.wins / row.leads : null,
+          sampleSizeBucket
         };
-      }).sort((a, b) => b.score - a.score);
-    }
-
-    function campaignRowsByMonth(campaignRow) {
-      return months.slice(months.length - state.range).map(month => {
-        const subset = rawData.filter(row =>
-          row.month === month &&
-          row.source === campaignRow.source &&
-          (state.region === "All markets" || row.region === state.region)
-        );
-        const leads = aggregate(subset, "leads") * campaignRow.mix * campaignRow.leadLift;
-        const spend = aggregate(subset, "spend") * campaignRow.mix * campaignRow.costIndex;
-        const wins = aggregate(subset, "wins") * campaignRow.mix * campaignRow.leadLift * campaignRow.winLift;
-        const revenue = aggregate(subset, "revenue") * campaignRow.mix * campaignRow.leadLift * campaignRow.winLift * campaignRow.revenueLift;
-        return { month, leads, spend, wins, revenue, cpw: spend / Math.max(1, wins) };
       });
     }
 
-    function renderCampaignAllocationControls(planRows) {
-      const store = allocationStore();
-      const controls = planRows.map(row => `
-        <div class="slider-row">
-          <label for="campaignAlloc${row.key.replace(/\W/g, "")}">${row.campaign}</label>
-          <input id="campaignAlloc${row.key.replace(/\W/g, "")}" type="range" min="0" max="60" value="${store[row.key]}">
-          <output>${Math.round(row.share * 100)}%</output>
-        </div>
-      `).join("");
-      document.getElementById("campaignAllocationControls").innerHTML = controls;
-      planRows.forEach(row => {
-        const input = document.getElementById(`campaignAlloc${row.key.replace(/\W/g, "")}`);
-        input.addEventListener("input", event => {
-          store[row.key] = Number(event.target.value);
-          renderCampaignPlanner();
-        });
-      });
-      document.getElementById("campaignBudgetOut").textContent = fmtCurrency(state.campaignBudget);
+    function campaignBenchmarks(rows) {
+      const rowsWithWins = rows.filter(row => (row.wins || 0) > 0);
+      const totalWins = rowsWithWins.reduce((sum, row) => sum + (row.wins || 0), 0);
+      const totalSpend = rowsWithWins.reduce((sum, row) => sum + (row.spend || 0), 0);
+      const totalLeads = rowsWithWins.reduce((sum, row) => sum + (row.leads || 0), 0);
+      return {
+        cpw: totalWins > 0 ? totalSpend / totalWins : 1100,
+        leadToWinRate: totalLeads > 0 ? totalWins / totalLeads : 0.2
+      };
     }
 
-    function renderCampaignMetrics(planRows) {
-      const expectedRevenue = planRows.reduce((sum, row) => sum + row.expectedRevenue, 0);
-      const expectedWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
-      const stress = planRows.reduce((sum, row) => sum + row.stress * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const roi = expectedRevenue / Math.max(1, state.campaignBudget);
-      const top = planRows[0] || { source: "n/a", decision: "n/a" };
-      const readiness = marketReadinessScore();
-      const capAdjustedCpw = planRows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const grossMargin = planRows.reduce((sum, row) => sum + row.expectedGrossMargin, 0);
-      const marginPerDollar = grossMargin / Math.max(1, state.campaignBudget);
-      const nextTenKRevenue = planRows.slice(0, 3).reduce((sum, row) => sum + row.nextTenKRevenue, 0) / Math.max(1, Math.min(3, planRows.length));
-      const nextTenKWins = planRows.slice(0, 3).reduce((sum, row) => sum + row.nextTenKWins, 0) / Math.max(1, Math.min(3, planRows.length));
-      const frictionTax = planRows.reduce((sum, row) => sum + row.ahjFrictionTax * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const data = [
-        ["Budget", fmtCurrency(state.campaignBudget), state.campaignObjective, "good"],
-        ["Expected revenue", fmtCurrency(expectedRevenue), `${roi.toFixed(1)}x blended rev/spend`, "good"],
-        ["Expected wins", fmtNum(expectedWins), `${fmtCurrency(state.campaignBudget / Math.max(1, expectedWins))} planned CPW`, "good"],
-        ["Weighted stress", pct(stress), stress > 0.18 ? "Capacity guardrail" : "Ops absorbable", stress > 0.18 ? "bad" : "good"],
-        ["Market readiness", `${readiness}/100`, state.region === "All markets" ? "DMV/PA weighted view" : state.region, marketReadinessTone(readiness)],
-        ["Capacity-adj CPW", fmtCurrency(capAdjustedCpw), `${fmtCurrency(frictionTax)} AHJ friction tax`, capAdjustedCpw < 5200 ? "good" : capAdjustedCpw < 6500 ? "warn" : "bad"],
-        ["Gross margin / $", `${marginPerDollar.toFixed(1)}x`, `${fmtCurrency(grossMargin)} expected gross margin`, marginPerDollar >= 1.8 ? "good" : "warn"],
-        ["Next $10K yield", `${fmtNum(nextTenKWins)} wins`, `${fmtCurrency(nextTenKRevenue)} revenue on best campaigns`, nextTenKWins >= 2 ? "good" : "warn"],
-        ["Top campaign", top.campaign || top.source, top.decision, top.decision === "Scale" ? "good" : "warn"],
-        ["Decision coverage", `${planRows.length} campaigns`, state.campaignGrain === "Detail" ? "Named detail grain" : "Source roll-up", "good"],
-        ["Best next dollar", `${planRows[0]?.marginalRoi.toFixed(1) || "0.0"}x`, planRows[0]?.campaign || "n/a", "good"],
-        ["Hold/Cut count", fmtNum(planRows.filter(row => row.decision === "Hold" || row.decision === "Cut").length), "Spend to review", "warn"]
+    function campaignSampleConfidenceRank(bucket) {
+      if (bucket === "Sufficient Sample") return 2;
+      if (bucket === "Low Sample") return 1;
+      return 0;
+    }
+
+    function campaignDecisionFor(row) {
+      const cpwBenchmark = row.cpwBenchmark;
+      const leadToWinBenchmark = row.leadToWinBenchmark;
+      const hasSample = row.sampleSizeBucket !== "No Same-Period Sample";
+      if (!hasSample) return "Avoid";
+      const cpwRatio = row.cpw ? row.cpw / Math.max(1, cpwBenchmark) : Infinity;
+      const leadToWinRate = row.leadToWinRate || 0;
+      if (
+        row.sampleSizeBucket === "Sufficient Sample" &&
+        cpwRatio <= 1 &&
+        leadToWinRate >= leadToWinBenchmark
+      ) {
+        return "Scale";
+      }
+      if (cpwRatio <= 1.45 && leadToWinRate >= leadToWinBenchmark * 0.7) {
+        return "Test";
+      }
+      if (cpwRatio <= 2.15) {
+        return "Hold";
+      }
+      return "Avoid";
+    }
+
+    function campaignRankingValue(row, metric = state.campaignObjective) {
+      const cpwRatio = row.cpw ? row.cpw / Math.max(1, row.cpwBenchmark) : 2;
+      if (metric === "Revenue per spend") return row.revenuePerSpend || 0;
+      if (metric === "Lowest cost per win") return 100 / Math.max(0.2, cpwRatio);
+      if (metric === "Lead to win rate") return (row.leadToWinRate || 0) * 1000;
+      if (metric === "Sample confidence") return campaignSampleConfidenceRank(row.sampleSizeBucket) * 28 + Math.log1p(row.leads) * 4 + Math.log1p(row.wins) * 10;
+      return Math.max(0, 22 - cpwRatio * 12) +
+        (row.leadToWinRate || 0) * 180 +
+        Math.min(24, (row.revenuePerSpend || 0) * 0.55) +
+        campaignSampleConfidenceRank(row.sampleSizeBucket) * 6;
+    }
+
+    function campaignMetricDisplay(row, metric = state.campaignObjective) {
+      if (metric === "Revenue per spend") return `${(row.revenuePerSpend || 0).toFixed(1)}x rev/spend`;
+      if (metric === "Lowest cost per win") return row.cpw ? `${fmtCurrency(row.cpw)} CPW` : "No wins yet";
+      if (metric === "Lead to win rate") return `${pct(row.leadToWinRate || 0)} lead-to-win`;
+      if (metric === "Sample confidence") return row.sampleSizeBucket;
+      return `${Math.round(campaignRankingValue(row, "Balanced decision score"))} score`;
+    }
+
+    function campaignBaseDecisionRows() {
+      const aggregateRows = campaignAggregateRows();
+      const benchmarks = campaignBenchmarks(aggregateRows);
+      return aggregateRows.map(row => {
+        const enriched = {
+          ...row,
+          cpwBenchmark: benchmarks.cpw,
+          leadToWinBenchmark: benchmarks.leadToWinRate
+        };
+        return { ...enriched, decision: campaignDecisionFor(enriched) };
+      });
+    }
+
+    function campaignDecisionRows() {
+      return campaignBaseDecisionRows()
+        .filter(row =>
+          (state.source === "All sources" || row.campaignRollup === state.source) &&
+          (state.campaignDetail === "All campaign details" || row.campaign === state.campaignDetail)
+        )
+        .map(row => ({
+          ...row,
+          metricValue: campaignRankingValue(row),
+          metricDisplay: campaignMetricDisplay(row)
+        }))
+        .sort((a, b) => b.metricValue - a.metricValue);
+    }
+
+    function campaignTrendRows(decisionRows = campaignDecisionRows()) {
+      const focusCampaign = state.campaignDetail !== "All campaign details"
+        ? state.campaignDetail
+        : decisionRows[0]?.campaign;
+      if (!focusCampaign) return [];
+      const rows = state.campaignRows.filter(row =>
+        row.campaign === focusCampaign &&
+        (state.source === "All sources" || row.campaignRollup === state.source)
+      );
+      const grouped = new Map();
+      rows.forEach(row => {
+        const month = row.month;
+        if (!grouped.has(month)) grouped.set(month, { month, leads: 0, wins: 0, spend: 0, revenue: 0 });
+        const item = grouped.get(month);
+        item.leads += Number(row.leads) || 0;
+        item.wins += Number(row.wins) || 0;
+        item.spend += Number(row.spend) || 0;
+        item.revenue += Number(row.revenue) || 0;
+      });
+      return [...grouped.values()]
+        .map(row => ({
+          ...row,
+          cpw: row.wins ? row.spend / row.wins : null,
+          label: new Date(`${row.month}T00:00:00`).toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+    }
+
+    function renderCampaignMetrics(rows) {
+      const top = rows[0] || {};
+      const leads = rows.reduce((sum, row) => sum + row.leads, 0);
+      const wins = rows.reduce((sum, row) => sum + row.wins, 0);
+      const spend = rows.reduce((sum, row) => sum + row.spend, 0);
+      const revenue = rows.reduce((sum, row) => sum + row.revenue, 0);
+      const blendedCpw = wins ? spend / wins : 0;
+      const scaleCount = rows.filter(row => row.decision === "Scale").length;
+      const testCount = rows.filter(row => row.decision === "Test").length;
+      const holdAvoid = rows.filter(row => row.decision === "Hold" || row.decision === "Avoid").length;
+      const metrics = [
+        ["Top campaign", top.campaign || "n/a", top.metricDisplay || "No live rows", top.decision === "Scale" ? "good" : top.decision === "Test" ? "warn" : "bad"],
+        ["Ranking metric", state.campaignObjective, state.campaignDetail, "good"],
+        ["Spend", fmtCurrency(spend), `${fmtNum(rows.length)} campaigns`, "good"],
+        ["Expected wins", fmtNum(wins), `${fmtNum(leads)} live leads`, "good"],
+        ["Projected revenue", fmtCurrency(revenue), `${(revenue / Math.max(1, spend)).toFixed(1)}x rev/spend`, "good"],
+        ["Cost per win", fmtCurrency(blendedCpw), `${fmtNum(wins)} actual wins`, blendedCpw <= (top.cpwBenchmark || 1100) ? "good" : "warn"],
+        ["Lead volume", fmtNum(leads), wins ? `${pct(wins / Math.max(1, leads))} lead-to-win` : "No wins yet", "good"],
+        ["Scale/Test", `${scaleCount} / ${testCount}`, "Evidence-backed candidates", scaleCount ? "good" : "warn"],
+        ["Hold/Avoid", fmtNum(holdAvoid), "Campaigns needing guardrails", holdAvoid ? "warn" : "good"]
       ];
-      document.getElementById("campaignMetrics").innerHTML = data.map(metricCardHtml).join("");
+      document.getElementById("campaignMetrics").innerHTML = metrics.map(metricCardHtml).join("");
       wireTips(document.getElementById("campaignMetrics"));
       wireNoteChips(document.getElementById("campaignMetrics"));
     }
 
-    function renderDecisionMetricSuite(planRows) {
-      const expectedWins = planRows.reduce((sum, row) => sum + row.expectedWins, 0);
-      const readiness = marketReadinessScore();
-      const top = planRows[0];
-      const capAdjustedCpw = planRows.reduce((sum, row) => sum + row.capacityAdjustedCpw * row.expectedWins, 0) / Math.max(1, expectedWins);
-      const blendedCpw = state.campaignBudget / Math.max(1, expectedWins);
-      const frictionTax = Math.max(0, capAdjustedCpw - blendedCpw);
-      const grossMargin = planRows.reduce((sum, row) => sum + row.expectedGrossMargin, 0);
-      const marginPerDollar = grossMargin / Math.max(1, state.campaignBudget);
-      const productLift = planRows.reduce((sum, row) => sum + row.productMixLift * row.expectedRevenue, 0) / Math.max(1, planRows.reduce((sum, row) => sum + row.expectedRevenue, 0));
-      const nextDollar = top ? `${fmtCurrency(top.nextTenKRevenue)} / ${fmtNum(top.nextTenKWins)} wins` : "$0 / 0 wins";
-      const cards = [
-        {
-          key: "decision:metric-suite:market-readiness",
-          title: `Market readiness: ${readiness}/100`,
-          body: "Blends permit speed, utility fit, crew coverage, survey access, and cancellation risk for the selected DMV/PA market view.",
-          pills: [state.region, marketReadinessTone(readiness) === "good" ? "Scale friendly" : "Guardrail needed", "AHJ + capacity"],
-          tone: marketReadinessTone(readiness)
-        },
-        {
-          key: "decision:metric-suite:capacity-adjusted-cpw",
-          title: `Capacity-adjusted CPW: ${fmtCurrency(capAdjustedCpw)}`,
-          body: "Normal cost per win adjusted for survey/install pressure and lower-readiness market friction.",
-          pills: [`${fmtCurrency(frictionTax)} friction tax`, "Capacity object", "Campaign AHJ rollup"],
-          tone: capAdjustedCpw < 5200 ? "good" : capAdjustedCpw < 6500 ? "warn" : "bad"
-        },
-        {
-          key: "decision:metric-suite:next-10k-efficiency",
-          title: `Next $10K efficiency: ${nextDollar}`,
-          body: `Shows the expected return from the best incremental spend candidate, currently ${top?.campaign || "n/a"}.`,
-          pills: [top ? `${top.nextDollarEfficiency.toFixed(1)}x adjusted ROI` : "0.0x", "Marginal decision", "Spend allocator"],
-          tone: top && top.nextDollarEfficiency >= 7 ? "good" : "warn"
-        },
-        {
-          key: "decision:metric-suite:gross-margin-per-dollar",
-          title: `Gross margin per $: ${marginPerDollar.toFixed(1)}x`,
-          body: "Uses project economics and campaign yield to shift the conversation from revenue to contribution quality.",
-          pills: [`${fmtCurrency(grossMargin)} margin`, "Project economics", "Payback view"],
-          tone: marginPerDollar >= 1.8 ? "good" : "warn"
-        },
-        {
-          key: "decision:metric-suite:product-mix-lift",
-          title: `Product mix lift: +${(productLift * 100).toFixed(1)} pts`,
-          body: "Flags campaigns likely to produce richer systems, partner/builder demand, or battery attach upside.",
-          pills: ["Battery attach", "System size", "Margin quality"],
-          tone: productLift >= 0.07 ? "good" : "warn"
-        },
-        {
-          key: "decision:metric-suite:saturation-guardrail",
-          title: "Saturation guardrail",
-          body: "Campaigns with high allocation shares are discounted so the recommendation avoids pouring dollars into a market/source already near diminishing returns.",
-          pills: ["Diminishing return", "Budget share", "Reallocation ready"],
-          tone: "warn"
-        }
-      ];
-      document.getElementById("decisionMetricSuite").innerHTML = cards.map(decisionCardHtml).join("");
-      wireNoteChips(document.getElementById("decisionMetricSuite"));
-    }
-
-    function renderCampaignRecommendations(planRows) {
-      const cards = planRows.slice(0, 4).map(row => {
-        const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
+    function renderCampaignRecommendations(rows) {
+      document.getElementById("campaignRecommendations").innerHTML = rows.slice(0, 4).map(row => {
+        const tone = row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad";
+        const body = row.decision === "Scale"
+          ? "Clears the strict CPW, conversion, and sufficient-sample gates."
+          : row.decision === "Test"
+            ? "Efficiency and conversion support a controlled test while evidence matures."
+            : row.decision === "Hold"
+              ? "Keep spend flat until cost or conversion clears the benchmark gate."
+              : "Avoid new spend until a credible same-period sample and efficiency signal emerge.";
         return decisionCardHtml({
-          key: `campaign:${row.source}:${row.key}`,
+          key: `campaign:${row.key}`,
           title: `${row.decision}: ${row.campaign}`,
-          body: row.tactic,
+          body,
           pills: [
-            row.source,
-            `${fmtCurrency(row.plannedSpend)} planned`,
-            `${row.marginalRoi.toFixed(1)}x rev/spend`,
-            `${fmtCurrency(row.capacityAdjustedCpw)} cap-adj CPW`,
-            `${row.marginPerDollar.toFixed(1)}x margin/$`,
-            `${fmtNum(row.expectedWins)} wins`,
-            `${pct(row.stress)} stress`
+            row.campaignRollup,
+            `${fmtCurrency(row.spend)} spend`,
+            `${fmtNum(row.wins)} wins`,
+            row.cpw ? `${fmtCurrency(row.cpw)} CPW` : "No wins yet",
+            row.sampleSizeBucket
           ],
           tone
         });
       }).join("");
-      document.getElementById("campaignRecommendations").innerHTML = cards;
       wireNoteChips(document.getElementById("campaignRecommendations"));
     }
 
-    function renderCampaignCards(planRows) {
-      document.getElementById("campaignCards").innerHTML = planRows.map(row => {
-        const tone = row.decision === "Scale" ? "good" : row.decision === "Cut" ? "bad" : "warn";
-        const key = `campaign:${row.source}:${row.key}`;
+    function renderCampaignCards(rows) {
+      document.getElementById("campaignCards").innerHTML = rows.map(row => {
+        const tone = row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad";
         return `
           <div class="campaign-card">
-            ${noteChip(key, row.campaign, "tile")}
+            ${noteChip(`campaign:${row.key}`, row.campaign, "tile")}
             <div>
               <span class="pill ${tone}">${row.decision}</span>
-              <h4>${row.campaign}</h4>
-              <p>${row.source} / ${row.rollupLabel}: ${row.tactic}</p>
+              <h4>${escapeAttr(row.campaign)}</h4>
+              <p>${escapeAttr(row.campaignRollup)} / ${escapeAttr(row.metricDisplay)}</p>
             </div>
             <div class="campaign-stats">
-              <span>Spend <strong>${fmtCurrency(row.plannedSpend)}</strong></span>
-              <span>Wins <strong>${fmtNum(row.expectedWins)}</strong></span>
-              <span>Next $10K <strong>${fmtNum(row.nextTenKWins)}</strong></span>
+              <span>Spend <strong>${fmtCurrency(row.spend)}</strong></span>
+              <span>Wins <strong>${fmtNum(row.wins)}</strong></span>
+              <span>Revenue <strong>${fmtCurrency(row.revenue)}</strong></span>
             </div>
-            <p>${row.guardrail} Cap-adj CPW ${fmtCurrency(row.capacityAdjustedCpw)}, margin payback ${row.paybackMonths.toFixed(1)} months.</p>
+            <p>${fmtNum(row.leads)} leads, ${pct(row.leadToWinRate || 0)} lead-to-win, ${(row.revenuePerSpend || 0).toFixed(1)}x revenue/spend, ${row.sampleSizeBucket.toLowerCase()}.</p>
           </div>
         `;
       }).join("");
       wireNoteChips(document.getElementById("campaignCards"));
     }
 
-    function renderCampaignTrend(planRows) {
-      const focus = state.campaignDetail !== "All campaign details"
-        ? planRows.find(row => row.campaign === state.campaignDetail)
-        : planRows[0];
-      if (!focus) {
+    function renderCampaignTrend(rows) {
+      const trend = campaignTrendRows(rows);
+      if (!trend.length) {
         drawLineChart("campaignTrendChart", [], [], {});
         return;
       }
-      const trend = campaignRowsByMonth(focus);
+      const focus = state.campaignDetail !== "All campaign details" ? state.campaignDetail : rows[0]?.campaign || "Campaign";
       drawLineChart("campaignTrendChart", [
-        { name: `${focus.campaign} revenue`, values: trend.map(row => row.revenue), color: "#39b54a", format: fmtCurrency },
-        { name: `${focus.campaign} wins`, values: trend.map(row => row.wins * 25000), color: "#7d8580", format: value => fmtNum(value / 25000) },
-        { name: `${focus.campaign} CPW`, values: trend.map(row => row.cpw * 45), color: "#167a2d", format: value => fmtCurrency(value / 45) }
-      ], trend.map(row => row.month), { yLabel: "$ / scaled" });
+        { name: `${focus} revenue`, values: trend.map(row => row.revenue), color: "#39b54a", format: fmtCurrency },
+        { name: `${focus} spend`, values: trend.map(row => row.spend), color: "#167a2d", format: fmtCurrency },
+        { name: `${focus} wins`, values: trend.map(row => row.wins * 10000), color: "#7d8580", format: value => fmtNum(value / 10000) }
+      ], trend.map(row => row.label), { yLabel: "$ / scaled" });
     }
 
-    function renderCampaignMoves(planRows) {
-      if (planRows.length < 2) {
-        const row = planRows[0];
-        document.getElementById("campaignMoves").innerHTML = row ? decisionCardHtml({
-          key: `campaign:${row.source}:${row.key}:brief`,
-          title: "Focused campaign brief",
-          body: `${row.campaign} is isolated in this view. Use the trend, market heatmap, and decision table to decide whether to scale or hold this campaign.`,
-          pills: [
-            row.decision,
-            `${row.marginalRoi.toFixed(1)}x rev/spend`,
-            `${fmtCurrency(row.plannedSpend)} planned`,
-            `${pct(row.stress)} stress`
-          ],
-          tone: row.decision === "Scale" ? "good" : "warn"
-        }) : "";
-        wireNoteChips(document.getElementById("campaignMoves"));
-        return;
-      }
-      const scalable = planRows.filter(row => row.decision === "Scale" || row.decision === "Test").sort((a, b) => b.score - a.score);
-      const weak = planRows.filter(row => row.decision === "Hold" || row.decision === "Cut").sort((a, b) => a.score - b.score);
-      const fallbackWeak = [...planRows].sort((a, b) => a.score - b.score);
-      const fromRows = weak.length ? weak : fallbackWeak.slice(0, 2);
-      const toRows = scalable.length ? scalable : planRows.slice(0, 2);
-      const moves = toRows.slice(0, 3).map((to, index) => {
-        const from = fromRows[index % fromRows.length] || to;
-        const moveAmount = Math.min(50000, Math.max(10000, from.plannedSpend * 0.22));
-        const fromWinsPerDollar = from.expectedWins / Math.max(1, from.plannedSpend);
-        const toWinsPerDollar = to.expectedWins / Math.max(1, to.plannedSpend);
-        const fromRevenuePerDollar = from.expectedRevenue / Math.max(1, from.plannedSpend);
-        const toRevenuePerDollar = to.expectedRevenue / Math.max(1, to.plannedSpend);
-        const winDelta = Math.max(0, (toWinsPerDollar - fromWinsPerDollar) * moveAmount);
-        const revenueDelta = Math.max(0, (toRevenuePerDollar - fromRevenuePerDollar) * moveAmount);
-        const tone = revenueDelta > 0 ? "good" : "warn";
-        return { from, to, moveAmount, winDelta, revenueDelta, tone };
-      });
-      document.getElementById("campaignMoves").innerHTML = moves.map((move, index) => decisionCardHtml({
-        key: `decision:campaign-moves:${index}`,
-        title: `Move ${fmtCurrency(move.moveAmount)} to ${move.to.campaign}`,
-        body: `Take budget from ${move.from.campaign} and redeploy it where expected yield and operational fit are stronger.`,
-        pills: [
-          `+${fmtNum(move.winDelta)} wins`,
-          `+${fmtCurrency(move.revenueDelta)} revenue`,
-          `${move.to.marginalRoi.toFixed(1)}x target ROI`,
-          `${pct(move.to.stress)} stress`
-        ],
-        tone: move.tone
-      })).join("");
-      wireNoteChips(document.getElementById("campaignMoves"));
-    }
-
-    function campaignRegionFit(column, region) {
-      const sourceFit = sourceRegionFit[column.source]?.[region] || 0;
-      let campaignFit = 0;
-      if (column.campaign.includes("Solar Reviews")) campaignFit = region === "Northern Virginia" ? 9 : region === "Maryland Suburbs" ? 7 : region === "Southeast PA" ? 4 : region === "Central PA" ? -2 : 2;
-      else if (column.campaign.includes("Brand")) campaignFit = region === "DC Metro" ? 7 : region === "Northern Virginia" ? 5 : region === "Maryland Suburbs" ? 5 : 2;
-      else if (column.campaign.includes("Nonbrand")) campaignFit = region === "Northern Virginia" ? 7 : region === "Maryland Suburbs" ? 6 : region === "Central PA" ? -1 : 3;
-      else if (column.campaign.includes("Referral")) campaignFit = region === "Northern Virginia" ? 8 : region === "Maryland Suburbs" ? 7 : region === "Southeast PA" ? 6 : region === "Central PA" ? 3 : 4;
-      else if (column.campaign.includes("EnergySage")) campaignFit = region === "Southeast PA" ? 8 : region === "Northern Virginia" ? 6 : region === "Maryland Suburbs" ? 5 : 2;
-      else if (column.campaign.includes("Builder")) campaignFit = region === "Northern Virginia" ? 8 : region === "Southeast PA" ? 6 : region === "Central PA" ? 4 : 1;
-      else if (column.campaign.includes("Home Shows")) campaignFit = region === "Baltimore" ? 7 : region === "Southeast PA" ? 6 : region === "Central PA" ? 4 : region === "DC Metro" ? -1 : 3;
-      else if (column.campaign.includes("Direct") || column.campaign.includes("Mailer") || column.campaign.includes("Neighborhood")) campaignFit = region === "Southeast PA" ? 8 : region === "Central PA" ? 6 : region === "Maryland Suburbs" ? 5 : 3;
-      return (regionReadiness[region] || 0) + sourceFit + campaignFit;
-    }
-
-    function renderCampaignHeatmap(planRows) {
-      const columns = state.campaignGrain === "Detail" ? planRows.slice(0, 5) : sources.map(source => ({ source, campaign: source, key: source, mix: 1, leadLift: 1, costIndex: 1, winLift: 1, revenueLift: 1, stressLift: 1 }));
-      const header = `<div class="heat-cell header">Market</div>${columns.map(row => `<div class="heat-cell header">${row.campaign}</div>`).join("")}`;
-      const cells = heatmapRegions.map(region => {
-        const rowHead = `<div class="heat-cell header">${region}</div>`;
-        const sourceCells = columns.map(column => {
-          const source = column.source;
-          const subset = rawData.filter(row =>
-            row.region === region &&
-            row.source === source &&
-            row.monthIndex >= months.length - state.range
-          );
-          const revenue = aggregate(subset, "revenue") * column.mix * column.leadLift * column.winLift * column.revenueLift;
-          const spend = aggregate(subset, "spend") * column.mix * column.costIndex;
-          const runs = aggregate(subset, "runs") * column.mix * column.leadLift * column.stressLift;
-          const capacity = aggregate(subset, "capacity") * column.mix;
-          const roi = revenue / Math.max(1, spend);
-          const stress = Math.max(0, runs - capacity) / Math.max(1, runs);
-          const fit = campaignRegionFit(column, region);
-          const adjustedRoi = roi * (1 + fit / 100);
-          const adjustedStress = Math.max(0, stress - fit / 250);
-          const roiSignal = Math.log2(Math.max(0, adjustedRoi) + 1) * 8;
-          const rawScore = Number.isFinite(roiSignal) && Number.isFinite(adjustedStress) ? 34 + roiSignal - adjustedStress * 35 + fit * 1.15 : 28;
-          const score = Math.round(Math.max(28, Math.min(96, rawScore)));
-          const hue = Math.round(8 + score * 1.25);
-          const safeRoi = Number.isFinite(adjustedRoi) ? adjustedRoi : 0;
-          const safeStress = Number.isFinite(adjustedStress) ? adjustedStress : 0;
-          return `<div class="heat-cell" style="background:hsl(${hue}, 58%, 84%)" data-tip="${region} ${column.campaign}: score ${score}, ${safeRoi.toFixed(1)}x rev/spend, ${pct(safeStress)} stress, fit ${fit > 0 ? "+" : ""}${fit}"><strong>${score}</strong><span>${safeRoi.toFixed(1)}x</span></div>`;
-        }).join("");
-        return rowHead + sourceCells;
-      }).join("");
-      const heatmap = document.getElementById("campaignHeatmap");
-      heatmap.innerHTML = header + cells;
-      wireTips(heatmap);
-    }
-
-    function renderCampaignTable(planRows) {
+    function renderCampaignTable(rows) {
       document.getElementById("campaignTable").innerHTML = `
         <thead>
-          <tr>
-            <th>Decision</th><th>Source</th><th>Campaign detail</th><th>Planned spend</th><th>Expected wins</th><th>Expected revenue</th><th>Gross margin</th><th>Cap-adj CPW</th><th>Next $10K</th><th>Product lift</th><th>Capacity risk</th><th>Guardrail</th>
-          </tr>
+          <tr><th>Decision</th><th>Source</th><th>Campaign</th><th>Spend</th><th>Leads</th><th>Wins</th><th>Revenue</th><th>CPW</th><th>Lead-to-win</th><th>Revenue/spend</th><th>Sample</th><th>Selected metric</th></tr>
         </thead>
-        <tbody>${planRows.map(row => `
+        <tbody>${rows.map(row => `
           <tr>
-            <td>${row.decision}</td>
-            <td>${row.source}</td>
-            <td><strong>${row.campaign}</strong></td>
-            <td>${fmtCurrency(row.plannedSpend)}</td>
-            <td>${fmtNum(row.expectedWins)}</td>
-            <td>${fmtCurrency(row.expectedRevenue)}</td>
-            <td>${fmtCurrency(row.expectedGrossMargin)}<br>${row.marginPerDollar.toFixed(1)}x margin/$</td>
-            <td>${fmtCurrency(row.capacityAdjustedCpw)}<br>${fmtCurrency(row.ahjFrictionTax)} friction</td>
-            <td>${fmtCurrency(row.nextTenKRevenue)}<br>${fmtNum(row.nextTenKWins)} wins</td>
-            <td>+${(row.productMixLift * 100).toFixed(1)} pts</td>
-            <td>${pct(row.stress)}</td>
-            <td>${row.guardrail}</td>
+            <td><span class="pill ${row.decision === "Scale" ? "good" : row.decision === "Test" ? "warn" : "bad"}">${row.decision}</span></td>
+            <td>${escapeAttr(row.campaignRollup)}</td>
+            <td><strong>${escapeAttr(row.campaign)}</strong></td>
+            <td>${fmtCurrency(row.spend)}</td>
+            <td>${fmtNum(row.leads)}</td>
+            <td>${fmtNum(row.wins)}</td>
+            <td>${fmtCurrency(row.revenue)}</td>
+            <td>${row.cpw ? fmtCurrency(row.cpw) : "No wins"}</td>
+            <td>${pct(row.leadToWinRate || 0)}</td>
+            <td>${(row.revenuePerSpend || 0).toFixed(1)}x</td>
+            <td>${row.sampleSizeBucket}</td>
+            <td>${escapeAttr(row.metricDisplay)}</td>
           </tr>
         `).join("")}</tbody>
       `;
     }
 
-    function renderCampaignPlanner() {
-      document.getElementById("campaignGrain").value = state.campaignGrain;
+    function campaignCurrentFetchKey() {
+      return "campaign-performance:trailing";
+    }
+
+    async function ensureCampaignRowsLoaded() {
+      const fetchKey = campaignCurrentFetchKey();
+      if (state.campaignRowsFetchKey === fetchKey) return;
+      const token = ++state.campaignFetchToken;
+      try {
+        const response = await fetch(`${API_BASE}/campaign-performance`);
+        if (!response.ok) throw new Error(`Campaign performance fetch failed: ${response.status}`);
+        const rows = await response.json();
+        if (token !== state.campaignFetchToken) return;
+        state.campaignRows = rows;
+        state.campaignRowsFetchKey = fetchKey;
+        state.campaignLoadError = null;
+      } catch (error) {
+        if (token !== state.campaignFetchToken) return;
+        state.campaignRows = state.campaignRows || [];
+        state.campaignLoadError = error.message || "Campaign performance data is unavailable.";
+      }
+    }
+
+    function renderCampaignLoadError() {
+      const banner = document.getElementById("campaignLoadError");
+      const text = document.getElementById("campaignLoadErrorText");
+      if (!banner || !text) return;
+      if (state.campaignLoadError) {
+        text.textContent = `Campaign data unavailable: ${state.campaignLoadError}`;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+      }
+    }
+
+    async function renderCampaignPlanner() {
+      await ensureCampaignRowsLoaded();
+      renderCampaignLoadError();
       renderCampaignDetailSelect();
-      const planRows = campaignPlanRows();
-      renderCampaignAllocationControls(planRows);
-      renderCampaignMetrics(planRows);
-      renderDecisionMetricSuite(planRows);
-      renderCampaignRecommendations(planRows);
-      renderCampaignCards(planRows);
-      renderCampaignTrend(planRows);
-      renderCampaignMoves(planRows);
-      drawFrontier(planRows.map(row => ({
-        source: row.campaign,
-        yieldScore: row.marginalRoi,
-        stress: row.stress,
-        wins: row.expectedWins
-      })), "campaignSpendChart");
-      renderCampaignHeatmap(planRows);
-      renderCampaignTable(planRows);
+      document.getElementById("campaignObjective").value = state.campaignObjective;
+      const rows = campaignDecisionRows();
+      renderCampaignMetrics(rows);
+      renderCampaignRecommendations(rows);
+      renderCampaignCards(rows);
+      renderCampaignTrend(rows);
+      renderCampaignTable(rows);
     }
 
     function ahjBenchmarks(rows) {
@@ -4526,7 +4148,6 @@
         source: state.source,
         range: state.range,
         campaignObjective: state.campaignObjective,
-        campaignGrain: state.campaignGrain,
         campaignDetail: state.campaignDetail,
         ahjObjective: state.ahjObjective,
         ahjCampaign: state.ahjCampaign,
@@ -4675,22 +4296,16 @@
     });
     document.getElementById("globalCampaignSelect").addEventListener("change", e => {
       state.campaignDetail = e.target.value;
-      if (state.campaignDetail !== "All campaign details") state.campaignGrain = "Detail";
       if (state.campaignDetail !== "All campaign details") state.ahjCampaign = state.campaignDetail;
       render();
     });
     document.getElementById("rangeSelect").addEventListener("change", e => { state.range = Number(e.target.value); render(); });
-    document.getElementById("campaignBudget").addEventListener("input", e => { state.campaignBudget = Number(e.target.value); renderCampaignPlanner(); });
     document.getElementById("campaignObjective").addEventListener("change", e => { state.campaignObjective = e.target.value; renderCampaignPlanner(); });
-    document.getElementById("campaignGrain").addEventListener("change", e => {
-      state.campaignGrain = e.target.value;
-      if (state.campaignGrain === "Source") state.campaignDetail = "All campaign details";
-      render();
-    });
     document.getElementById("campaignDetailSelect").addEventListener("change", e => {
       state.campaignDetail = e.target.value;
       render();
     });
+    document.getElementById("campaignRetryButton").addEventListener("click", () => { renderCampaignPlanner(); });
     document.getElementById("ahjCampaignSelect").addEventListener("change", e => { state.ahjCampaign = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjObjective").addEventListener("change", e => { state.ahjObjective = e.target.value; renderAhjPlanner(); });
     document.getElementById("ahjFocusSelect").addEventListener("change", e => { state.selectedAhj = e.target.value; renderAhjPlanner(); });
@@ -4796,6 +4411,7 @@
     addPanelChips();
     renderFreshnessBadge();
     render();
+    ensureCampaignRowsLoaded().then(() => render());
     initGoogleSignIn();
     fetchNotes().then(() => {
       refreshPanelNoteBadges();

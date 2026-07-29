@@ -93,6 +93,11 @@
     .chart-host{width:100%;height:310px;display:block;margin-top:8px}
     .chart-host>canvas.chart-fallback{width:100%;height:300px;display:block;cursor:crosshair}
     .chart-card.compact{min-height:350px}.chart-card.compact .chart-host{height:265px}.chart-card.tall .chart-host{height:360px}
+    .command-momentum-card{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);align-items:center;gap:24px;min-height:0;padding:18px 22px}
+    .command-momentum-card .section-head{margin:0}
+    .command-momentum-card .section-head p{max-width:250px}
+    .command-momentum-card .chart-host{height:258px;margin:0}
+    .command-opportunity-card{min-height:0}
     .decision-canvas{background:linear-gradient(145deg,#fffefb,#f8faf5);border-color:#d5dfd6}
     .decision-canvas-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px}
     .decision-canvas-grid>.chart-card.compact{height:100%;min-height:360px}
@@ -115,7 +120,8 @@
     .filters #monthsFilter{max-width:122px}.filters #campaignFilter{max-width:160px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
     @media(max-width:1360px) and (min-width:761px){.crumb{display:none}.filters{margin-left:0;width:100%;flex-wrap:nowrap}}
     @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:360px;min-height:360px}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:760px){.chart-host{height:280px}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:310px;min-height:310px}.small-multiples{grid-template-columns:1fr 1fr}}
+    @media(max-width:900px){.command-momentum-card{grid-template-columns:1fr;gap:8px}.command-momentum-card .section-head p{max-width:none}.command-momentum-card .chart-host{height:290px}}
+    @media(max-width:760px){.chart-host{height:280px}.command-momentum-card{padding:18px}.command-momentum-card .chart-host{height:270px}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:310px;min-height:310px}.small-multiples{grid-template-columns:1fr 1fr}}
     @media(max-width:480px){.small-multiples{grid-template-columns:1fr}.chart-host{height:250px}}
   </style>
 </head>
@@ -172,10 +178,8 @@
         <div class="hero"><div><div class="eyebrow">Marketing decision operating system</div><h1>Know what is working. Decide what to do next.</h1><p>One cohort-consistent view of acquisition, conversion, geography, pipeline, and spend quality.</p></div><div class="asof" id="asOf">Loading latest cohort...</div></div>
         <div class="card status-strip"><div class="status-mark">↗</div><div><h3 id="statusTitle">Building your decision brief</h3><p id="statusCopy">Comparing funnel performance, spend coverage, and local opportunity.</p></div><span class="badge dark" id="statusBadge">LIVE COHORT</span></div>
         <div class="grid grid-4 section" id="commandMetrics"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-        <div class="grid grid-2 section">
-          <div class="card elevated"><div class="section-head"><div><div class="eyebrow">Portfolio opportunity queue</div><h2>Campaign × county decisions worth attention</h2><p>Ranked by estimated win impact, evidence confidence, actionability, and recency.</p></div><div class="opportunity-toolbar"><select id="opportunityTypeFilter" aria-label="Decision type"><option value="All">All decisions</option><option value="Scale">Scale</option><option value="Recover">Recover</option><option value="Protect">Protect</option><option value="Test">Test</option><option value="Investigate">Investigate</option><option value="Fix data">Fix data</option></select></div></div><div class="opportunity-list" id="insightList"><div class="loading">Analyzing campaign and county opportunities...</div></div></div>
-          <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Cohort momentum</div><h2>Is demand translating into residential wins?</h2><p>Observed monthly cohorts with portfolio reference and the latest decision window.</p></div></div><div class="chart-host" id="commandTrend" role="img" aria-label="Monthly cohort leads and wins with reference lines and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
-        </div>
+        <div class="card elevated command-opportunity-card section"><div class="section-head"><div><div class="eyebrow">Portfolio opportunity queue</div><h2>Campaign × county decisions worth attention</h2><p>Ranked by estimated win impact, evidence confidence, actionability, and recency.</p></div><div class="opportunity-toolbar"><select id="opportunityTypeFilter" aria-label="Decision type"><option value="All">All decisions</option><option value="Scale">Scale</option><option value="Recover">Recover</option><option value="Protect">Protect</option><option value="Test">Test</option><option value="Investigate">Investigate</option><option value="Fix data">Fix data</option></select></div></div><div class="opportunity-list" id="insightList"><div class="loading">Analyzing campaign and county opportunities...</div></div></div>
+        <div class="card chart-card command-momentum-card section"><div class="section-head"><div><div class="eyebrow">Cohort momentum</div><h2>Is demand translating into residential wins?</h2><p>Observed monthly cohorts with portfolio reference and the latest decision window.</p></div></div><div class="chart-host" id="commandTrend" role="img" aria-label="Monthly cohort leads and wins with reference lines and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
         <div class="card decision-canvas section">
           <div class="section-head"><div><div class="eyebrow">Decision canvas</div><h2>Where should the next marketing dollar—or conversion intervention—go?</h2><p>Compare acquisition cost with conversion, then use the campaign panels to ground the signal in volume, benchmark, and confidence.</p></div><div class="chart-note"><span>●</span><div><strong>One selection across every view.</strong><br>Hover to compare; click to investigate the exact campaign × county pair.</div></div></div>
           <div class="decision-canvas-grid">

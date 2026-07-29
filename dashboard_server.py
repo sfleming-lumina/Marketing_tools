@@ -319,6 +319,7 @@ def build_marketing_geo_query(
             operating_region_group AS operatingRegion,
             normalized_ops_region AS normalizedOpsRegion,
             normalized_operating_state AS normalizedState,
+            final_reporting_jurisdiction_label AS ahj,
             COALESCE(NULLIF(final_reporting_jurisdiction_label, 'Unknown'), resolved_county, reporting_market_label, 'Unresolved') AS geography,
             COALESCE(NULLIF(final_reporting_jurisdiction_type, 'UNKNOWN'), 'Market / County') AS geographyType,
             resolved_county AS county,
@@ -347,10 +348,34 @@ def build_marketing_geo_query(
         WHERE cohort_period_grain = 'MONTH'
             AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
             AND {where_clause}
-        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, geography, geographyType, county, state, market
+        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, ahj, geography, geographyType, county, state, market
         HAVING SUM(lead_count) > 0
         ORDER BY leads DESC, wins DESC
         LIMIT 2000
+    """
+
+
+def build_marketing_filter_options_query(months=7, region=None):
+    conditions = _marketing_filter_conditions(region=region)
+    where_clause = " AND ".join(conditions)
+    return f"""
+        WITH bounds AS (
+            SELECT MAX(cohort_period_start_date) AS latest_start
+            FROM `{FUNNEL_TABLE_REF}`
+            WHERE cohort_period_grain = 'MONTH'
+        )
+        SELECT
+            ARRAY_AGG(DISTINCT campaign_name IGNORE NULLS ORDER BY campaign_name) AS campaigns,
+            ARRAY_AGG(DISTINCT campaign_reporting_rollup_name IGNORE NULLS ORDER BY campaign_reporting_rollup_name) AS rollups,
+            ARRAY_AGG(
+                DISTINCT NULLIF(final_reporting_jurisdiction_label, 'Unknown')
+                IGNORE NULLS
+                ORDER BY NULLIF(final_reporting_jurisdiction_label, 'Unknown')
+            ) AS ahjs
+        FROM `{FUNNEL_TABLE_REF}`, bounds
+        WHERE cohort_period_grain = 'MONTH'
+            AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+            AND {where_clause}
     """
 
 
@@ -498,6 +523,7 @@ def shape_marketing_geo_row(row):
         "campaignId": row["campaignId"],
         "campaign": row["campaign"],
         "campaignRollup": row["campaignRollup"],
+        "ahj": row["ahj"],
         "geography": row["geography"],
         "geographyType": row["geographyType"],
         "county": row["county"],
@@ -615,6 +641,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/marketing-geo":
             status, result = self._marketing_geo(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
+        if parsed.path == "/api/marketing-filter-options":
+            status, result = self._marketing_filter_options(parse_qs(parsed.query))
             self._send_json(status, result)
             return
         if parsed.path == "/api/marketing-projection":
@@ -807,6 +837,26 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
         query = build_marketing_geo_query(**values)
         return self._run_marketing_query(query, values, shape_marketing_geo_row, "Marketing geography")
+
+    def _marketing_filter_options(self, params):
+        try:
+            values = self._marketing_params(params)
+        except ValueError as exc:
+            return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+        values = {"months": values["months"], "region": values["region"]}
+        query = build_marketing_filter_options_query(**values)
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=self._marketing_query_parameters(values)
+        )
+        try:
+            row = next(iter(self.client.query(query, job_config=job_config).result()), None)
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing filter options query failed: {exc}"}
+        return HTTPStatus.OK, {
+            "campaigns": list(row["campaigns"] or []) if row else [],
+            "rollups": list(row["rollups"] or []) if row else [],
+            "ahjs": list(row["ahjs"] or []) if row else [],
+        }
 
     def _marketing_projection(self, params):
         try:

@@ -21,11 +21,11 @@ const funnelRows = [
   }
 ];
 const geoRows = [{
-  geography:"Fairfax County", geographyType:"County", county:"Fairfax", state:"VA",
+  ahj:"Fairfax County", geography:"Fairfax County", geographyType:"County", county:"Fairfax", state:"VA",
   campaign:"Efficient Search", campaignRollup:"3rd Party Vendors LSR", leads:55, sets:25,
   runs:20, wins:10, revenue:450000, effectiveSpend:20000, activePipeline:9,
   expectedRemainingWins:2, benchmarkLeadToWinRate:.14, leadToWinRate:10/55,
-  conversionDeltaVsBenchmark:10/55-.14, opportunityScore:76.2
+  conversionDeltaVsBenchmark:10/55-.14, costPerWin:2000, opportunityScore:76.2
 }];
 const reconciliation = {
   workbook:"Marketing Report 2026_Official.xlsx", period:"2026-01-01 through 2026-07-31",
@@ -51,6 +51,7 @@ global.fetch = url => {
   let payload = [];
   if (path.includes("marketing-funnel")) payload = funnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
+  else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search"],rollups:["Co-op","3rd Party Vendors LSR"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
   return Promise.resolve({ok:true,json:()=>Promise.resolve(payload)});
@@ -66,6 +67,8 @@ setImmediate(() => {
     getElement("commandMetrics").innerHTML,
     getElement("mainFunnel").innerHTML,
     getElement("campaignTable").innerHTML,
+    getElement("funnelHealth").innerHTML,
+    getElement("funnelFocus").innerHTML,
     getElement("geoTable").innerHTML,
     getElement("qualityRows").innerHTML,
     getElement("scenarioCompare").innerHTML,
@@ -89,13 +92,22 @@ setImmediate(() => {
   assert(dashboardHtml.includes('<option value="Maryland">Maryland</option>') && !dashboardHtml.includes('<option value="DMV">'), "Operating-region options do not follow the MD/PA operational contract.");
   assert(dashboardHtml.includes('yLabel:"Cohort volume"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
   assert(dashboardHtml.includes("chart-tooltip") && dashboardHtml.includes('addEventListener("mousemove"'), "Chart hover details are missing.");
+  assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
+  assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
+  assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
   getElement("stateFilter").value = "Maryland";
   getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
   setImmediate(() => {
     assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=Maryland")), "Changing operating region did not reload funnel data.");
     assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=Maryland")), "Changing operating region did not reload geography data.");
     assert(getElement("campaignTable").innerHTML.includes("Efficient Search"), "Expanded campaign portfolio did not render.");
-    console.log("Marketing Intelligence workspace verified OK.");
+    getElement("ahjFilter").value = "Fairfax County";
+    getElement("ahjFilter").dispatchEvent({type:"change",target:getElement("ahjFilter")});
+    setImmediate(() => {
+      assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("ahj=Fairfax+County")), "Changing AHJ did not re-query funnel data.");
+      assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("ahj=Fairfax+County")), "Changing AHJ did not re-query geography data.");
+      console.log("Marketing Intelligence workspace verified OK.");
+    });
   });
 });

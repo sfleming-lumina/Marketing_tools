@@ -9,10 +9,12 @@ from dashboard_server import (
     DashboardHandler,
     OFFICIAL_REPORT_BENCHMARKS,
     build_marketing_funnel_query,
+    build_marketing_filter_options_query,
     build_marketing_geo_query,
     build_marketing_projection_query,
     build_marketing_reconciliation_query,
     shape_marketing_funnel_row,
+    shape_marketing_geo_row,
 )
 
 
@@ -102,11 +104,50 @@ def test_operating_footprint_filter_is_explicit_and_requires_no_region_parameter
         assert "@region" not in query
 
 
+def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
+    query = build_marketing_filter_options_query(months=7, region="Operating footprint")
+    assert "ARRAY_AGG(DISTINCT campaign_name" in query
+    assert "final_reporting_jurisdiction_label" in query
+    assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
+    assert "INTERVAL @months MONTH" in query
+
+
 def test_geo_query_returns_normalized_region_dimensions():
     query = build_marketing_geo_query(region="Pennsylvania")
     assert "operating_region_group AS operatingRegion" in query
     assert "normalized_ops_region AS normalizedOpsRegion" in query
     assert "normalized_operating_state AS normalizedState" in query
+    assert "final_reporting_jurisdiction_label AS ahj" in query
+
+
+def test_geo_shaper_exposes_exact_ahj_for_filter_catalog():
+    row = {
+        "campaignId": "701-test",
+        "campaign": "Summer Search",
+        "campaignRollup": "3rd Party Vendors LSR",
+        "ahj": "Fairfax County",
+        "geography": "Fairfax County",
+        "geographyType": "COUNTY",
+        "county": "Fairfax",
+        "state": "VA",
+        "market": "DMV",
+        "leads": 20,
+        "sets": 8,
+        "runs": 6,
+        "wins": 3,
+        "revenue": 120000,
+        "effectiveSpend": 9000,
+        "activePipeline": 4,
+        "expectedRemainingWins": 1,
+        "benchmarkLeadToWinRate": 0.12,
+        "benchmarkRows": 1,
+        "cohortRows": 1,
+        "spendCompleteLeadShare": 1,
+        "loadedAt": datetime(2026, 7, 28, tzinfo=timezone.utc),
+    }
+    shaped = shape_marketing_geo_row(row)
+    assert shaped["ahj"] == "Fairfax County"
+    assert shaped["costPerWin"] == 3000
 
 
 def test_lakehouse_regions_follow_operational_md_pa_contract():
@@ -191,6 +232,21 @@ def test_operating_footprint_handler_binds_only_months(monkeypatch):
     assert status == HTTPStatus.OK
     assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["months"]
     assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in fake.last_query
+
+
+def test_filter_options_handler_returns_arrays_and_region_binding(monkeypatch):
+    fake = FakeClient([{
+        "campaigns": ["SolarReviews", "EnergySage"],
+        "rollups": ["3rd Party Vendors LSR"],
+        "ahjs": ["Anne Arundel County (MD)", "Lancaster Township (PA)"],
+    }])
+    monkeypatch.setattr(DashboardHandler, "_client", fake)
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, payload = handler._marketing_filter_options({"months": ["7"], "region": ["Maryland"]})
+    assert status == HTTPStatus.OK
+    assert payload["campaigns"] == ["SolarReviews", "EnergySage"]
+    assert payload["ahjs"][0] == "Anne Arundel County (MD)"
+    assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["months", "region"]
 
 
 def test_marketing_query_errors_are_returned_as_bad_gateway(monkeypatch):

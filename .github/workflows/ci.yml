@@ -11,6 +11,7 @@ env:
   GCP_PROJECT_NUMBER: "502916414508"
   GCP_REGION: us-east1
   DASHBOARD_SERVICE: marketing-decision-tool
+  DASHBOARD_IAP_MEMBER: user:luminadata@luminasolar.com
   NOTES_SERVICE: notes-api
   RUNTIME_SERVICE_ACCOUNT: marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com
   DEPLOY_SERVICE_ACCOUNT: marketing-tools-deployer@lumina-lakehouse.iam.gserviceaccount.com
@@ -124,4 +125,12 @@ jobs:
             --region="${GCP_REGION}" \
             --member="serviceAccount:service-${GCP_PROJECT_NUMBER}@gcp-sa-iap.iam.gserviceaccount.com" \
             --role=roles/run.invoker \
+            --quiet
+          gcloud iap web add-iam-policy-binding \
+            --project="${GCP_PROJECT_ID}" \
+            --resource-type=cloud-run \
+            --service="${DASHBOARD_SERVICE}" \
+            --region="${GCP_REGION}" \
+            --member="${DASHBOARD_IAP_MEMBER}" \
+            --role=roles/iap.httpsResourceAccessor \
             --quiet

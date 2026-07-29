@@ -6,96 +6,68 @@ class FakeElement {
     this.value = "";
     this.innerHTML = "";
     this.textContent = "";
+    this.hidden = false;
     this.disabled = false;
     this.clientWidth = 700;
-    this.clientHeight = 280;
-    this.firstChild = null;
-    this.attributes = {};
+    this.clientHeight = 245;
     this.style = {};
+    this.dataset = {};
     this._classes = new Set();
     this.classList = {
       add: name => this._classes.add(name),
       remove: name => this._classes.delete(name),
       toggle: (name, force) => {
-        const shouldAdd = force == null ? !this._classes.has(name) : Boolean(force);
-        if (shouldAdd) this._classes.add(name);
+        const add = force == null ? !this._classes.has(name) : Boolean(force);
+        if (add) this._classes.add(name);
         else this._classes.delete(name);
       },
-      contains: name => this._classes.has(name)
+      contains: name => this._classes.has(name),
     };
   }
   addEventListener() {}
-  focus() {}
-  insertAdjacentHTML(_position, html) { this.innerHTML += html; }
-  closest() { return null; }
-  removeChild() {}
   querySelectorAll() { return []; }
-  setAttribute(name, value) { this.attributes[name] = String(value); }
-  getAttribute(name) { return this.attributes[name] || null; }
+  setAttribute() {}
+  focus() {}
+  getContext() {
+    return {
+      scale() {}, clearRect() {}, fillText() {}, beginPath() {}, moveTo() {},
+      lineTo() {}, stroke() {}, fill() {},
+      set fillStyle(_) {}, set strokeStyle(_) {}, set lineWidth(_) {},
+      set lineJoin(_) {}, set font(_) {},
+    };
+  }
 }
 
-function installFakeDom(extraIds = []) {
+function installFakeDom() {
   const elements = new Map();
-  function getElement(id) {
+  const getElement = id => {
     if (!elements.has(id)) elements.set(id, new FakeElement(id));
     return elements.get(id);
-  }
-
+  };
+  const views = ["command", "funnel", "geo", "scenario", "quality"].map(name => getElement(`view-${name}`));
   global.document = {
     getElementById: getElement,
     querySelectorAll(selector) {
-      if (selector === ".view") return [getElement("overview"), getElement("campaigns"), getElement("ahj")];
+      if (selector === ".view") return views;
       return [];
     },
-    querySelector(selector) {
-      if (selector.startsWith("#")) return getElement(selector.slice(1));
-      return null;
-    }
+    querySelector() { return null; },
   };
   global.window = {
+    devicePixelRatio: 1,
     addEventListener() {},
-    LUMINA_API_BASE: "http://fake-notes-api.test",
-    google: {
-      accounts: {
-        id: {
-          initialize() {},
-          renderButton() {},
-          prompt() {}
-        }
-      }
-    }
+    requestAnimationFrame(callback) { callback(); },
   };
-  global.localStorage = {
-    getItem() { return null; },
-    setItem() {}
-  };
-
-  [
-    "appShell", "sideToggle", "campaignObjective", "campaignMetrics",
-    "campaignDetailSelect", "rangeSelect", "regionSelect", "sourceSelect", "globalCampaignSelect",
-    "campaignLoadError", "campaignLoadErrorText", "campaignRetryButton",
-    "campaignRecommendations", "campaignCards", "campaignTrendChart", "campaignTable",
-    "ahjCampaignSelect", "ahjObjective", "ahjFocusSelect", "ahjLayoutSelect", "ahjMetrics",
-    "ahjLoadError", "ahjLoadErrorText", "ahjRetryButton",
-    "ahjImmediateInsights", "ahjHeatmap", "ahjAllocationTable", "ahjDetail",
-    "ahjAreaTabs", "ahjPerformanceBreakdown", "ahjInvestigationCanvas",
-    "refreshBqButton", "freshnessTitle", "freshnessMeta",
-    "askClaudeButton", "claudePanel", "claudeBackdrop", "claudeQuestion", "claudeSubmit",
-    "claudeAnswer", "claudeClose", "claudeForm",
-    "trendExplorerMetric", "trendCompareMode", "trendExplorerChart", "trendExplorerLegend", "trendSummary",
-    "noteDrawer", "noteDrawerBackdrop", "noteDrawerClose", "noteDrawerForm",
-    "noteDrawerText", "noteDrawerAuthor", "noteDrawerStatus", "noteDrawerLabel", "noteDrawerView",
-    "noteDrawerSigninPrompt", "noteDrawerGoogleSignInButton", "noteDrawerSignInAction",
-    "googleSignInButton", "signedInAs",
-    ...extraIds
-  ].forEach(id => getElement(id));
-
+  global.requestAnimationFrame = callback => callback();
+  global.alert = () => {};
   return { getElement };
 }
 
 function loadDashboardScript() {
   const html = fs.readFileSync("outputs/marketing_decision_tool.html", "utf8");
-  return html.match(/<script>([\s\S]*)<\/script>/)[1];
+  const match = html.match(/<script>([\s\S]*?)<\/script>/);
+  if (!match) throw new Error("Dashboard script not found.");
+  return match[1];
 }
 
 module.exports = { FakeElement, installFakeDom, loadDashboardScript };

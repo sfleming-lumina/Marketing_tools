@@ -890,11 +890,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "status": row["status"],
             "source_view": row["source_view"],
             "campaign": row["campaign"] or "",
-            "rollup": row["rollup"] or "",
+            "rollup": row["campaign_rollup"] or "",
             "ahj": row["ahj"] or "",
             "operating_region": row["operating_region"] or "",
             "months": row["months"] or 7,
-            "window": row["window"] or "",
+            "window": row["temporal_window"] or "",
             "primary_metric": row["primary_metric"],
             "review_after": row["review_after"].isoformat(),
             "baseline": parsed_json("baseline", {}),
@@ -957,11 +957,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "status": "Monitoring",
             "source_view": str(payload.get("sourceView") or "scenario")[:50],
             "campaign": str(filters.get("campaign") or "")[:500],
-            "rollup": str(filters.get("rollup") or "")[:500],
+            "campaign_rollup": str(filters.get("rollup") or "")[:500],
             "ahj": str(filters.get("ahj") or "")[:500],
             "operating_region": str(filters.get("operatingRegion") or "")[:100],
             "months": months,
-            "window": str(filters.get("window") or "")[:20],
+            "temporal_window": str(filters.get("window") or "")[:20],
             "primary_metric": primary_metric,
             "review_after": (now + timedelta(days=horizon_days)).date().isoformat(),
             "baseline": json.dumps(baseline),
@@ -979,6 +979,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         response = dict(created)
         for name in ("baseline", "scenario", "expected", "evidence"):
             response[name] = json.loads(response[name])
+        response["rollup"] = response.pop("campaign_rollup")
+        response["window"] = response.pop("temporal_window")
         return HTTPStatus.CREATED, response
 
     def _get_marketing_decision(self, decision_id):

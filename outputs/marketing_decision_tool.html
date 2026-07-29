@@ -49,6 +49,11 @@
     .badge.good{background:var(--green-soft);color:var(--green-dark)}.badge.warn{background:var(--amber-soft);color:#8a5a00}.badge.bad{background:#feeae6;color:#a5382d}.badge.dark{background:rgba(255,255,255,.11);color:#dfece4}
     .insight-list{display:grid;gap:10px}.insight{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:14px}
     .insight-num{width:30px;height:30px;border-radius:9px;background:var(--green-soft);color:var(--green-dark);display:grid;place-items:center;font-weight:800}.insight p{margin:3px 0 0;color:var(--muted);font-size:12px}
+    .insight-action{align-self:center;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:750;white-space:nowrap}.insight-action:hover{border-color:var(--green);background:var(--green-soft)}
+    .decision-workspace{display:none;margin-bottom:20px;padding:16px 18px;background:#fff;border:1px solid #bde6c3;border-radius:17px;box-shadow:0 10px 30px rgba(24,50,34,.07)}.decision-workspace.show{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+    .workflow-steps{display:flex;align-items:center;gap:5px;margin-bottom:8px}.workflow-step{display:flex;align-items:center;gap:6px;color:#8a978f;font-size:10px;font-weight:760;text-transform:uppercase;letter-spacing:.06em}.workflow-step:after{content:"›";margin-left:2px;color:#c2cbc5}.workflow-step:last-child:after{display:none}.workflow-step span{width:19px;height:19px;display:grid;place-items:center;border:1px solid #ccd6cf;border-radius:50%;font-size:9px}.workflow-step.complete,.workflow-step.active{color:var(--green-dark)}.workflow-step.complete span{background:var(--green);border-color:var(--green);color:#0b2412}.workflow-step.active span{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+    .decision-workspace h3{font-size:16px}.decision-workspace p{margin:3px 0 0;color:var(--muted);font-size:12px}.decision-context{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.decision-context span{padding:4px 8px;background:#f0f4f1;border-radius:999px;color:#506057;font-size:10px}.decision-actions{display:flex;align-items:center;gap:8px}.text-btn{border:0;background:transparent;color:var(--muted);padding:8px;font-size:11px}.text-btn:hover{color:var(--ink)}
+    .evidence-strip{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 15px;margin-bottom:16px;background:#f7f9f7;border:1px solid var(--line);border-radius:14px}.evidence-strip p{margin:2px 0 0;color:var(--muted);font-size:11px}.evidence-strip .decision-actions{flex-shrink:0}
     .funnel-wrap{overflow:auto;padding:4px 1px}.funnel{display:flex;align-items:stretch;min-width:740px}.stage{flex:1;padding:17px 16px;background:#f7f9f7;border:1px solid var(--line);position:relative}
     .stage:first-child{border-radius:16px 0 0 16px}.stage:last-child{border-radius:0 16px 16px 0}.stage+.stage{border-left:0}.stage small{color:var(--muted)}.stage strong{display:block;font-size:24px;letter-spacing:-.035em;margin:5px 0}.stage em{font-style:normal;font-size:11px;color:var(--green-dark)}
     .stage:after{content:"›";position:absolute;right:-8px;top:50%;transform:translateY(-50%);z-index:2;color:#9daa9f;background:#fff;border:1px solid var(--line);width:16px;height:24px;border-radius:8px;display:grid;place-items:center}.stage:last-child:after{display:none}
@@ -61,6 +66,7 @@
     .controls{display:grid;gap:15px}.slider-row{display:grid;grid-template-columns:150px 1fr 64px;gap:14px;align-items:center}.slider-row label{font-weight:650}.slider-row output{text-align:right;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--green)}
     .preset-row{display:flex;gap:8px;flex-wrap:wrap}.preset-row button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px}.preset-row button:hover{border-color:var(--green)}
     .scenario-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}.scenario-column{padding:18px;border:1px solid var(--line);border-radius:16px}.scenario-column.accent{background:var(--green-soft);border-color:#bde6c3}.scenario-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}.scenario-metrics small{display:block;color:var(--muted)}.scenario-metrics strong{display:block;font-size:20px;margin-top:3px}
+    .scenario-output{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px;padding:15px 17px;border-radius:15px;background:#10231a;color:#fff}.scenario-output p{margin:2px 0 0;color:#aabcb1;font-size:11px}.scenario-output .primary{flex-shrink:0}
     .quality-row{display:grid;grid-template-columns:190px repeat(4,1fr) 90px;gap:10px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.quality-row:last-child{border:0}.quality-row div:not(:first-child){text-align:right}.quality-row small{display:block;color:var(--muted)}
     .empty,.loading{padding:45px;text-align:center;color:var(--muted)}.skeleton{background:linear-gradient(90deg,#edf1ee,#f8faf8,#edf1ee);background-size:200% 100%;animation:shine 1.3s infinite;border-radius:10px;height:92px}@keyframes shine{to{background-position:-200% 0}}
     .error-banner{display:none;margin-bottom:16px;padding:13px 15px;border:1px solid #f1c1b9;background:#fff2ef;color:#9a352b;border-radius:12px}.error-banner.show{display:flex;justify-content:space-between;gap:12px;align-items:center}.error-banner button{border:0;background:transparent;color:inherit;text-decoration:underline}
@@ -68,11 +74,12 @@
     .drawer{position:fixed;top:0;right:0;width:min(440px,94vw);height:100vh;background:#fff;z-index:60;transform:translateX(105%);transition:.25s;box-shadow:-20px 0 60px rgba(0,0,0,.16);display:flex;flex-direction:column}.drawer.guide{width:min(560px,96vw)}.drawer.open{transform:none}
     .drawer-head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.drawer-body{padding:22px;overflow:auto;flex:1}.drawer-foot{padding:16px 22px;border-top:1px solid var(--line)}
     textarea{width:100%;min-height:115px;padding:12px;border:1px solid var(--line);border-radius:12px;resize:vertical}.primary{border:0;background:var(--green);color:#0c2612;font-weight:750;padding:10px 15px;border-radius:11px}.secondary{border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:10px}.close{border:0;background:transparent;font-size:20px;color:var(--muted)}
+    .brief-section{padding:16px 0;border-bottom:1px solid var(--line)}.brief-section:first-child{padding-top:0}.brief-section:last-child{border:0}.brief-section h3{margin-bottom:8px}.brief-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.brief-field label{display:block;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}.brief-field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px}.brief-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.brief-metric{padding:11px;background:#f5f8f5;border-radius:11px}.brief-metric small{display:block;color:var(--muted)}.brief-metric strong{display:block;margin-top:2px;font-size:16px}.brief-evidence{margin:0;padding-left:18px;color:var(--muted)}.brief-evidence li+li{margin-top:5px}
     .assistant-answer{white-space:pre-wrap;background:#f7f9f7;border-radius:14px;padding:16px;margin-top:14px}.note-item{padding:14px 0;border-bottom:1px solid var(--line)}.note-item p{margin:5px 0}.note-item small{color:var(--muted)}.guide-intro{padding:16px;border-radius:15px;background:var(--green-soft);color:#24552f;margin-bottom:18px}.guide-section{padding:17px 0;border-bottom:1px solid var(--line)}.guide-section:last-child{border:0}.guide-section h3{margin-bottom:7px}.guide-section p{margin:0;color:var(--muted)}.guide-section ul{margin:9px 0 0;padding-left:20px;color:var(--muted)}.guide-section li+li{margin-top:5px}.guide-key{display:grid;grid-template-columns:115px 1fr;gap:7px 12px;margin-top:10px}.guide-key dt{font-weight:700}.guide-key dd{margin:0;color:var(--muted)}
     .mobile-brand{display:none}.tooltip{border-bottom:1px dotted #7a8b81}
     @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.filters .rollup-filter{display:none}.content{padding:28px 24px 55px}.scenario-compare{grid-template-columns:1fr}.health-grid{grid-template-columns:1fr}}
     @media(max-width:760px){
-      .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}.filters .rollup-filter{display:none}.filters .select-wrap,.filters select,.filters .filter-input{width:100%;max-width:none}.filters .icon-btn{position:absolute;right:14px;top:11px}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:17px;border-radius:17px}.chart-card{min-height:370px}.chart-card canvas{height:270px}.health-row{grid-template-columns:92px 58px 1fr}.health-delta{grid-column:2/-1;text-align:left}.portfolio-table{overflow:visible;border:0}.portfolio-table table,.portfolio-table tbody{display:block;min-width:0}.portfolio-table thead{display:none}.portfolio-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:#fff}.portfolio-table td,.portfolio-table th{display:block;width:auto!important;padding:0;border:0;text-align:left!important}.portfolio-table td:first-child{grid-column:1/-1;padding-bottom:4px}.portfolio-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.portfolio-table td:first-child:before{display:none}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}
+      .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}.filters .rollup-filter{display:none}.filters .select-wrap,.filters select,.filters .filter-input{width:100%;max-width:none}.filters .icon-btn{position:absolute;right:14px;top:11px}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:17px;border-radius:17px}.chart-card{min-height:370px}.chart-card canvas{height:270px}.health-row{grid-template-columns:92px 58px 1fr}.health-delta{grid-column:2/-1;text-align:left}.portfolio-table{overflow:visible;border:0}.portfolio-table table,.portfolio-table tbody{display:block;min-width:0}.portfolio-table thead{display:none}.portfolio-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:#fff}.portfolio-table td,.portfolio-table th{display:block;width:auto!important;padding:0;border:0;text-align:left!important}.portfolio-table td:first-child{grid-column:1/-1;padding-bottom:4px}.portfolio-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.portfolio-table td:first-child:before{display:none}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}.decision-workspace.show{grid-template-columns:1fr}.workflow-steps{overflow:auto;padding-bottom:2px}.decision-actions{flex-wrap:wrap}.evidence-strip,.scenario-output{align-items:flex-start;flex-direction:column}.brief-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -111,6 +118,19 @@
     </header>
     <div class="content">
       <div class="error-banner" id="errorBanner"><span id="errorText"></span><button id="retryButton">Retry</button></div>
+      <div class="decision-workspace" id="decisionWorkspace" aria-live="polite">
+        <div>
+          <div class="workflow-steps" id="workflowSteps"></div>
+          <h3 id="activeDecisionTitle">Active decision</h3>
+          <p id="activeDecisionCopy"></p>
+          <div class="decision-context" id="activeDecisionContext"></div>
+        </div>
+        <div class="decision-actions">
+          <button class="text-btn" id="clearDecision">Clear</button>
+          <button class="secondary" id="backToEvidence">Review evidence</button>
+          <button class="primary" id="testDecision">Test decision</button>
+        </div>
+      </div>
 
       <section class="view active" id="view-command">
         <div class="hero"><div><div class="eyebrow">Marketing decision operating system</div><h1>Know what is working. Decide what to do next.</h1><p>One cohort-consistent view of acquisition, conversion, geography, pipeline, and spend quality.</p></div><div class="asof" id="asOf">Loading latest cohort...</div></div>
@@ -124,6 +144,7 @@
 
       <section class="view" id="view-funnel">
         <div class="hero"><div><div class="eyebrow">Spend-aware funnel lab</div><h1>Follow every lead to its commercial outcome.</h1><p>The lens automatically switches to lead-first when attributable spend is incomplete, so missing costs never masquerade as efficiency.</p><div class="focus-context" id="focusContext"></div></div><div class="segmented" id="lensToggle"><button class="active" data-lens="auto">Auto</button><button data-lens="spend">Spend</button><button data-lens="lead">Lead cohort</button></div></div>
+        <div class="evidence-strip" id="funnelEvidence" hidden><div><strong>Ground the decision in this funnel</strong><p id="funnelEvidenceCopy">Review sample, conversion, maturity, and spend coverage before testing a change.</p></div><div class="decision-actions"><button class="secondary" data-add-evidence="funnel">Add funnel evidence</button><button class="primary" data-test-from="funnel">Test this decision</button></div></div>
         <div class="card"><div class="section-head"><div><h2 id="funnelTitle">Cohort funnel</h2><p id="funnelCoverage"></p></div><span class="badge" id="funnelBadge">Evaluating spend</span></div><div class="funnel-wrap"><div class="funnel" id="mainFunnel"></div></div></div>
         <div class="grid grid-4 section" id="funnelMetrics"></div>
         <div class="card section"><div class="section-head"><div><div class="eyebrow">Focus scan</div><h2>Funnel health vs prior cohorts</h2><p>Color identifies where the latest cohort is improving, holding, or needs intervention.</p></div><div class="legend"><span><i style="background:#39b54a"></i>Healthy</span><span><i style="background:#f1a900"></i>Watch</span><span><i style="background:#c84232"></i>Focus</span></div></div><div class="health-grid"><div class="health-list" id="funnelHealth"></div><div id="funnelFocus"></div></div></div>
@@ -136,6 +157,7 @@
 
       <section class="view" id="view-geo">
         <div class="hero"><div><div class="eyebrow">County & AHJ intelligence</div><h1>See where campaigns earn the right to scale.</h1><p>Rank local performance using cohort conversion, sample confidence, pipeline, spend coverage, and the campaign benchmark.</p></div></div>
+        <div class="evidence-strip" id="geoEvidence" hidden><div><strong>Ground the decision in local performance</strong><p id="geoEvidenceCopy">Confirm the AHJ signal, sample size, benchmark delta, and CAC before changing allocation.</p></div><div class="decision-actions"><button class="secondary" data-add-evidence="geo">Add geography evidence</button><button class="primary" data-test-from="geo">Test this decision</button></div></div>
         <div class="grid grid-4" id="geoMetrics"></div>
         <div class="grid grid-3 section">
           <div class="card elevated" style="grid-column:span 2"><div class="section-head"><div><div class="eyebrow">Opportunity map</div><h2>County / AHJ leaderboard</h2></div><span class="badge good">Cohort-ranked</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>County / AHJ</th><th>Campaign</th><th>Leads</th><th>Win rate</th><th>vs benchmark</th><th>CAC</th><th>Pipeline</th><th>Score</th></tr></thead><tbody id="geoTable"></tbody></table></div></div>
@@ -151,6 +173,7 @@
           <div class="card elevated"><div class="section-head"><div><div class="eyebrow">Impact</div><h2>Baseline vs scenario</h2></div><span class="badge good" id="scenarioHeadline">Ready</span></div><div class="scenario-compare" id="scenarioCompare"></div></div>
         </div>
         <div class="card section"><div class="section-head"><div><h2>Scenario funnel</h2><p>Projected flow based on the selected campaign cohort.</p></div></div><div class="funnel-wrap"><div class="funnel" id="scenarioFunnel"></div></div></div>
+        <div class="scenario-output"><div><strong id="scenarioOutputTitle">Ready to turn the scenario into an action</strong><p id="scenarioOutputCopy">Create a compact brief with the selected audience, assumptions, expected impact, caveats, owner, and review date.</p></div><button class="primary" id="createDecisionBrief">Create decision brief</button></div>
       </section>
 
       <section class="view" id="view-quality">
@@ -172,7 +195,8 @@
 <aside class="drawer guide" id="guideDrawer" aria-label="Marketing Intelligence usage guide">
   <div class="drawer-head"><div><div class="eyebrow">Usage guide</div><h2>How to use this workspace</h2></div><button class="close" data-close aria-label="Close">×</button></div>
   <div class="drawer-body">
-    <div class="guide-intro">Start with a decision, choose the operating region and time window, then move from the command center into the funnel, geography, or scenario view for evidence.</div>
+    <div class="guide-intro">Use one repeatable workflow: discover what needs attention, investigate the evidence, test a potential decision, and create an implementation brief.</div>
+    <div class="guide-section"><h3>Discover → Investigate → Test → Implement</h3><ul><li><strong>Discover:</strong> choose an insight from the Command center priority queue.</li><li><strong>Investigate:</strong> the active question and filters follow you into Funnel lab or Geo intelligence; add the evidence you want carried forward.</li><li><strong>Test:</strong> Scenario studio opens with a relevant starting preset while preserving the same campaign, AHJ, region, and period.</li><li><strong>Implement:</strong> create a decision brief with expected impact, assumptions, evidence, caveats, owner, and review date.</li></ul></div>
     <div class="guide-section"><h3>Filters and operating regions</h3><p>Campaign and AHJ selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
     <div class="guide-section"><h3>Command center</h3><p>Use the priority queue for the fastest read on scale, recovery, and geography. Hover any chart point to see the exact month and values.</p></div>
     <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
@@ -190,6 +214,11 @@
   <div class="drawer-head"><div><div class="eyebrow">Decision assistant</div><h2>Ask about this view</h2></div><button class="close" data-close aria-label="Close">×</button></div>
   <div class="drawer-body"><p class="sub">The assistant receives the active filters, funnel totals, top geography signals, and scenario assumptions.</p><textarea id="assistantQuestion" placeholder="Which campaigns should we scale, and where?"></textarea><button class="primary" id="askAssistant" style="margin-top:10px;width:100%">Analyze current view</button><div class="assistant-answer" id="assistantAnswer" hidden></div></div>
 </aside>
+<aside class="drawer guide" id="decisionDrawer" aria-label="Decision brief">
+  <div class="drawer-head"><div><div class="eyebrow">Implementation output</div><h2>Decision brief</h2></div><button class="close" data-close aria-label="Close">×</button></div>
+  <div class="drawer-body" id="decisionBriefBody"></div>
+  <div class="drawer-foot"><button class="secondary" id="copyDecisionBrief">Copy brief</button><button class="primary" id="markDecisionReady" style="float:right">Mark ready to implement</button></div>
+</aside>
 
 <script>
 (() => {
@@ -200,7 +229,8 @@
     view:"command", months:7, window:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     filterCatalog:{campaigns:[],rollups:[],ahjs:[]},
-    loading:false, error:null, scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
+    loading:false, error:null, workflowStage:"discover", activeDecision:null,
+    scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
   };
   const viewTitles = {command:"Command center",funnel:"Funnel lab",geo:"Geo intelligence",scenario:"Scenario studio",quality:"Data quality"};
   const fmtNum = value => new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(Number(value)||0);
@@ -332,6 +362,89 @@
     populateSelect($("rollupFilter"),state.filterCatalog.rollups,"All rollups",state.rollup);
     populateDatalist($("ahjOptions"),state.filterCatalog.ahjs,state.ahj);
   }
+  const workflowStages=["discover","investigate","test","implement"];
+  const workflowLabels={discover:"Discover",investigate:"Investigate",test:"Test",implement:"Implement"};
+  function periodLabel(){return state.window==="30d"?"Last 30 days":`Last ${state.months} months`}
+  function activeFilterContext(){
+    return [
+      `Period: ${periodLabel()}`,
+      `Campaign: ${state.campaign||"All campaigns"}`,
+      `AHJ: ${state.ahj||"All AHJs"}`,
+      `Region: ${state.region||"All data"}`
+    ];
+  }
+  function decisionInsights(){
+    const rows=filteredFunnelRows(),t=aggregate(rows),campaigns=group(rows,"campaign").sort((a,b)=>b.totals.leads-a.totals.leads);
+    const best=campaigns.filter(c=>c.totals.leads>=20).sort((a,b)=>b.totals.leadToWin-a.totals.leadToWin)[0];
+    const benchmark=t.benchmark||0,gap=t.leadToWin-benchmark;
+    const geo=filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore)[0];
+    return [
+      {
+        id:"campaign-signal",tag:"Campaign",view:"funnel",preset:"growth",campaign:best?.name||"",
+        title:best?`${best.name} leads conversion among scaled cohorts`:"Build campaign sample",
+        copy:best?`${fmtPct(best.totals.leadToWin)} of ${fmtNum(best.totals.leads)} leads became wins.`:"More cohort activity is needed before comparing campaigns.",
+        question:best?`Should we increase investment in ${best.name}?`:"Which campaign should receive controlled test spend?",
+        evidence:[best?`${fmtNum(best.totals.leads)} leads produced ${fmtNum(best.totals.wins)} wins at ${fmtPct(best.totals.leadToWin)} lead-to-win.`:"Campaign sample is below the comparison threshold."]
+      },
+      {
+        id:"funnel-signal",tag:"Funnel",view:"funnel",preset:gap>=0?"efficiency":"conversion",
+        title:gap>=0?"Cohort is above its mature benchmark":"Conversion recovery is available",
+        copy:benchmark?`${fmtPct(Math.abs(gap))} ${gap>=0?"above":"below"} the reliable benchmark.`:"Reliable benchmark coverage is still developing.",
+        question:gap>=0?"Can we preserve conversion while improving acquisition efficiency?":"Which funnel-stage improvement would recover the most wins?",
+        evidence:[benchmark?`Lead-to-win is ${fmtPct(t.leadToWin)} versus a ${fmtPct(benchmark)} mature benchmark.`:"A reliable mature benchmark is not available for this slice."]
+      },
+      {
+        id:"geo-signal",tag:"Geo",view:"geo",preset:"growth",
+        title:geo?`${geo.geography} is the top local signal`:"Resolve local attribution",
+        copy:geo?`Opportunity score ${geo.opportunityScore}; ${fmtNum(geo.activePipeline)} active pipeline candidates.`:"No county/AHJ rows match the filters.",
+        question:geo?`Should we expand the selected campaign mix in ${geo.geography}?`:"Which local market has enough evidence for a controlled test?",
+        evidence:[geo?`${geo.geography} has ${fmtNum(geo.leads)} leads, ${fmtPct(geo.leadToWinRate)} lead-to-win, and opportunity score ${geo.opportunityScore}.`:"No sample-qualified local cohort is available."]
+      }
+    ];
+  }
+  function renderDecisionWorkspace(){
+    const workspace=$("decisionWorkspace"),decision=state.activeDecision;
+    workspace.classList.toggle("show",Boolean(decision));
+    if(!decision)return;
+    const activeIndex=workflowStages.indexOf(state.workflowStage);
+    $("workflowSteps").innerHTML=workflowStages.map((stage,index)=>`<div class="workflow-step ${index<activeIndex?"complete":index===activeIndex?"active":""}"><span>${index<activeIndex?"✓":index+1}</span>${workflowLabels[stage]}</div>`).join("");
+    $("activeDecisionTitle").textContent=decision.question||decision.title;
+    $("activeDecisionCopy").textContent=decision.copy||"Review the evidence, test the change, and create an implementation brief.";
+    $("activeDecisionContext").innerHTML=activeFilterContext().map(item=>`<span>${esc(item)}</span>`).join("");
+    $("backToEvidence").hidden=state.workflowStage==="investigate";
+    $("testDecision").hidden=state.workflowStage==="test"||state.workflowStage==="implement";
+    renderInvestigationPrompts();
+  }
+  function renderInvestigationPrompts(){
+    const active=Boolean(state.activeDecision);
+    $("funnelEvidence").hidden=!active;
+    $("geoEvidence").hidden=!active;
+    if(active){
+      $("funnelEvidenceCopy").textContent=`Active question: ${state.activeDecision.question}`;
+      $("geoEvidenceCopy").textContent=`Active question: ${state.activeDecision.question}`;
+    }
+  }
+  function beginInvestigation(id){
+    const insight=decisionInsights().find(item=>item.id===id);if(!insight)return;
+    state.activeDecision={...insight,evidence:[...insight.evidence],startedAt:new Date().toISOString(),status:"Investigating"};
+    state.workflowStage="investigate";
+    if(insight.campaign&&state.filterCatalog.campaigns.includes(insight.campaign)&&state.campaign!==insight.campaign){
+      state.campaign=insight.campaign;loadData();
+    }
+    setView(insight.view);renderDecisionWorkspace();
+  }
+  function addDecisionEvidence(kind){
+    if(!state.activeDecision)return;
+    const t=aggregate(filteredFunnelRows()),rows=filteredGeoRows();
+    const evidence=kind==="geo"
+      ?`${fmtNum(rows.length)} local cohorts show ${fmtNum(sum(rows,"leads"))} leads, ${fmtNum(sum(rows,"wins"))} wins, and ${fmtNum(sum(rows,"activePipeline"))} active pipeline candidates.`
+      :`${fmtNum(t.leads)} leads convert at ${fmtPct(t.setRate)} lead-to-set, ${fmtPct(t.runRate)} set-to-run, and ${fmtPct(t.winRate)} run-to-win; ${coverageInfo(t).label.toLowerCase()} spend coverage.`;
+    if(!state.activeDecision.evidence.includes(evidence))state.activeDecision.evidence.push(evidence);
+    state.activeDecision.status="Evidence grounded";renderDecisionWorkspace();
+  }
+  function clearDecision(){
+    state.activeDecision=null;state.workflowStage="discover";renderDecisionWorkspace();renderInvestigationPrompts();
+  }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
     $("asOf").textContent=t.loadedAt?`Cohorts loaded ${new Date(t.loadedAt).toLocaleDateString()}`:"No cohort activity";
@@ -344,16 +457,8 @@
       metric("Active pipeline",fmtNum(t.activePipeline),`${fmtMoney(t.activePipelineRevenue)} potential revenue`,"neutral"),
       metric(coverage.leadFirst?"Expected remaining wins":"Revenue / spend",coverage.leadFirst?fmtNum(t.expectedRemainingWins):`${(t.roi||0).toFixed(1)}×`,coverage.leadFirst?`${fmtMoney(t.expectedRemainingRevenue)} expected`:`${fmtMoney(t.cpw)} cost per win`,coverage.leadFirst?"neutral":"positive")
     ].join("");
-    const campaigns=group(rows,"campaign").sort((a,b)=>b.totals.leads-a.totals.leads);
-    const best=campaigns.filter(c=>c.totals.leads>=20).sort((a,b)=>b.totals.leadToWin-a.totals.leadToWin)[0];
-    const benchmark=t.benchmark||0, gap=t.leadToWin-benchmark;
-    const geo=filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore)[0];
-    const insights=[
-      {title:best?`${best.name} leads conversion among scaled cohorts`:"Build campaign sample",copy:best?`${fmtPct(best.totals.leadToWin)} of ${fmtNum(best.totals.leads)} leads became wins.`:"More cohort activity is needed before comparing campaigns.",tag:"Campaign"},
-      {title:gap>=0?"Cohort is above its mature benchmark":"Conversion recovery is available",copy:benchmark?`${fmtPct(Math.abs(gap))} ${gap>=0?"above":"below"} the reliable benchmark.`:"Reliable benchmark coverage is still developing.",tag:"Funnel"},
-      {title:geo?`${geo.geography} is the top local signal`:"Resolve local attribution",copy:geo?`Opportunity score ${geo.opportunityScore}; ${fmtNum(geo.activePipeline)} active pipeline candidates.`:"No county/AHJ rows match the filters.",tag:"Geo"}
-    ];
-    $("insightList").innerHTML=insights.map((x,i)=>`<div class="insight"><div class="insight-num">${i+1}</div><div><h3>${esc(x.title)}</h3><p>${esc(x.copy)}</p></div>${badge(x.tag)}</div>`).join("");
+    const insights=decisionInsights();
+    $("insightList").innerHTML=insights.map((x,i)=>`<div class="insight"><div class="insight-num">${i+1}</div><div><h3>${esc(x.title)}</h3><p>${esc(x.copy)}</p></div><button class="insight-action" data-investigate="${esc(x.id)}">Investigate</button></div>`).join("");
     drawTrend($("commandTrend"),rows,[
       {key:"leads",label:"Leads",color:"#39b54a"},
       {key:"wins",label:"Wins",color:"#10231a"}
@@ -443,6 +548,13 @@
     $("scenarioHeadline").textContent=`${winLift>=0?"+":""}${fmtPct(winLift)} wins`;
     $("scenarioHeadline").className=`badge ${winLift>=0?"good":"bad"}`;
     $("scenarioFunnel").innerHTML=funnelHtml(s,"spend");
+    if(state.activeDecision){
+      $("scenarioOutputTitle").textContent=`Turn “${state.activeDecision.question}” into an implementation brief`;
+      $("scenarioOutputCopy").textContent=`The brief will carry forward ${state.activeDecision.evidence.length} evidence point${state.activeDecision.evidence.length===1?"":"s"}, the active filters, scenario assumptions, and expected impact.`;
+    }else{
+      $("scenarioOutputTitle").textContent="Ready to turn the scenario into an action";
+      $("scenarioOutputCopy").textContent="Create a compact brief with the selected audience, assumptions, expected impact, caveats, owner, and review date.";
+    }
   }
   function renderQuality(){
     const data=state.reconciliation;if(!data)return;
@@ -526,13 +638,13 @@
       const tip=canvas.parentElement?.querySelector(".chart-tooltip");if(tip){tip.style.display="none";tip.setAttribute("aria-hidden","true")}
     });
   }
-  function renderAll(){renderCommand();renderFunnel();renderGeo();renderScenario();renderQuality()}
+  function renderAll(){renderCommand();renderFunnel();renderGeo();renderScenario();renderQuality();renderDecisionWorkspace()}
   function setView(view){
     state.view=view;document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===`view-${view}`));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("crumbTitle").textContent=viewTitles[view];$("sidebar").classList.remove("open");window.scrollTo?.({top:0,behavior:"instant"});
-    requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="funnel")renderFunnel()});
+    requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="funnel")renderFunnel();if(view==="scenario")renderScenario();renderDecisionWorkspace()});
   }
   function openDrawer(name){
-    closeDrawers(); const drawer=$(name==="notes"?"notesDrawer":name==="guide"?"guideDrawer":"assistantDrawer");drawer.classList.add("open");$("drawerBackdrop").classList.add("open");if(name==="notes")loadNotes();
+    closeDrawers(); const drawer=$(name==="notes"?"notesDrawer":name==="guide"?"guideDrawer":name==="decision"?"decisionDrawer":"assistantDrawer");drawer.classList.add("open");$("drawerBackdrop").classList.add("open");if(name==="notes")loadNotes();
   }
   function closeDrawers(){document.querySelectorAll(".drawer").forEach(d=>d.classList.remove("open"));$("drawerBackdrop").classList.remove("open")}
   async function loadNotes(){
@@ -542,7 +654,7 @@
     const text=$("noteText").value.trim();if(!text)return;
     try{await fetchJson("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({view:state.view,element_key:`${state.view}-workspace`,element_label:viewTitles[state.view],target_type:"view",feedback_type:"decision",note_text:text,context:assistantContext()})});$("noteText").value="";loadNotes()}catch(e){alert(e.message)}
   }
-  function assistantContext(){return {view:state.view,filters:{period:state.window==="30d"?"Last 30 days":`${state.months} months`,campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
+  function assistantContext(){return {view:state.view,filters:{period:periodLabel(),campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},active_decision:state.activeDecision,workflow_stage:state.workflowStage,funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
   async function askAssistant(){
     const question=$("assistantQuestion").value.trim();if(!question)return;const out=$("assistantAnswer");out.hidden=false;out.textContent="Analyzing the current decision context...";
     try{const result=await fetchJson("/api/ask-claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,view:state.view,context:assistantContext()})});out.textContent=result.answer||result.summary||JSON.stringify(result,null,2)}catch(e){out.textContent=e.message}
@@ -551,9 +663,83 @@
     const presets={baseline:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0},growth:{budget:35,cpl:8,setRate:5,runRate:3,winRate:2,revenuePerWin:0},efficiency:{budget:0,cpl:-15,setRate:5,runRate:5,winRate:6,revenuePerWin:0},conversion:{budget:0,cpl:0,setRate:15,runRate:10,winRate:12,revenuePerWin:0}};
     state.scenario={...presets[name]};renderScenario();
   }
+  function startScenario(preset){
+    if(!state.activeDecision){
+      state.activeDecision={
+        id:"portfolio-scenario",tag:"Scenario",view:state.view==="geo"?"geo":"funnel",preset:preset||"baseline",
+        title:"Selected portfolio scenario",question:"What change should we implement for the selected portfolio?",
+        copy:"Test the selected acquisition and conversion assumptions against the live cohort baseline.",
+        evidence:[],startedAt:new Date().toISOString(),status:"Testing"
+      };
+    }
+    state.workflowStage="test";state.activeDecision.status="Testing";
+    applyPreset(preset||state.activeDecision.preset||"baseline");setView("scenario");renderDecisionWorkspace();
+  }
+  function decisionBriefText(){
+    const decision=state.activeDecision||{},values=scenarioValues(),b=values.baseline,s=values.scenario;
+    const owner=$("decisionOwner")?.value||"Unassigned",review=$("decisionReview")?.value||"Not set",action=$("decisionAction")?.value||decision.question||"Define implementation action";
+    const assumptions=scenarioDefs.filter(def=>state.scenario[def.key]).map(def=>`${def.label}: ${state.scenario[def.key]>0?"+":""}${state.scenario[def.key]}%`);
+    return [
+      "LUMINA MARKETING DECISION BRIEF",
+      decision.question||decision.title||"Portfolio decision",
+      "",
+      `Action: ${action}`,
+      `Owner: ${owner}`,
+      `Review date: ${review}`,
+      `Scope: ${activeFilterContext().join(" | ")}`,
+      "",
+      "Expected impact",
+      `Leads: ${fmtNum(b.leads)} → ${fmtNum(s.leads)}`,
+      `Wins: ${fmtNum(b.wins)} → ${fmtNum(s.wins)}`,
+      `Spend: ${fmtMoney(b.spend)} → ${fmtMoney(s.spend)}`,
+      `CAC: ${fmtMoney(b.cpw)} → ${fmtMoney(s.cpw)}`,
+      `Revenue: ${fmtMoney(b.revenue)} → ${fmtMoney(s.revenue)}`,
+      "",
+      `Assumptions: ${assumptions.length?assumptions.join("; "):"Baseline unchanged"}`,
+      "Evidence:",
+      ...(decision.evidence?.length?decision.evidence.map(item=>`- ${item}`):["- No evidence has been added yet."]),
+      "",
+      `Caveat: Directional scenario based on the selected cohort; ${coverageInfo(b).copy}`
+    ].join("\n");
+  }
+  function renderDecisionBrief(){
+    const decision=state.activeDecision,values=scenarioValues(),b=values.baseline,s=values.scenario;
+    const delta=(current,baseline,format)=>`${current-baseline>=0?"+":""}${format(current-baseline)}`;
+    const assumptions=scenarioDefs.filter(def=>state.scenario[def.key]).map(def=>`${def.label} ${state.scenario[def.key]>0?"+":""}${state.scenario[def.key]}%`);
+    $("decisionBriefBody").innerHTML=`
+      <div class="brief-section"><span class="badge good">Decision-ready workflow</span><h3 style="margin-top:9px">${esc(decision?.question||"What change should we implement for the selected portfolio?")}</h3><p class="sub">${esc(decision?.copy||"Scenario grounded in the active cohort and filter context.")}</p></div>
+      <div class="brief-section"><h3>Implementation</h3><div class="brief-field"><label for="decisionAction">Action to take</label><textarea id="decisionAction" placeholder="Example: Move 15% of Maryland paid-search budget into the selected campaign for a 30-day controlled test.">${esc(decision?.action||"")}</textarea></div><div class="brief-grid" style="margin-top:10px"><div class="brief-field"><label for="decisionOwner">Owner</label><input id="decisionOwner" placeholder="Name or team"></div><div class="brief-field"><label for="decisionReview">Review date</label><input id="decisionReview" type="date"></div></div></div>
+      <div class="brief-section"><h3>Expected impact</h3><div class="brief-metrics"><div class="brief-metric"><small>Wins</small><strong>${esc(delta(s.wins,b.wins,fmtNum))}</strong></div><div class="brief-metric"><small>Revenue</small><strong>${esc(delta(s.revenue,b.revenue,fmtMoney))}</strong></div><div class="brief-metric"><small>CAC</small><strong>${esc(fmtMoney(s.cpw))}</strong></div><div class="brief-metric"><small>Spend</small><strong>${esc(fmtMoney(s.spend))}</strong></div></div></div>
+      <div class="brief-section"><h3>Scope</h3><div class="decision-context">${activeFilterContext().map(item=>`<span>${esc(item)}</span>`).join("")}</div></div>
+      <div class="brief-section"><h3>Assumptions</h3><p class="sub">${esc(assumptions.length?assumptions.join(" · "):"Baseline unchanged")}</p></div>
+      <div class="brief-section"><h3>Evidence carried forward</h3><ul class="brief-evidence">${(decision?.evidence?.length?decision.evidence:["No evidence has been added yet."]).map(item=>`<li>${esc(item)}</li>`).join("")}</ul></div>
+      <div class="brief-section"><h3>Interpretation guardrail</h3><p class="sub">This is a directional scenario based on the selected live cohort. ${esc(coverageInfo(b).copy)} Confirm operational capacity and measurement ownership before implementation.</p></div>`;
+  }
+  function openDecisionBrief(){
+    if(!state.activeDecision)startScenario("baseline");
+    state.workflowStage="implement";state.activeDecision.status="Draft decision brief";renderDecisionWorkspace();renderDecisionBrief();openDrawer("decision");
+  }
+  async function copyDecisionBrief(){
+    const text=decisionBriefText();
+    try{await navigator.clipboard.writeText(text);$("copyDecisionBrief").textContent="Copied"}catch(error){$("copyDecisionBrief").textContent="Copy unavailable"}
+  }
+  function markDecisionReady(){
+    if(!state.activeDecision)return;
+    state.activeDecision.status="Ready to implement";state.activeDecision.action=$("decisionAction")?.value||"";
+    $("markDecisionReady").textContent="Ready to implement ✓";renderDecisionWorkspace();
+  }
   document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
   document.querySelectorAll("[data-drawer]").forEach(b=>b.addEventListener("click",()=>openDrawer(b.dataset.drawer)));
+  document.querySelectorAll("[data-add-evidence]").forEach(b=>b.addEventListener("click",()=>addDecisionEvidence(b.dataset.addEvidence)));
+  document.querySelectorAll("[data-test-from]").forEach(b=>b.addEventListener("click",()=>{addDecisionEvidence(b.dataset.testFrom);startScenario()}));
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",closeDrawers));$("drawerBackdrop").addEventListener("click",closeDrawers);
+  $("insightList").addEventListener("click",event=>{const id=event.target?.dataset?.investigate;if(id)beginInvestigation(id)});
+  $("clearDecision").addEventListener("click",clearDecision);
+  $("backToEvidence").addEventListener("click",()=>{if(state.activeDecision){state.workflowStage="investigate";setView(state.activeDecision.view||"funnel")}});
+  $("testDecision").addEventListener("click",()=>startScenario());
+  $("createDecisionBrief").addEventListener("click",openDecisionBrief);
+  $("copyDecisionBrief").addEventListener("click",copyDecisionBrief);
+  $("markDecisionReady").addEventListener("click",markDecisionReady);
   $("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
   $("monthsFilter").addEventListener("change",e=>{state.window=e.target.value==="30d"?"30d":"";if(!state.window)state.months=Number(e.target.value);state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;loadData()});
@@ -573,7 +759,7 @@
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("saveNote").addEventListener("click",saveNote);$("askAssistant").addEventListener("click",askAssistant);
   window.addEventListener("resize",()=>{if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
-  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,renderAll,loadData};
+  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,openDecisionBrief,renderAll,loadData};
   renderScenario(); loadData();
 })();
 </script>

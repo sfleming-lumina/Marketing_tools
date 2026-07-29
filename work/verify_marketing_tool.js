@@ -10,14 +10,16 @@ const funnelRows = [
     campaignSubrollup:"Paid Search", leads:100, sets:50, runs:40, wins:20, revenue:900000,
     effectiveSpend:40000, recordedSpend:40000, activePipeline:20, activePipelineRevenue:600000,
     expectedRemainingWins:5, expectedRemainingRevenue:200000, benchmarkLeadToWinRate:.15,
-    spendCompleteLeadShare:1, spendCoverageStatus:"Complete", loadedAt:"2026-07-28T12:00:00Z"
+    spendCompleteLeadShare:1, spendCoverageStatus:"Complete", openNoSet30Plus:8,
+    setNoRun30Plus:5, runNoWin60Plus:4, loadedAt:"2026-07-28T12:00:00Z"
   },
   {
     month:"2026-07-01", campaign:"Co-op Maryland", campaignRollup:"Co-op",
     campaignSubrollup:"Co-op", leads:50, sets:25, runs:20, wins:8, revenue:340000,
     effectiveSpend:0, recordedSpend:0, activePipeline:12, activePipelineRevenue:300000,
     expectedRemainingWins:3, expectedRemainingRevenue:125000, benchmarkLeadToWinRate:.14,
-    spendCompleteLeadShare:0, spendCoverageStatus:"Known incomplete", loadedAt:"2026-07-28T12:00:00Z"
+    spendCompleteLeadShare:0, spendCoverageStatus:"Known incomplete", openNoSet30Plus:3,
+    setNoRun30Plus:2, runNoWin60Plus:1, loadedAt:"2026-07-28T12:00:00Z"
   }
 ];
 const geoRows = [{
@@ -84,6 +86,8 @@ setImmediate(() => {
   assert(incomplete.leadFirst && incomplete.label === "Known incomplete", "Incomplete spend did not force lead-first semantics.");
   assert(getElement("mainFunnel").innerHTML.startsWith('<div class="stage"><small>Leads'), "Auto lens should omit spend when the selected portfolio is incomplete.");
   assert(output.includes("Efficient Search") && output.includes("Co-op Maryland"), "Campaign rows did not render.");
+  assert(getElement("campaignTable").innerHTML.includes('data-label="Sets"') && getElement("campaignTable").innerHTML.includes('data-label="Runs"'), "Campaign stage volumes did not render.");
+  assert(getElement("campaignTable").innerHTML.includes("no set") && getElement("campaignTable").innerHTML.includes("no run") && getElement("campaignTable").innerHTML.includes("no win"), "Campaign fallout detail did not render.");
   assert(output.includes("Fairfax County") && output.includes("76.2"), "Geo opportunity ranking did not render.");
   assert(getElement("qualityMetrics").innerHTML.includes("Marketing Report 2026_Official.xlsx"), "Workbook reconciliation did not render.");
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
@@ -93,6 +97,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('yLabel:"Cohort volume"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
   assert(dashboardHtml.includes("chart-tooltip") && dashboardHtml.includes('addEventListener("mousemove"'), "Chart hover details are missing.");
   assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
+  assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");
   assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");

@@ -56,7 +56,7 @@
     .chart-card{position:relative;height:auto;min-height:398px;overflow:visible}.chart-card canvas{width:100%;height:300px;display:block;margin-top:8px;cursor:crosshair}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.chart-tooltip{position:absolute;z-index:5;display:none;min-width:138px;padding:10px 12px;border-radius:11px;background:#10231a;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.2);pointer-events:none;font-size:11px;line-height:1.45}.chart-tooltip strong{display:block;margin-bottom:4px}.chart-tooltip span{display:flex;justify-content:space-between;gap:14px}
     .focus-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.focus-context span{padding:6px 10px;border-radius:999px;background:#edf2ee;color:#526159;font-size:11px}.focus-context strong{color:var(--ink)}
     .health-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:18px}.health-list{display:grid;gap:14px}.health-row{display:grid;grid-template-columns:120px 72px 1fr 96px;gap:12px;align-items:center}.health-row strong{font-size:17px}.health-track{height:9px;background:#edf1ee;border-radius:999px;overflow:hidden}.health-track span{display:block;height:100%;border-radius:inherit}.health-track .good{background:var(--green)}.health-track .warn{background:var(--amber)}.health-track .bad{background:var(--red)}.health-track .neutral{background:#91a097}.health-delta{text-align:right;font-size:11px;font-weight:700}.focus-callout{height:100%;padding:19px;border-radius:16px;background:#f7f9f7;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}.focus-callout.good{background:var(--green-soft);border-color:#bde6c3}.focus-callout.warn{background:var(--amber-soft);border-color:#f0d48b}.focus-callout.bad{background:#feeae6;border-color:#f1c1b9}.focus-callout strong{font-size:26px;letter-spacing:-.03em;margin:7px 0 4px}.focus-callout p{margin:0;color:var(--muted);font-size:12px}
-    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px}table{width:100%;border-collapse:collapse;min-width:800px}th{text-align:left;padding:11px 13px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:#f7f9f7;border-bottom:1px solid var(--line)}td{padding:13px;border-bottom:1px solid #edf1ee;vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfcfb}.portfolio-card{padding-bottom:18px}.portfolio-table{overflow:visible}.portfolio-table table{min-width:0;table-layout:fixed}.portfolio-table th:first-child,.portfolio-table td:first-child{width:34%}.portfolio-table th:not(:first-child),.portfolio-table td:not(:first-child){text-align:right}.portfolio-table th:last-child,.portfolio-table td:last-child{width:145px}.portfolio-table td{padding-top:12px;padding-bottom:12px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px}table{width:100%;border-collapse:collapse;min-width:800px}th{text-align:left;padding:11px 13px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:#f7f9f7;border-bottom:1px solid var(--line)}td{padding:13px;border-bottom:1px solid #edf1ee;vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfcfb}.portfolio-card{padding-bottom:18px}.portfolio-table{overflow:visible}.portfolio-table table{min-width:0;table-layout:fixed;font-size:12px}.portfolio-table th:first-child,.portfolio-table td:first-child{width:20%}.portfolio-table th:nth-child(9),.portfolio-table td:nth-child(9){width:18%;text-align:left}.portfolio-table th:not(:first-child):not(:nth-child(9)),.portfolio-table td:not(:first-child):not(:nth-child(9)){text-align:right}.portfolio-table th:last-child,.portfolio-table td:last-child{width:105px}.portfolio-table td{padding:11px 8px}.portfolio-table th{padding:10px 8px;letter-spacing:.045em}.fallout-count{font-weight:750}.fallout-detail{display:block;color:var(--muted);font-size:10px;line-height:1.35;margin-top:3px}
     .rank{font-weight:800;color:#91a097}.strong{font-weight:700}.sub{display:block;color:var(--muted);font-size:11px;margin-top:2px}.bar{height:6px;background:#edf1ee;border-radius:4px;overflow:hidden;margin-top:6px}.bar span{display:block;height:100%;background:var(--green);border-radius:4px}
     .controls{display:grid;gap:15px}.slider-row{display:grid;grid-template-columns:150px 1fr 64px;gap:14px;align-items:center}.slider-row label{font-weight:650}.slider-row output{text-align:right;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--green)}
     .preset-row{display:flex;gap:8px;flex-wrap:wrap}.preset-row button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px}.preset-row button:hover{border-color:var(--green)}
@@ -100,7 +100,7 @@
         <img class="mobile-brand" src="assets/lumina-horizontal-transparent.png" alt="Lumina Solar">
         <div class="crumb">Marketing Intelligence / <strong id="crumbTitle">Command center</strong></div>
         <div class="filters">
-          <div class="select-wrap"><select id="monthsFilter" aria-label="Trailing months"><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
+          <div class="select-wrap"><select id="monthsFilter" aria-label="Trailing period"><option value="30d">Last 30 days</option><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
           <div class="select-wrap campaign-filter"><select id="campaignFilter" aria-label="Campaign"><option value="">All campaigns</option></select></div>
           <div class="select-wrap rollup-filter"><select id="rollupFilter" aria-label="Campaign rollup"><option value="">All rollups</option></select></div>
           <div class="select-wrap ahj-filter"><input class="filter-input" id="ahjFilter" list="ahjOptions" aria-label="AHJ or reporting jurisdiction" placeholder="All AHJs"><datalist id="ahjOptions"></datalist></div>
@@ -131,7 +131,7 @@
           <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Flow over time</div><h2>Stage conversion trends</h2></div><div class="legend"><span><i style="background:#2777c7"></i>Lead → set</span><span><i style="background:#f1a900"></i>Set → run</span><span><i style="background:#39b54a"></i>Run → win</span><span><i style="background:#10231a"></i>Lead → win</span></div></div><canvas id="funnelTrend" role="img" aria-label="Monthly funnel conversion rates by stage. Hover points for details."></canvas><div class="chart-tooltip" aria-hidden="true"></div></div>
           <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Acquisition economics</div><h2>Customer acquisition cost trend</h2><p>Effective spend divided by cohort wins; interpret alongside spend coverage.</p></div><span class="badge" id="cacBadge">Evaluating</span></div><canvas id="cacTrend" role="img" aria-label="Monthly customer acquisition cost per cohort win. Hover points for details."></canvas><div class="chart-tooltip" aria-hidden="true"></div></div>
         </div>
-        <div class="card portfolio-card section"><div class="section-head"><div><div class="eyebrow">Campaign portfolio</div><h2>Where performance compounds</h2><p>Expanded across the workspace so campaign names, efficiency, and spend coverage remain visible together.</p></div></div><div class="table-wrap portfolio-table"><table><thead><tr><th>Campaign</th><th>Leads</th><th>Wins</th><th>Lead → win</th><th>Cost / win</th><th>Coverage</th></tr></thead><tbody id="campaignTable"></tbody></table></div></div>
+        <div class="card portfolio-card section"><div class="section-head"><div><div class="eyebrow">Campaign portfolio</div><h2>Where performance compounds—or falls out</h2><p>Stage volume, conversion, aged fallout, CAC, and spend coverage are shown on one cohort-consistent row.</p></div></div><div class="table-wrap portfolio-table"><table><thead><tr><th>Campaign</th><th>Leads</th><th>Sets</th><th>Runs</th><th>Wins</th><th>L → S</th><th>S → R</th><th>R → W</th><th>Aged fallout</th><th>CAC</th><th>Coverage</th></tr></thead><tbody id="campaignTable"></tbody></table></div></div>
       </section>
 
       <section class="view" id="view-geo">
@@ -173,9 +173,9 @@
   <div class="drawer-head"><div><div class="eyebrow">Usage guide</div><h2>How to use this workspace</h2></div><button class="close" data-close aria-label="Close">×</button></div>
   <div class="drawer-body">
     <div class="guide-intro">Start with a decision, choose the operating region and time window, then move from the command center into the funnel, geography, or scenario view for evidence.</div>
-    <div class="guide-section"><h3>Filters and operating regions</h3><p>Campaign and AHJ selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
+    <div class="guide-section"><h3>Filters and operating regions</h3><p>Campaign and AHJ selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
     <div class="guide-section"><h3>Command center</h3><p>Use the priority queue for the fastest read on scale, recovery, and geography. Hover any chart point to see the exact month and values.</p></div>
-    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li></ul></div>
+    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
     <div class="guide-section"><h3>Source semantics</h3><p>Salesforce reports such as SolarReviews Leads by County use event/status-update dates and formulas like Converted ÷ member rows. This tool uses fixed lead-created cohorts, so use Data quality to understand definition differences before reconciling totals.</p></div>
@@ -197,7 +197,7 @@
   const API_BASE = "";
   const $ = id => document.getElementById(id);
   const state = {
-    view:"command", months:7, campaign:"", rollup:"", ahj:"", region:"Operating footprint",
+    view:"command", months:7, window:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     filterCatalog:{campaigns:[],rollups:[],ahjs:[]},
     loading:false, error:null, scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
@@ -216,7 +216,9 @@
     const completeLeads=rows.reduce((t,r)=>t+(Number(r.leads)||0)*(Number(r.spendCompleteLeadShare)||0),0);
     const knownIncomplete=rows.some(r=>r.spendCoverageStatus==="Known incomplete");
     const coverage=leads?completeLeads/leads:0;
-    return {leads,sets,runs,wins,revenue,spend,recorded,coverage,knownIncomplete,
+    const openNoSet30Plus=sum(rows,"openNoSet30Plus"),setNoRun30Plus=sum(rows,"setNoRun30Plus"),runNoWin60Plus=sum(rows,"runNoWin60Plus");
+    return {leads,sets,runs,wins,losses:sum(rows,"losses"),revenue,spend,recorded,coverage,knownIncomplete,
+      openNoSet30Plus,setNoRun30Plus,runNoWin60Plus,agedFallout:openNoSet30Plus+setNoRun30Plus+runNoWin60Plus,
       activePipeline:sum(rows,"activePipeline"),activePipelineRevenue:sum(rows,"activePipelineRevenue"),
       expectedRemainingWins:sum(rows,"expectedRemainingWins"),expectedRemainingRevenue:sum(rows,"expectedRemainingRevenue"),
       setRate:leads?sets/leads:0,runRate:sets?runs/sets:0,winRate:runs?wins/runs:0,leadToWin:leads?wins/leads:0,
@@ -277,11 +279,13 @@
   }
   function queryString(){
     const q=new URLSearchParams({months:String(state.months)});
+    if(state.window)q.set("window",state.window);
     if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.ahj)q.set("ahj",state.ahj); if(state.region)q.set("region",state.region);
     return q.toString();
   }
   function catalogQueryString(){
     const q=new URLSearchParams({months:String(state.months)});
+    if(state.window)q.set("window",state.window);
     if(state.region)q.set("region",state.region);
     return q.toString();
   }
@@ -393,7 +397,7 @@
       {label:"Prior-period reference",color:"#91a097",money:true,value:()=>priorCac}
     ],{xLabel:"Cohort month",yLabel:"Cost per cohort win",money:true});
     const campaigns=group(rows,"campaign").sort((a,b)=>b.totals.leads-a.totals.leads).slice(0,20);
-    $("campaignTable").innerHTML=campaigns.length?campaigns.map(c=>{const x=c.totals,cv=coverageInfo(x);return `<tr><td data-label="Campaign"><span class="strong">${esc(c.name)}</span><span class="sub">${esc(c.items[0]?.campaignRollup||"")}</span></td><td data-label="Leads">${fmtNum(x.leads)}</td><td data-label="Wins">${fmtNum(x.wins)}</td><td data-label="Lead → win">${fmtPct(x.leadToWin)}</td><td data-label="Cost / win">${x.cpw?fmtMoney(x.cpw):"—"}</td><td data-label="Coverage">${badge(cv.label,cv.tone)}</td></tr>`}).join(""):`<tr><td colspan="6" class="empty">No campaign cohorts match these filters.</td></tr>`;
+    $("campaignTable").innerHTML=campaigns.length?campaigns.map(c=>{const x=c.totals,cv=coverageInfo(x);return `<tr><td data-label="Campaign"><span class="strong">${esc(c.name)}</span><span class="sub">${esc(c.items[0]?.campaignRollup||"")}</span></td><td data-label="Leads">${fmtNum(x.leads)}</td><td data-label="Sets">${fmtNum(x.sets)}</td><td data-label="Runs">${fmtNum(x.runs)}</td><td data-label="Wins">${fmtNum(x.wins)}</td><td data-label="Lead → set">${fmtPct(x.setRate)}</td><td data-label="Set → run">${fmtPct(x.runRate)}</td><td data-label="Run → win">${fmtPct(x.winRate)}</td><td data-label="Aged fallout"><span class="fallout-count">${fmtNum(x.agedFallout)}</span><span class="fallout-detail">${fmtNum(x.openNoSet30Plus)} no set · ${fmtNum(x.setNoRun30Plus)} no run · ${fmtNum(x.runNoWin60Plus)} no win</span></td><td data-label="CAC">${x.cpw?fmtMoney(x.cpw):"—"}</td><td data-label="Coverage">${badge(cv.label,cv.tone)}</td></tr>`}).join(""):`<tr><td colspan="11" class="empty">No campaign cohorts match these filters.</td></tr>`;
   }
   function renderGeo(){
     const rows=filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore),leads=sum(rows,"leads"),wins=sum(rows,"wins");
@@ -536,7 +540,7 @@
     const text=$("noteText").value.trim();if(!text)return;
     try{await fetchJson("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({view:state.view,element_key:`${state.view}-workspace`,element_label:viewTitles[state.view],target_type:"view",feedback_type:"decision",note_text:text,context:assistantContext()})});$("noteText").value="";loadNotes()}catch(e){alert(e.message)}
   }
-  function assistantContext(){return {view:state.view,filters:{months:state.months,campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
+  function assistantContext(){return {view:state.view,filters:{period:state.window==="30d"?"Last 30 days":`${state.months} months`,campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
   async function askAssistant(){
     const question=$("assistantQuestion").value.trim();if(!question)return;const out=$("assistantAnswer");out.hidden=false;out.textContent="Analyzing the current decision context...";
     try{const result=await fetchJson("/api/ask-claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,view:state.view,context:assistantContext()})});out.textContent=result.answer||result.summary||JSON.stringify(result,null,2)}catch(e){out.textContent=e.message}
@@ -549,7 +553,7 @@
   document.querySelectorAll("[data-drawer]").forEach(b=>b.addEventListener("click",()=>openDrawer(b.dataset.drawer)));
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",closeDrawers));$("drawerBackdrop").addEventListener("click",closeDrawers);
   $("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
-  $("monthsFilter").addEventListener("change",e=>{state.months=Number(e.target.value);loadData()});
+  $("monthsFilter").addEventListener("change",e=>{state.window=e.target.value==="30d"?"30d":"";if(!state.window)state.months=Number(e.target.value);state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;loadData()});
   $("rollupFilter").addEventListener("change",e=>{state.rollup=e.target.value;loadData()});
   let ahjFilterTimer;

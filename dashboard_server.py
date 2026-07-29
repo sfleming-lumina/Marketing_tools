@@ -204,6 +204,7 @@ OPERATING_REGION_FILTERS = {
     "Unresolved",
     "Operating footprint",
 }
+MARKETING_WINDOWS = {"30d"}
 
 
 def _marketing_filter_conditions(
@@ -232,8 +233,21 @@ def _marketing_filter_conditions(
     return conditions
 
 
+def _marketing_period_sql(window=None):
+    if window == "30d":
+        return (
+            "WEEK",
+            "cohort_period_start_date >= DATE_SUB(bounds.latest_start, INTERVAL 28 DAY)",
+        )
+    return (
+        "MONTH",
+        "cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)",
+    )
+
+
 def build_marketing_funnel_query(
     months=7,
+    window=None,
     campaign=None,
     rollup=None,
     state=None,
@@ -243,11 +257,12 @@ def build_marketing_funnel_query(
 ):
     conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
+    period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
-            WHERE cohort_period_grain = 'MONTH'
+            WHERE cohort_period_grain = '{period_grain}'
         )
         SELECT
             cohort_period_start_date AS month,
@@ -260,6 +275,9 @@ def build_marketing_funnel_query(
             SUM(run_count) AS runs,
             SUM(win_count) AS wins,
             SUM(lost_count) AS losses,
+            SUM(open_no_set_30_plus_count) AS openNoSet30Plus,
+            SUM(set_no_run_30_plus_count) AS setNoRun30Plus,
+            SUM(run_no_win_60_plus_count) AS runNoWin60Plus,
             SUM(win_revenue) AS revenue,
             SUM(allocated_spend_amount) AS recordedSpend,
             SUM(effective_spend_amount) AS effectiveSpend,
@@ -285,8 +303,8 @@ def build_marketing_funnel_query(
             MAX(spend_coverage_note) AS spendCoverageNote,
             MAX(rpt_loaded_at) AS loadedAt
         FROM `{FUNNEL_TABLE_REF}`, bounds
-        WHERE cohort_period_grain = 'MONTH'
-            AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+        WHERE cohort_period_grain = '{period_grain}'
+            AND {period_predicate}
             AND {where_clause}
         GROUP BY month, campaignId, campaign, campaignRollup, campaignSubrollup
         HAVING SUM(lead_count) > 0 OR SUM(effective_spend_amount) > 0
@@ -297,6 +315,7 @@ def build_marketing_funnel_query(
 
 def build_marketing_geo_query(
     months=7,
+    window=None,
     campaign=None,
     rollup=None,
     state=None,
@@ -306,11 +325,12 @@ def build_marketing_geo_query(
 ):
     conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
+    period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
-            WHERE cohort_period_grain = 'MONTH'
+            WHERE cohort_period_grain = '{period_grain}'
         )
         SELECT
             campaign_sf_id AS campaignId,
@@ -345,8 +365,8 @@ def build_marketing_geo_query(
             COUNT(*) AS cohortRows,
             MAX(rpt_loaded_at) AS loadedAt
         FROM `{FUNNEL_TABLE_REF}`, bounds
-        WHERE cohort_period_grain = 'MONTH'
-            AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+        WHERE cohort_period_grain = '{period_grain}'
+            AND {period_predicate}
             AND {where_clause}
         GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, ahj, geography, geographyType, county, state, market
         HAVING SUM(lead_count) > 0
@@ -355,14 +375,15 @@ def build_marketing_geo_query(
     """
 
 
-def build_marketing_filter_options_query(months=7, region=None):
+def build_marketing_filter_options_query(months=7, window=None, region=None):
     conditions = _marketing_filter_conditions(region=region)
     where_clause = " AND ".join(conditions)
+    period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
-            WHERE cohort_period_grain = 'MONTH'
+            WHERE cohort_period_grain = '{period_grain}'
         )
         SELECT
             ARRAY_AGG(DISTINCT campaign_name IGNORE NULLS ORDER BY campaign_name) AS campaigns,
@@ -373,8 +394,8 @@ def build_marketing_filter_options_query(months=7, region=None):
                 ORDER BY NULLIF(final_reporting_jurisdiction_label, 'Unknown')
             ) AS ahjs
         FROM `{FUNNEL_TABLE_REF}`, bounds
-        WHERE cohort_period_grain = 'MONTH'
-            AND cohort_period_start_date > DATE_SUB(bounds.latest_start, INTERVAL @months MONTH)
+        WHERE cohort_period_grain = '{period_grain}'
+            AND {period_predicate}
             AND {where_clause}
     """
 
@@ -474,6 +495,9 @@ def shape_marketing_funnel_row(row):
         "runs": runs,
         "wins": wins,
         "losses": row["losses"] or 0,
+        "openNoSet30Plus": row["openNoSet30Plus"] or 0,
+        "setNoRun30Plus": row["setNoRun30Plus"] or 0,
+        "runNoWin60Plus": row["runNoWin60Plus"] or 0,
         "revenue": revenue,
         "recordedSpend": row["recordedSpend"] or 0,
         "effectiveSpend": effective_spend,
@@ -778,6 +802,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
     @staticmethod
     def _marketing_params(params, include_geo=True):
+        window = params.get("window", [None])[0] or None
+        if window and window not in MARKETING_WINDOWS:
+            raise ValueError("window is not a supported temporal filter.")
         try:
             months = int((params.get("months", ["7"])[0]) or "7")
         except ValueError as exc:
@@ -786,6 +813,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             raise ValueError("months must be between 1 and 36.")
         values = {
             "months": months,
+            "window": window,
             "campaign": params.get("campaign", [None])[0] or None,
             "rollup": params.get("rollup", [None])[0] or None,
         }
@@ -803,7 +831,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     @staticmethod
     def _marketing_query_parameters(values, include_months=True):
         parameters = []
-        if include_months:
+        if include_months and values.get("window") != "30d":
             parameters.append(bigquery.ScalarQueryParameter("months", "INT64", values["months"]))
         for name in ("campaign", "rollup", "state", "county", "ahj", "region"):
             if name == "region" and values.get(name) == "Operating footprint":
@@ -843,7 +871,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             values = self._marketing_params(params)
         except ValueError as exc:
             return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
-        values = {"months": values["months"], "region": values["region"]}
+        values = {"months": values["months"], "window": values["window"], "region": values["region"]}
         query = build_marketing_filter_options_query(**values)
         job_config = bigquery.QueryJobConfig(
             query_parameters=self._marketing_query_parameters(values)

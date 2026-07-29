@@ -55,6 +55,9 @@ def funnel_row(**overrides):
         "runs": 30,
         "wins": 10,
         "losses": 20,
+        "openNoSet30Plus": 5,
+        "setNoRun30Plus": 4,
+        "runNoWin60Plus": 3,
         "revenue": 500000,
         "recordedSpend": 20000,
         "effectiveSpend": 20000,
@@ -110,6 +113,17 @@ def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     assert "final_reporting_jurisdiction_label" in query
     assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
     assert "INTERVAL @months MONTH" in query
+
+
+def test_last_30d_uses_five_weekly_cohort_starts_without_month_parameter():
+    for query in (
+        build_marketing_funnel_query(window="30d"),
+        build_marketing_geo_query(window="30d"),
+        build_marketing_filter_options_query(window="30d"),
+    ):
+        assert "cohort_period_grain = 'WEEK'" in query
+        assert "INTERVAL 28 DAY" in query
+        assert "@months" not in query
 
 
 def test_geo_query_returns_normalized_region_dimensions():
@@ -175,6 +189,9 @@ def test_funnel_shaper_uses_spend_when_complete():
     assert shaped["costPerWin"] == 2000
     assert shaped["leadToWinRate"] == 0.1
     assert shaped["benchmarkCoverage"] == 1
+    assert shaped["openNoSet30Plus"] == 5
+    assert shaped["setNoRun30Plus"] == 4
+    assert shaped["runNoWin60Plus"] == 3
 
 
 def test_funnel_shaper_forces_lead_first_for_known_incomplete_spend():
@@ -221,6 +238,27 @@ def test_marketing_handler_rejects_unsupported_region(monkeypatch):
     status, payload = handler._marketing_funnel({"region": ["New York"]})
     assert status == HTTPStatus.BAD_REQUEST
     assert "supported operating-region filter" in payload["detail"]
+    assert fake.last_query is None
+
+
+def test_last_30d_handler_uses_weekly_window_and_binds_no_months(monkeypatch):
+    fake = FakeClient([funnel_row()])
+    monkeypatch.setattr(DashboardHandler, "_client", fake)
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, payload = handler._marketing_funnel({"window": ["30d"]})
+    assert status == HTTPStatus.OK
+    assert payload[0]["sets"] == 40
+    assert "cohort_period_grain = 'WEEK'" in fake.last_query
+    assert fake.last_job_config.query_parameters == []
+
+
+def test_marketing_handler_rejects_unsupported_temporal_window(monkeypatch):
+    fake = FakeClient([])
+    monkeypatch.setattr(DashboardHandler, "_client", fake)
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, payload = handler._marketing_funnel({"window": ["90d"]})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "supported temporal filter" in payload["detail"]
     assert fake.last_query is None
 
 

@@ -118,6 +118,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
   assert(dashboardHtml.includes('<script src="/assets/echarts.min.js"></script>') && dashboardHtml.includes("renderEchartTrend"), "The local ECharts runtime or trend renderer is missing.");
   assert(dashboardHtml.includes('id="opportunityQuadrant"') && dashboardHtml.includes('id="funnelWaterfall"') && dashboardHtml.includes('id="campaignMultiples"'), "Decision quadrant, funnel waterfall, or campaign small multiples are missing.");
+  assert(dashboardHtml.includes(".decision-canvas-grid>.chart-card.compact .chart-host{height:100%;min-height:360px"), "The CAC/conversion scatter plot does not fill its decision-canvas column.");
   assert(dashboardHtml.includes("markLine") && dashboardHtml.includes("markArea") && dashboardHtml.includes("markPoint") && dashboardHtml.includes("aria:{enabled:true"), "Chart benchmarks, focus bands, annotations, or accessibility configuration are missing.");
   assert(dashboardHtml.includes("Number.isFinite(benchmarks.costPerWin)") && dashboardHtml.includes("Number.isFinite(firstValues[index-1])"), "Chart annotations do not guard missing CAC or trend coordinates.");
   assert(dashboardHtml.includes("selectedOpportunityKey") && dashboardHtml.includes("hoverOpportunityKey") && dashboardHtml.includes("setOpportunityHover"), "Cross-highlighting state is missing.");

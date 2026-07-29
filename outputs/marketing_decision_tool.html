@@ -571,13 +571,16 @@
     if(!chart){if(element)element.innerHTML='<div class="empty">Interactive CAC × conversion view loads when chart support is available.</div>';return}
     const selected=state.selectedOpportunityKey;
     chart.resize();chart.off("mouseover");chart.off("mouseout");chart.off("click");
+    const benchmarkLines=[];
+    if(Number.isFinite(benchmarks.costPerWin)&&benchmarks.costPerWin>0)benchmarkLines.push({xAxis:benchmarks.costPerWin,label:{formatter:"Portfolio CAC"}});
+    if(Number.isFinite(benchmarks.leadToWinRate))benchmarkLines.push({yAxis:benchmarks.leadToWinRate,label:{formatter:"Portfolio conversion"}});
     chart.setOption({...baseChartOption(),graphic:plotted.length<rows.length?{type:"text",right:8,bottom:4,style:{text:`${rows.length-plotted.length} cohort${rows.length-plotted.length===1?"":"s"} shown lead-first; CAC unavailable`,fill:"#6a766f",font:"10px Inter, system-ui"}}:undefined,
       tooltip:{...baseChartOption().tooltip,formatter:param=>{const d=param.data.value;return `<strong>${esc(d[4])}</strong><br>${esc(d[5])}<br>CAC <b>${fmtMoney(d[0])}</b><br>Lead → win <b>${fmtPct(d[1])}</b><br>${fmtNum(d[2])} leads · ${esc(d[6])} confidence`;}},
       xAxis:{type:"value",name:"Customer acquisition cost",nameLocation:"middle",nameGap:34,axisLabel:{formatter:value=>fmtMoney(value)},splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
       yAxis:{type:"value",name:"Lead → win conversion",nameLocation:"middle",nameGap:46,axisLabel:{formatter:value=>fmtPct(value)},splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
       series:[{name:"Campaign × AHJ",type:"scatter",data:plotted.map(row=>({value:[row.costPerWin,row.leadToWinRate,row.leads,row.key,row.campaign,row.ahj,row.confidence],itemStyle:{color:decisionColors[row.decisionType]||"#3478b8",opacity:row.confidence==="High"?.92:row.confidence==="Medium"?.7:.45,borderColor:row.key===selected?"#10231a":"#fff",borderWidth:row.key===selected?3:1.5}})),symbolSize:value=>Math.max(12,Math.min(38,8+Math.sqrt(value[2])*2.4)),
         emphasis:{scale:1.25,itemStyle:{borderColor:"#10231a",borderWidth:3}},
-        markLine:{silent:true,symbol:"none",label:{color:"#6a766f",fontSize:9,position:"insideEndTop"},lineStyle:{type:"dashed",color:"#9aa79e"},data:[{xAxis:benchmarks.costPerWin,label:{formatter:"Portfolio CAC"}},{yAxis:benchmarks.leadToWinRate,label:{formatter:"Portfolio conversion"}}]}
+        markLine:{silent:true,symbol:"none",label:{color:"#6a766f",fontSize:9,position:"insideEndTop"},lineStyle:{type:"dashed",color:"#9aa79e"},data:benchmarkLines}
       }]
     },true);
     chart.on("mouseover",params=>setOpportunityHover(params.data?.value?.[3]||""));chart.on("mouseout",()=>setOpportunityHover(""));
@@ -874,7 +877,7 @@
     if(!months.length){chart.clear();chart.setOption({graphic:{type:"text",left:"center",top:"middle",style:{text:"No trend data for this selection",fill:"#6a766f",font:"12px system-ui"}}});return true}
     const values=series.map(item=>months.map(month=>{const monthRows=rows.filter(row=>row.month===month);return item.value?item.value(monthRows):item.rate?weighted(monthRows,item.key):sum(monthRows,item.key)}));
     const formatValue=(value,item)=>value==null?"—":trendValue(value,item),latestMonth=months.at(-1),axisFormatter=value=>options.rate?fmtPct(value):options.money?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1}).format(value):new Intl.NumberFormat("en-US",{notation:value>=1000?"compact":"standard",maximumFractionDigits:1}).format(value);
-    const firstValues=values[0],inflectionIndex=firstValues.length>1?firstValues.slice(1).reduce((best,value,index)=>Math.abs(value-firstValues[index])>Math.abs(firstValues[best+1]-firstValues[best])?index:best,0)+1:0;
+    const firstValues=values[0],inflectionCandidates=firstValues.map((value,index)=>index>0&&Number.isFinite(value)&&Number.isFinite(firstValues[index-1])?{index,change:Math.abs(value-firstValues[index-1])}:null).filter(Boolean),inflectionIndex=inflectionCandidates.sort((a,b)=>b.change-a.change)[0]?.index??null;
     const dual=Boolean(options.dualAxis||series.some(item=>item.axis===1));
     const chartSeries=series.map((item,index)=>{
       const finite=values[index].filter(Number.isFinite),reference=item.reference??(finite.length?finite.reduce((a,b)=>a+b,0)/finite.length:0);
@@ -882,7 +885,7 @@
         lineStyle:{width:index===0?3:2.2,color:item.color},itemStyle:{color:item.color,borderColor:"#fff",borderWidth:1.5},emphasis:{focus:"series",lineStyle:{width:4}},
         markLine:{silent:true,symbol:"none",lineStyle:{type:"dashed",color:item.color,opacity:.32},label:{show:index===0,formatter:options.target!=null?"Target":"Reference",color:"#6a766f",fontSize:9},data:[{yAxis:options.target??reference}]},
         markArea:index===0?{silent:true,itemStyle:{color:"rgba(57,181,74,.055)"},label:{show:true,formatter:"Decision window",color:"#7a877f",fontSize:9},data:[[{xAxis:latestMonth},{xAxis:latestMonth}]]}:undefined,
-        markPoint:index===0&&inflectionIndex?{symbol:"pin",symbolSize:34,itemStyle:{color:"#10231a"},label:{show:false},data:[{coord:[months[inflectionIndex],firstValues[inflectionIndex]],name:"Largest change"}]}:undefined
+        ...(index===0&&inflectionIndex!=null?{markPoint:{symbol:"pin",symbolSize:34,itemStyle:{color:"#10231a"},label:{show:false},data:[{coord:[months[inflectionIndex],firstValues[inflectionIndex]],name:"Largest change"}]}}:{})
       };
     });
     const common=baseChartOption();

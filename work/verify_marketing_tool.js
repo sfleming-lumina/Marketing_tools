@@ -119,6 +119,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('<script src="/assets/echarts.min.js"></script>') && dashboardHtml.includes("renderEchartTrend"), "The local ECharts runtime or trend renderer is missing.");
   assert(dashboardHtml.includes('id="opportunityQuadrant"') && dashboardHtml.includes('id="funnelWaterfall"') && dashboardHtml.includes('id="campaignMultiples"'), "Decision quadrant, funnel waterfall, or campaign small multiples are missing.");
   assert(dashboardHtml.includes("markLine") && dashboardHtml.includes("markArea") && dashboardHtml.includes("markPoint") && dashboardHtml.includes("aria:{enabled:true"), "Chart benchmarks, focus bands, annotations, or accessibility configuration are missing.");
+  assert(dashboardHtml.includes("Number.isFinite(benchmarks.costPerWin)") && dashboardHtml.includes("Number.isFinite(firstValues[index-1])"), "Chart annotations do not guard missing CAC or trend coordinates.");
   assert(dashboardHtml.includes("selectedOpportunityKey") && dashboardHtml.includes("hoverOpportunityKey") && dashboardHtml.includes("setOpportunityHover"), "Cross-highlighting state is missing.");
   assert(dashboardHtml.includes("chart-fallback") && dashboardHtml.includes("paintTrend"), "Graceful canvas chart fallback is missing.");
   assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");

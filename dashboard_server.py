@@ -568,6 +568,7 @@ def shape_marketing_capacity_row(row):
             "salesforceOpen": "IS_Open__c = TRUE and IsConverted = FALSE.",
             "activeCampaignOpen": "Salesforce open leads whose Active_Campaign__c is TRUE.",
             "capacity": "Advisory scenario only; no Salesforce assignments are changed.",
+            "insideAssignment": "The governed lead-funnel contract does not yet expose IS_Lead_Owner__c; inside assignments are labeled unavailable instead of inferred.",
         },
     }
 

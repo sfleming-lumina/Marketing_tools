@@ -410,43 +410,42 @@ WITH campaign_lookup AS (
 ),
 open_leads AS (
   SELECT
-    l.id AS lead_sf_id,
-    l.created_date AS lead_created_at,
-    l.status AS lead_status,
-    COALESCE(l.is_open_c, FALSE) AS is_currently_open,
-    COALESCE(l.active_campaign_c, FALSE) AS has_active_campaign,
-    l.campaign_c AS campaign_sf_id,
+    l.lead_id AS lead_sf_id,
+    l.lead_created_date AS lead_created_at,
+    l.source_lead_status AS lead_status,
+    COALESCE(l.lead_is_open, FALSE) AS is_currently_open,
+    COALESCE(l.lead_active_campaign_flag, FALSE) AS has_active_campaign,
+    l.lead_primary_campaign_source_sf_id AS campaign_sf_id,
     COALESCE(
       NULLIF(TRIM(c.campaign_name), ''),
-      CONCAT('Campaign ', l.campaign_c)
+      NULLIF(TRIM(l.campaign_name), ''),
+      CONCAT('Campaign ', l.lead_primary_campaign_source_sf_id)
     ) AS campaign_source,
-    NULLIF(TRIM(l.is_lead_owner_c), '') AS inside_rep_raw,
-    NULLIF(TRIM(l.assigned_lead_owner_c), '') AS outside_rep_raw,
-    NULLIF(TRIM(l.state), '') AS raw_state,
-    DATE_DIFF(
-      CURRENT_DATE('America/New_York'),
-      DATE(l.created_date, 'America/New_York'),
-      DAY
+    CAST('Inside assignment unavailable' AS STRING) AS inside_rep_raw,
+    NULLIF(TRIM(l.resolved_sales_rep_name), '') AS outside_rep_raw,
+    COALESCE(
+      NULLIF(TRIM(l.resolved_sales_team_state), ''),
+      NULLIF(TRIM(l.resolved_state), '')
+    ) AS raw_state,
+    COALESCE(
+      l.lead_age_days,
+      DATE_DIFF(CURRENT_DATE('America/New_York'), l.lead_created_date, DAY)
     ) AS lead_age_days,
-    REGEXP_CONTAINS(
-      LOWER(CONCAT(
-        COALESCE(l.first_name, ''), ' ',
-        COALESCE(l.last_name, ''), ' ',
-        COALESCE(l.company, ''), ' ',
-        COALESCE(l.email, '')
-      )),
-      r'(^|[^a-z])(test|testing|demo|training|dummy|fake|sandbox|do not use|qa)([^a-z]|$)'
-    )
-      OR ENDS_WITH(LOWER(COALESCE(l.email, '')), '@luminasolar.com')
-      AS is_test_record
-  FROM `lumina-lakehouse.salesforce.lead` l
+    FALSE AS is_test_record
+  FROM `lumina-lakehouse.marketing_tool_ops.fact_lead_funnel_attributed_clean` l
   LEFT JOIN campaign_lookup c
-    ON c.campaign_sf_id = l.campaign_c
-  WHERE COALESCE(l.is_open_c, FALSE)
-    AND NOT COALESCE(l.is_converted, FALSE)
-    AND l.status IN ('New', 'Nurturing', 'Qualified')
-    AND NOT COALESCE(l.is_deleted, FALSE)
-    AND NOT COALESCE(l._fivetran_deleted, FALSE)
+    ON c.campaign_sf_id = l.lead_primary_campaign_source_sf_id
+  WHERE l.lead_id IS NOT NULL
+    AND COALESCE(l.lead_is_open, FALSE)
+    AND NOT COALESCE(l.lead_is_converted, FALSE)
+    AND l.source_lead_status IN ('New', 'Nurturing', 'Qualified')
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY l.lead_id
+    ORDER BY
+      COALESCE(l.source_most_recent_campaign_member, FALSE) DESC,
+      l.campaign_member_created_timestamp DESC,
+      l.fact_loaded_at DESC
+  ) = 1
 )
 SELECT
   lead_sf_id,

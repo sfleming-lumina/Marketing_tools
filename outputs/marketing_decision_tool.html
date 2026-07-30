@@ -265,7 +265,7 @@
     <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall decomposes benchmark win potential through each stage gap to observed wins. Positive bars are strengths to protect; negative bars are recoverable gaps.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
-    <div class="guide-section"><h3>Sales capacity guardrail</h3><p><strong>Salesforce open</strong> uses <code>IS_Open__c = TRUE</code> and excludes converted leads. <strong>Active-campaign open</strong> further requires <code>Active_Campaign__c = TRUE</code>. Adjust inside or outside capacity per rep to test overload and rerouting pressure; the tool never changes Salesforce assignments. Automation owners are grouped as unassigned, and excluded legacy assignments remain in inventory as <strong>Needs reassignment</strong> so the total is not artificially lowered.</p></div>
+    <div class="guide-section"><h3>Sales capacity guardrail</h3><p><strong>Salesforce open</strong> uses the governed lakehouse equivalent of <code>IS_Open__c = TRUE</code> and excludes converted leads. <strong>Active-campaign open</strong> further requires the governed active-campaign flag. Adjust inside or outside capacity per rep to test overload and rerouting pressure; the tool never changes Salesforce assignments. Automation owners are grouped as unassigned, and excluded legacy assignments remain in inventory as <strong>Needs reassignment</strong> so the total is not artificially lowered. The current governed contract exposes the assigned outside rep but not the inside-owner field, so inside assignment is explicitly labeled unavailable rather than inferred.</p></div>
     <div class="guide-section"><h3>Source semantics</h3><p>Salesforce current open inventory is intentionally shown beside—not forced to equal—the cohort metric <strong>open, no set, 30+ days</strong>. The latter is only an aged subset within selected lead-created cohorts. Salesforce reports such as SolarReviews Leads by County can also use event/status-update dates and formulas like Converted ÷ member rows, so use Data quality to understand definition differences before reconciling totals.</p></div>
   </div>
 </aside>
@@ -741,7 +741,7 @@
     return ratio>1?"bad":ratio>=.85?"warn":"good";
   }
   function renderCapacityRows(rows,capacity,target){
-    const systemBuckets=new Set(["Automation / unassigned","Needs reassignment"]);
+    const systemBuckets=new Set(["Automation / unassigned","Needs reassignment","Inside assignment unavailable"]);
     target.innerHTML=(rows||[]).map(row=>{
       const system=systemBuckets.has(row.rep),tone=system?"bad":capacityTone(row.activeLeads,capacity);
       const delta=Number(row.activeLeads)-capacity;
@@ -758,9 +758,10 @@
       return;
     }
     const gap=Math.max(0,Number(data.salesforceOpen||0)-t.openNoSet30Plus),aged=Number(data.ageBands?.["61Plus"]||0);
-    const insideOver=(data.insideLoads||[]).filter(r=>!["Automation / unassigned","Needs reassignment"].includes(r.rep)&&r.activeLeads>state.insideCapacity).length;
-    const outsideOver=(data.outsideLoads||[]).filter(r=>!["Automation / unassigned","Needs reassignment"].includes(r.rep)&&r.activeLeads>state.outsideCapacity).length;
-    const needsRoute=[...(data.insideLoads||[]),...(data.outsideLoads||[])].filter(r=>["Automation / unassigned","Needs reassignment"].includes(r.rep)).reduce((total,row)=>total+Number(row.activeLeads||0),0);
+    const nonHumanBuckets=["Automation / unassigned","Needs reassignment","Inside assignment unavailable"];
+    const insideOver=(data.insideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.insideCapacity).length;
+    const outsideOver=(data.outsideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.outsideCapacity).length;
+    const needsRoute=[...(data.insideLoads||[]),...(data.outsideLoads||[])].filter(r=>nonHumanBuckets.includes(r.rep)).reduce((total,row)=>total+Number(row.activeLeads||0),0);
     const hasPressure=insideOver+outsideOver>0||needsRoute>0;
     $("capacityBadge").className=`badge ${hasPressure?"bad":"good"}`;$("capacityBadge").textContent=hasPressure?"Capacity attention":"Within planning limits";
     $("capacitySummary").innerHTML=[
@@ -771,7 +772,7 @@
     ].join("");
     renderCapacityRows(data.insideLoads,state.insideCapacity,$("insideCapacityRows"));
     renderCapacityRows(data.outsideLoads,state.outsideCapacity,$("outsideCapacityRows"));
-    $("capacityNote").innerHTML=`<strong>${insideOver} inside and ${outsideOver} outside rep${outsideOver===1?"":"s"} exceed the current planning limits.</strong> ${needsRoute?`${fmtNum(needsRoute)} assignments are in automation, unassigned, or reassignment buckets. `:""}Adjust capacity per rep to test load; this scenario is advisory and never writes to Salesforce.`;
+    $("capacityNote").innerHTML=`<strong>${insideOver} inside and ${outsideOver} outside rep${outsideOver===1?"":"s"} exceed the current planning limits.</strong> ${needsRoute?`${fmtNum(needsRoute)} assignments are in automation, unassigned, reassignment, or governance-gap buckets. `:""}Adjust capacity per rep to test load; this scenario is advisory and never writes to Salesforce.`;
   }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);

@@ -160,11 +160,14 @@ def test_active_inventory_sql_uses_salesforce_open_contract_and_hides_excluded_o
     sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
     sql = sql_path.read_text(encoding="utf-8")
     assert "rpt_marketing_active_lead_inventory_runtime" in sql
-    assert "COALESCE(l.is_open_c, FALSE)" in sql
-    assert "NOT COALESCE(l.is_converted, FALSE)" in sql
-    assert "COALESCE(l.active_campaign_c, FALSE)" in sql
+    assert "COALESCE(l.lead_is_open, FALSE)" in sql
+    assert "NOT COALESCE(l.lead_is_converted, FALSE)" in sql
+    assert "COALESCE(l.lead_active_campaign_flag, FALSE)" in sql
     assert "THEN 'Needs reassignment'" in sql
+    assert "Inside assignment unavailable" in sql
     assert "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime" in sql
+    assert "marketing_tool_ops.fact_lead_funnel_attributed_clean" in sql
+    assert "salesforce.lead" not in sql
     assert "salesforce.campaign" not in sql
 
 

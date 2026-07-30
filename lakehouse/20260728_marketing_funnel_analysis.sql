@@ -383,3 +383,99 @@ OPTIONS (
 AS
 SELECT *
 FROM `lumina-lakehouse.analytics_rpt.rpt_marketing_period_projection`;
+
+
+-- Current Salesforce lead inventory used by the dashboard's campaign-source
+-- selector, open-lead reconciliation, and advisory rep-capacity scenario.
+-- This is deliberately separate from the fixed lead-created cohorts above:
+-- current operational inventory and cohort fallout answer different questions.
+CREATE OR REPLACE TABLE
+  `lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime`
+OPTIONS (
+  description = 'Current Salesforce open lead inventory with active-campaign source and inside/outside assignment buckets. Refresh with this deployment script.'
+)
+AS
+WITH open_leads AS (
+  SELECT
+    l.id AS lead_sf_id,
+    l.created_date AS lead_created_at,
+    l.status AS lead_status,
+    COALESCE(l.is_open_c, FALSE) AS is_currently_open,
+    COALESCE(l.active_campaign_c, FALSE) AS has_active_campaign,
+    l.campaign_c AS campaign_sf_id,
+    NULLIF(TRIM(c.name), '') AS campaign_source,
+    NULLIF(TRIM(l.is_lead_owner_c), '') AS inside_rep_raw,
+    NULLIF(TRIM(l.assigned_lead_owner_c), '') AS outside_rep_raw,
+    NULLIF(TRIM(l.state), '') AS raw_state,
+    DATE_DIFF(
+      CURRENT_DATE('America/New_York'),
+      DATE(l.created_date, 'America/New_York'),
+      DAY
+    ) AS lead_age_days,
+    REGEXP_CONTAINS(
+      LOWER(CONCAT(
+        COALESCE(l.first_name, ''), ' ',
+        COALESCE(l.last_name, ''), ' ',
+        COALESCE(l.company, ''), ' ',
+        COALESCE(l.email, '')
+      )),
+      r'(^|[^a-z])(test|testing|demo|training|dummy|fake|sandbox|do not use|qa)([^a-z]|$)'
+    )
+      OR ENDS_WITH(LOWER(COALESCE(l.email, '')), '@luminasolar.com')
+      AS is_test_record
+  FROM `lumina-lakehouse.salesforce.lead` l
+  LEFT JOIN `lumina-lakehouse.salesforce.campaign` c
+    ON c.id = l.campaign_c
+    AND NOT COALESCE(c.is_deleted, FALSE)
+    AND NOT COALESCE(c._fivetran_deleted, FALSE)
+  WHERE COALESCE(l.is_open_c, FALSE)
+    AND NOT COALESCE(l.is_converted, FALSE)
+    AND l.status IN ('New', 'Nurturing', 'Qualified')
+    AND NOT COALESCE(l.is_deleted, FALSE)
+    AND NOT COALESCE(l._fivetran_deleted, FALSE)
+)
+SELECT
+  lead_sf_id,
+  lead_created_at,
+  lead_status,
+  is_currently_open,
+  has_active_campaign,
+  campaign_sf_id,
+  campaign_source,
+  raw_state,
+  CASE
+    WHEN UPPER(raw_state) IN (
+      'MD', 'MARYLAND', 'DC', 'D.C.', 'DISTRICT OF COLUMBIA',
+      'VA', 'VIRGINIA'
+    ) THEN 'Maryland'
+    WHEN UPPER(raw_state) IN ('PA', 'PENNSYLVANIA', 'DE', 'DELAWARE')
+      THEN 'Pennsylvania'
+    WHEN raw_state IS NULL THEN 'Unresolved'
+    ELSE 'Outside operating footprint'
+  END AS operating_region_group,
+  lead_age_days,
+  CASE
+    WHEN lead_age_days <= 7 THEN '0–7 days'
+    WHEN lead_age_days <= 30 THEN '8–30 days'
+    WHEN lead_age_days <= 60 THEN '31–60 days'
+    ELSE '61+ days'
+  END AS lead_age_bucket,
+  CASE
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(inside_rep_raw, '')), r'jonathan\s+bissell')
+      THEN 'Needs reassignment'
+    WHEN inside_rep_raw IS NULL
+      OR REGEXP_CONTAINS(LOWER(inside_rep_raw), r'(^|[^a-z])(hubspot|zapier|flowminator|operations)([^a-z]|$)')
+      THEN 'Automation / unassigned'
+    ELSE inside_rep_raw
+  END AS inside_rep_bucket,
+  CASE
+    WHEN REGEXP_CONTAINS(LOWER(COALESCE(outside_rep_raw, '')), r'jonathan\s+bissell')
+      THEN 'Needs reassignment'
+    WHEN outside_rep_raw IS NULL
+      OR REGEXP_CONTAINS(LOWER(outside_rep_raw), r'(^|[^a-z])(hubspot|zapier|flowminator|operations)([^a-z]|$)')
+      THEN 'Automation / unassigned'
+    ELSE outside_rep_raw
+  END AS outside_rep_bucket,
+  is_test_record,
+  CURRENT_TIMESTAMP() AS loaded_at
+FROM open_leads;

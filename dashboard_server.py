@@ -23,6 +23,7 @@ DECISIONS_TABLE_REF = f"{PROJECT_ID}.{DATASET}.marketing_decisions"
 AHJ_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_campaign_ahj_performance"
 FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime"
 PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_projection_runtime"
+ACTIVE_LEAD_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -33,6 +34,7 @@ SOURCE_OBJECTS = [
     "analytics_rpt.rpt_marketing_period_projection",
     "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime",
     "marketing_tool_ops.rpt_marketing_period_projection_runtime",
+    "marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime",
     "analytics_rpt.rpt_marketing_campaign_ahj_performance",
     "analytics_rpt.rpt_campaign_ahj_performance",
     "analytics_rpt.rpt_pipeline_funnel",
@@ -247,6 +249,7 @@ def _marketing_identity_exclusions(include_subrollup=True):
 
 def _marketing_filter_conditions(
     campaign=None,
+    source=None,
     rollup=None,
     state=None,
     county=None,
@@ -257,6 +260,8 @@ def _marketing_filter_conditions(
     portfolio_geography_sql = _marketing_portfolio_geography_sql()
     if campaign:
         conditions.append("campaign_name = @campaign")
+    if source:
+        conditions.append("campaign_name = @source")
     if rollup:
         conditions.append("campaign_reporting_rollup_name = @rollup")
     if state:
@@ -291,13 +296,14 @@ def build_marketing_funnel_query(
     months=7,
     window=None,
     campaign=None,
+    source=None,
     rollup=None,
     state=None,
     county=None,
     ahj=None,
     region=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
@@ -359,13 +365,14 @@ def build_marketing_geo_query(
     months=7,
     window=None,
     campaign=None,
+    source=None,
     rollup=None,
     state=None,
     county=None,
     ahj=None,
     region=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, rollup, state, county, ahj, region)
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
     portfolio_geography_sql = _marketing_portfolio_geography_sql()
@@ -464,6 +471,105 @@ def build_marketing_filter_options_query(months=7, window=None, region=None):
             AND {period_predicate}
             AND {where_clause}
     """
+
+
+def _active_lead_conditions(source=None, region=None, active_only=False):
+    conditions = ["is_currently_open", "NOT is_test_record"]
+    if active_only:
+        conditions.append("has_active_campaign")
+    if source:
+        conditions.append("campaign_source = @source")
+    if region == "Operating footprint":
+        conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
+    elif region:
+        conditions.append("operating_region_group = @region")
+    return conditions
+
+
+def build_marketing_capacity_query(source=None, region=None):
+    all_open_where = " AND ".join(_active_lead_conditions(source, region))
+    active_where = " AND ".join(_active_lead_conditions(source, region, active_only=True))
+    return f"""
+        WITH all_open AS (
+            SELECT *
+            FROM `{ACTIVE_LEAD_TABLE_REF}`
+            WHERE {all_open_where}
+        ),
+        active_open AS (
+            SELECT *
+            FROM `{ACTIVE_LEAD_TABLE_REF}`
+            WHERE {active_where}
+        ),
+        summary AS (
+            SELECT
+                (SELECT COUNT(*) FROM all_open) AS salesforceOpen,
+                COUNT(*) AS activeCampaignOpen,
+                COUNTIF(lead_age_days BETWEEN 0 AND 7) AS age0To7,
+                COUNTIF(lead_age_days BETWEEN 8 AND 30) AS age8To30,
+                COUNTIF(lead_age_days BETWEEN 31 AND 60) AS age31To60,
+                COUNTIF(lead_age_days >= 61) AS age61Plus,
+                MAX(loaded_at) AS loadedAt
+            FROM active_open
+        ),
+        sources AS (
+            SELECT ARRAY_AGG(campaign_source ORDER BY campaign_source) AS sourceOptions
+            FROM (
+                SELECT DISTINCT campaign_source
+                FROM `{ACTIVE_LEAD_TABLE_REF}`
+                WHERE {" AND ".join(_active_lead_conditions(region=region, active_only=True))}
+                  AND campaign_source IS NOT NULL
+            )
+        ),
+        inside_load AS (
+            SELECT ARRAY_AGG(STRUCT(rep, activeLeads) ORDER BY activeLeads DESC, rep) AS insideLoads
+            FROM (
+                SELECT inside_rep_bucket AS rep, COUNT(*) AS activeLeads
+                FROM active_open
+                GROUP BY rep
+            )
+        ),
+        outside_load AS (
+            SELECT ARRAY_AGG(STRUCT(rep, activeLeads) ORDER BY activeLeads DESC, rep) AS outsideLoads
+            FROM (
+                SELECT outside_rep_bucket AS rep, COUNT(*) AS activeLeads
+                FROM active_open
+                GROUP BY rep
+            )
+        )
+        SELECT summary.*, sources.sourceOptions, inside_load.insideLoads, outside_load.outsideLoads
+        FROM summary
+        CROSS JOIN sources
+        CROSS JOIN inside_load
+        CROSS JOIN outside_load
+    """
+
+
+def shape_marketing_capacity_row(row):
+    def loads(name):
+        return [
+            {"rep": item["rep"], "activeLeads": item["activeLeads"] or 0}
+            for item in (row[name] or [])
+        ]
+
+    return {
+        "salesforceOpen": row["salesforceOpen"] or 0,
+        "activeCampaignOpen": row["activeCampaignOpen"] or 0,
+        "ageBands": {
+            "0To7": row["age0To7"] or 0,
+            "8To30": row["age8To30"] or 0,
+            "31To60": row["age31To60"] or 0,
+            "61Plus": row["age61Plus"] or 0,
+        },
+        "sourceOptions": list(row["sourceOptions"] or []),
+        "insideLoads": loads("insideLoads"),
+        "outsideLoads": loads("outsideLoads"),
+        "loadedAt": row["loadedAt"].isoformat() if row["loadedAt"] else None,
+        "definitions": {
+            "salesforceOpen": "IS_Open__c = TRUE and IsConverted = FALSE.",
+            "activeCampaignOpen": "Salesforce open leads whose Active_Campaign__c is TRUE.",
+            "capacity": "Advisory scenario only; no Salesforce assignments are changed.",
+        },
+    }
 
 
 def build_marketing_projection_query(campaign=None, rollup=None):
@@ -840,6 +946,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             status, result = self._marketing_filter_options(parse_qs(parsed.query))
             self._send_json(status, result)
             return
+        if parsed.path == "/api/marketing-capacity":
+            status, result = self._marketing_capacity(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
         if parsed.path == "/api/marketing-projection":
             status, result = self._marketing_projection(parse_qs(parsed.query))
             self._send_json(status, result)
@@ -1139,6 +1249,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "months": months,
             "window": window,
             "campaign": params.get("campaign", [None])[0] or None,
+            "source": params.get("source", [None])[0] or None,
             "rollup": params.get("rollup", [None])[0] or None,
         }
         if include_geo:
@@ -1157,7 +1268,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         parameters = []
         if include_months and values.get("window") != "30d":
             parameters.append(bigquery.ScalarQueryParameter("months", "INT64", values["months"]))
-        for name in ("campaign", "rollup", "state", "county", "ahj", "region"):
+        for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region"):
             if name == "region" and values.get(name) == "Operating footprint":
                 continue
             if values.get(name):
@@ -1209,6 +1320,38 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "rollups": list(row["rollups"] or []) if row else [],
             "ahjs": list(row["ahjs"] or []) if row else [],
         }
+
+    def _marketing_capacity(self, params):
+        try:
+            values = self._marketing_params(params)
+        except ValueError as exc:
+            return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+        query_values = {
+            "source": values["source"],
+            "region": values["region"],
+        }
+        query = build_marketing_capacity_query(**query_values)
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=self._marketing_query_parameters(
+                query_values,
+                include_months=False,
+            )
+        )
+        try:
+            row = next(iter(self.client.query(query, job_config=job_config).result()), None)
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing capacity query failed: {exc}"}
+        if not row:
+            return HTTPStatus.OK, {
+                "salesforceOpen": 0,
+                "activeCampaignOpen": 0,
+                "ageBands": {"0To7": 0, "8To30": 0, "31To60": 0, "61Plus": 0},
+                "sourceOptions": [],
+                "insideLoads": [],
+                "outsideLoads": [],
+                "loadedAt": None,
+            }
+        return HTTPStatus.OK, shape_marketing_capacity_row(row)
 
     def _marketing_projection(self, params):
         try:

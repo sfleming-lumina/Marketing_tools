@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from dashboard_server import (
     DashboardHandler,
     OFFICIAL_REPORT_BENCHMARKS,
+    build_marketing_capacity_query,
     build_marketing_funnel_query,
     build_marketing_filter_options_query,
     build_marketing_geo_query,
@@ -15,6 +16,7 @@ from dashboard_server import (
     build_marketing_reconciliation_query,
     shape_marketing_funnel_row,
     shape_marketing_geo_row,
+    shape_marketing_capacity_row,
 )
 
 
@@ -85,6 +87,7 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
     values = {
         "months": 7,
         "campaign": "Summer Search",
+        "source": "EnergySage",
         "rollup": "3rd Party Vendors LSR",
         "state": "VA",
         "county": "Fairfax",
@@ -93,7 +96,7 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
     }
     for query in (build_marketing_funnel_query(**values), build_marketing_geo_query(**values)):
         assert "rpt_marketing_funnel_analysis_runtime" in query
-        for name in ("campaign", "rollup", "state", "county", "ahj", "region"):
+        for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region"):
             assert f"@{name}" in query
         assert "INTERVAL @months MONTH" in query
 
@@ -114,6 +117,53 @@ def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     assert "reporting_market_county" in query
     assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
     assert "INTERVAL @months MONTH" in query
+
+
+def test_capacity_query_uses_current_active_salesforce_inventory():
+    query = build_marketing_capacity_query(
+        source="EnergySage",
+        region="Operating footprint",
+    )
+    assert "rpt_marketing_active_lead_inventory_runtime" in query
+    assert "is_currently_open" in query
+    assert "has_active_campaign" in query
+    assert "campaign_source = @source" in query
+    assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
+    assert "inside_rep_bucket" in query
+    assert "outside_rep_bucket" in query
+
+
+def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
+    shaped = shape_marketing_capacity_row({
+        "salesforceOpen": 6472,
+        "activeCampaignOpen": 4765,
+        "age0To7": 238,
+        "age8To30": 561,
+        "age31To60": 392,
+        "age61Plus": 3574,
+        "sourceOptions": ["EnergySage", "SolarReviews"],
+        "insideLoads": [
+            {"rep": "Needs reassignment", "activeLeads": 2839},
+            {"rep": "Angelo Nauls", "activeLeads": 206},
+        ],
+        "outsideLoads": [{"rep": "Kelly Stelmack", "activeLeads": 1235}],
+        "loadedAt": datetime(2026, 7, 30, tzinfo=timezone.utc),
+    })
+    assert shaped["salesforceOpen"] == 6472
+    assert shaped["activeCampaignOpen"] == 4765
+    assert shaped["ageBands"]["61Plus"] == 3574
+    assert shaped["insideLoads"][0]["rep"] == "Needs reassignment"
+    assert "Jonathan Bissell" not in str(shaped)
+
+
+def test_active_inventory_sql_uses_salesforce_open_contract_and_hides_excluded_owner():
+    sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+    assert "rpt_marketing_active_lead_inventory_runtime" in sql
+    assert "COALESCE(l.is_open_c, FALSE)" in sql
+    assert "NOT COALESCE(l.is_converted, FALSE)" in sql
+    assert "COALESCE(l.active_campaign_c, FALSE)" in sql
+    assert "THEN 'Needs reassignment'" in sql
 
 
 def test_marketing_queries_exclude_jonathan_bissell_from_data_and_filters():
@@ -321,6 +371,30 @@ def test_filter_options_handler_returns_arrays_and_region_binding(monkeypatch):
     assert payload["campaigns"] == ["SolarReviews", "EnergySage"]
     assert payload["ahjs"][0] == "Anne Arundel County (MD)"
     assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["months", "region"]
+
+
+def test_capacity_handler_binds_source_and_returns_current_inventory(monkeypatch):
+    fake = FakeClient([{
+        "salesforceOpen": 4070,
+        "activeCampaignOpen": 4070,
+        "age0To7": 100,
+        "age8To30": 400,
+        "age31To60": 300,
+        "age61Plus": 3270,
+        "sourceOptions": ["EnergySage", "SolarReviews"],
+        "insideLoads": [{"rep": "Needs reassignment", "activeLeads": 2500}],
+        "outsideLoads": [{"rep": "Kelly Stelmack", "activeLeads": 1000}],
+        "loadedAt": datetime(2026, 7, 30, tzinfo=timezone.utc),
+    }])
+    monkeypatch.setattr(DashboardHandler, "_client", fake)
+    handler = DashboardHandler.__new__(DashboardHandler)
+    status, payload = handler._marketing_capacity({
+        "source": ["EnergySage"],
+        "region": ["Operating footprint"],
+    })
+    assert status == HTTPStatus.OK
+    assert payload["activeCampaignOpen"] == 4070
+    assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["source"]
 
 
 def test_marketing_query_errors_are_returned_as_bad_gateway(monkeypatch):

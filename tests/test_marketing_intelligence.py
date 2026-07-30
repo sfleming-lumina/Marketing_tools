@@ -164,6 +164,8 @@ def test_active_inventory_sql_uses_salesforce_open_contract_and_hides_excluded_o
     assert "NOT COALESCE(l.is_converted, FALSE)" in sql
     assert "COALESCE(l.active_campaign_c, FALSE)" in sql
     assert "THEN 'Needs reassignment'" in sql
+    assert "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime" in sql
+    assert "salesforce.campaign" not in sql
 
 
 def test_marketing_queries_exclude_jonathan_bissell_from_data_and_filters():

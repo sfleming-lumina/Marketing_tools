@@ -395,7 +395,20 @@ OPTIONS (
   description = 'Current Salesforce open lead inventory with active-campaign source and inside/outside assignment buckets. Refresh with this deployment script.'
 )
 AS
-WITH open_leads AS (
+WITH campaign_lookup AS (
+  SELECT
+    campaign_sf_id,
+    ARRAY_AGG(
+      NULLIF(TRIM(campaign_name), '')
+      IGNORE NULLS
+      ORDER BY rpt_loaded_at DESC
+      LIMIT 1
+    )[SAFE_OFFSET(0)] AS campaign_name
+  FROM `lumina-lakehouse.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime`
+  WHERE campaign_sf_id IS NOT NULL
+  GROUP BY campaign_sf_id
+),
+open_leads AS (
   SELECT
     l.id AS lead_sf_id,
     l.created_date AS lead_created_at,
@@ -403,7 +416,10 @@ WITH open_leads AS (
     COALESCE(l.is_open_c, FALSE) AS is_currently_open,
     COALESCE(l.active_campaign_c, FALSE) AS has_active_campaign,
     l.campaign_c AS campaign_sf_id,
-    NULLIF(TRIM(c.name), '') AS campaign_source,
+    COALESCE(
+      NULLIF(TRIM(c.campaign_name), ''),
+      CONCAT('Campaign ', l.campaign_c)
+    ) AS campaign_source,
     NULLIF(TRIM(l.is_lead_owner_c), '') AS inside_rep_raw,
     NULLIF(TRIM(l.assigned_lead_owner_c), '') AS outside_rep_raw,
     NULLIF(TRIM(l.state), '') AS raw_state,
@@ -424,10 +440,8 @@ WITH open_leads AS (
       OR ENDS_WITH(LOWER(COALESCE(l.email, '')), '@luminasolar.com')
       AS is_test_record
   FROM `lumina-lakehouse.salesforce.lead` l
-  LEFT JOIN `lumina-lakehouse.salesforce.campaign` c
-    ON c.id = l.campaign_c
-    AND NOT COALESCE(c.is_deleted, FALSE)
-    AND NOT COALESCE(c._fivetran_deleted, FALSE)
+  LEFT JOIN campaign_lookup c
+    ON c.campaign_sf_id = l.campaign_c
   WHERE COALESCE(l.is_open_c, FALSE)
     AND NOT COALESCE(l.is_converted, FALSE)
     AND l.status IN ('New', 'Nurturing', 'Qualified')

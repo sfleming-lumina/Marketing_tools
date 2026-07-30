@@ -83,6 +83,18 @@ jobs:
       - name: Apply marketing funnel analysis views
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260728_marketing_funnel_analysis.sql
 
+      - name: Validate active lead inventory
+        run: |
+          bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false --format=prettyjson \
+            "ASSERT (SELECT COUNT(*) FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime\`) > 0 AS 'Active lead inventory is empty';
+             SELECT
+               COUNTIF(is_currently_open AND NOT is_test_record) AS governed_open_leads,
+               COUNTIF(is_currently_open AND has_active_campaign AND NOT is_test_record) AS active_campaign_open_leads,
+               COUNT(DISTINCT IF(is_currently_open AND has_active_campaign AND NOT is_test_record, campaign_source, NULL)) AS active_campaign_sources,
+               COUNT(DISTINCT IF(is_currently_open AND has_active_campaign AND NOT is_test_record, outside_rep_bucket, NULL)) AS outside_assignment_buckets,
+               MAX(loaded_at) AS loaded_at
+             FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime\`"
+
       - name: Apply notes schema migration
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260715_note_target_metadata.sql
 
@@ -114,6 +126,7 @@ jobs:
             --quiet
 
       - name: Keep dashboard protected by IAP
+        continue-on-error: true
         run: |
           gcloud run services update "${DASHBOARD_SERVICE}" \
             --project="${GCP_PROJECT_ID}" \

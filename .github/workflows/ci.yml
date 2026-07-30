@@ -80,6 +80,11 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
+      - name: Inspect governed active-lead contracts
+        run: |
+          bq --project_id="${GCP_PROJECT_ID}" show --schema --format=prettyjson "${GCP_PROJECT_ID}:analytics_fact.fact_lead_funnel_attributed"
+          bq --project_id="${GCP_PROJECT_ID}" show --schema --format=prettyjson "${GCP_PROJECT_ID}:analytics_rpt.rpt_pipeline_funnel"
+
       - name: Apply marketing funnel analysis views
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260728_marketing_funnel_analysis.sql
 

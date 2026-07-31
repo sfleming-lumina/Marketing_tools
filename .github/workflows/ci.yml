@@ -95,6 +95,15 @@ jobs:
                MAX(loaded_at) AS loaded_at
              FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime\`"
 
+      - name: Validate active campaign catalog
+        run: |
+          bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false --format=prettyjson \
+            "ASSERT (SELECT COUNT(*) FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime\` WHERE is_active AND NOT is_test_record) > 2 AS 'Active campaign catalog is unexpectedly small';
+             ASSERT (SELECT COUNT(*) FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime\` WHERE REGEXP_CONTAINS(LOWER(campaign_name), r'jonathan\\s+bissell')) = 0 AS 'Excluded Jonathan Bissell campaign remains in catalog';
+             SELECT COUNT(*) AS active_campaigns, MAX(loaded_at) AS loaded_at
+             FROM \`${GCP_PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime\`
+             WHERE is_active AND NOT is_test_record"
+
       - name: Apply notes schema migration
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260715_note_target_metadata.sql
 

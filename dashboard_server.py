@@ -24,6 +24,7 @@ AHJ_TABLE_REF = f"{PROJECT_ID}.analytics_rpt.rpt_marketing_campaign_ahj_performa
 FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime"
 PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_projection_runtime"
 ACTIVE_LEAD_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime"
+ACTIVE_CAMPAIGN_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -35,6 +36,7 @@ SOURCE_OBJECTS = [
     "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime",
     "marketing_tool_ops.rpt_marketing_period_projection_runtime",
     "marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime",
+    "marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime",
     "analytics_rpt.rpt_marketing_campaign_ahj_performance",
     "analytics_rpt.rpt_campaign_ahj_performance",
     "analytics_rpt.rpt_pipeline_funnel",
@@ -466,7 +468,12 @@ def build_marketing_filter_options_query(months=7, window=None, region=None):
             WHERE cohort_period_grain = '{period_grain}'
         )
         SELECT
-            ARRAY_AGG(DISTINCT campaign_name IGNORE NULLS ORDER BY campaign_name) AS campaigns,
+            (
+                SELECT ARRAY_AGG(DISTINCT campaign_name IGNORE NULLS ORDER BY campaign_name)
+                FROM `{ACTIVE_CAMPAIGN_TABLE_REF}`
+                WHERE is_active
+                    AND NOT is_test_record
+            ) AS campaigns,
             ARRAY_AGG(DISTINCT campaign_reporting_rollup_name IGNORE NULLS ORDER BY campaign_reporting_rollup_name) AS rollups,
             ARRAY_AGG(
                 DISTINCT NULLIF({portfolio_geography_sql}, 'Unresolved')

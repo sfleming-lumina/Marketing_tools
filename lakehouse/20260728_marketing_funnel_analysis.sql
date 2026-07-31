@@ -385,6 +385,33 @@ SELECT *
 FROM `lumina-lakehouse.analytics_rpt.rpt_marketing_period_projection`;
 
 
+-- Authoritative Salesforce campaign catalog for the dashboard selector.
+-- This is intentionally independent of the selected cohort period and current
+-- open-lead inventory: an active campaign remains selectable before it has
+-- generated a lead in the reporting window.
+CREATE OR REPLACE TABLE
+  `lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime`
+OPTIONS (
+  description = 'Current active Salesforce campaigns available to the marketing dashboard. Refresh with this deployment script.'
+)
+AS
+SELECT
+  id AS campaign_sf_id,
+  NULLIF(TRIM(name), '') AS campaign_name,
+  COALESCE(is_active, FALSE) AS is_active,
+  NULLIF(TRIM(status), '') AS campaign_status,
+  REGEXP_CONTAINS(
+    LOWER(COALESCE(name, '')),
+    r'(^|[^a-z])(test|testing|demo|training|dummy|fake|sandbox|do not use)([^a-z]|$)'
+  ) AS is_test_record,
+  CURRENT_TIMESTAMP() AS loaded_at
+FROM `lumina-lakehouse.salesforce.campaign`
+WHERE COALESCE(is_active, FALSE)
+  AND NOT COALESCE(_fivetran_deleted, FALSE)
+  AND NULLIF(TRIM(name), '') IS NOT NULL
+  AND NOT REGEXP_CONTAINS(LOWER(name), r'jonathan\s+bissell');
+
+
 -- Current Salesforce lead inventory used by the dashboard's campaign-source
 -- selector, open-lead reconciliation, and advisory rep-capacity scenario.
 -- This is deliberately separate from the fixed lead-created cohorts above:

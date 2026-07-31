@@ -115,10 +115,28 @@ def test_operating_footprint_filter_is_explicit_and_requires_no_region_parameter
 def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     query = build_marketing_filter_options_query(months=7, region="Operating footprint")
     assert "ARRAY_AGG(DISTINCT campaign_name" in query
+    assert "rpt_marketing_active_campaign_catalog_runtime" in query
+    assert "WHERE is_active" in query
     assert "resolved_county" in query
     assert "reporting_market_county" in query
     assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in query
     assert "INTERVAL @months MONTH" in query
+
+
+def test_active_campaign_catalog_uses_salesforce_status_not_current_leads():
+    sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+    catalog_sql = sql.split(
+        "`lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime`",
+        1,
+    )[1].split(
+        "`lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime`",
+        1,
+    )[0]
+    assert "FROM `lumina-lakehouse.salesforce.campaign`" in catalog_sql
+    assert "COALESCE(is_active, FALSE)" in catalog_sql
+    assert "jonathan\\s+bissell" in catalog_sql
+    assert "fact_lead_funnel_attributed_clean" not in catalog_sql
 
 
 def test_capacity_query_uses_current_active_salesforce_inventory():
@@ -162,16 +180,19 @@ def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
 def test_active_inventory_sql_uses_salesforce_open_contract_and_hides_excluded_owner():
     sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
     sql = sql_path.read_text(encoding="utf-8")
-    assert "rpt_marketing_active_lead_inventory_runtime" in sql
-    assert "COALESCE(l.lead_is_open, FALSE)" in sql
-    assert "NOT COALESCE(l.lead_is_converted, FALSE)" in sql
-    assert "COALESCE(l.lead_active_campaign_flag, FALSE)" in sql
-    assert "THEN 'Needs reassignment'" in sql
-    assert "Inside assignment unavailable" in sql
-    assert "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime" in sql
-    assert "marketing_tool_ops.fact_lead_funnel_attributed_clean" in sql
-    assert "salesforce.lead" not in sql
-    assert "salesforce.campaign" not in sql
+    inventory_sql = sql.split(
+        "`lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime`",
+        1,
+    )[1]
+    assert "COALESCE(l.lead_is_open, FALSE)" in inventory_sql
+    assert "NOT COALESCE(l.lead_is_converted, FALSE)" in inventory_sql
+    assert "COALESCE(l.lead_active_campaign_flag, FALSE)" in inventory_sql
+    assert "THEN 'Needs reassignment'" in inventory_sql
+    assert "Inside assignment unavailable" in inventory_sql
+    assert "marketing_tool_ops.rpt_marketing_funnel_analysis_runtime" in inventory_sql
+    assert "marketing_tool_ops.fact_lead_funnel_attributed_clean" in inventory_sql
+    assert "salesforce.lead" not in inventory_sql
+    assert "salesforce.campaign" not in inventory_sql
 
 
 def test_marketing_queries_exclude_jonathan_bissell_from_data_and_filters():

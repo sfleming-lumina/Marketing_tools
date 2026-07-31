@@ -122,12 +122,9 @@
     .matrix-cell.is-hovered{box-shadow:inset 0 0 0 2px currentColor}.matrix-cell.is-selected{box-shadow:inset 0 0 0 3px var(--forest),0 0 0 2px #fff}
     .primary{box-shadow:0 4px 12px rgba(57,181,74,.18)}.primary:hover{background:#44c154}.secondary{border-color:var(--line-strong);background:var(--surface)}
     .filters #monthsFilter{max-width:122px}.filters #sourceFilter{max-width:180px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
-    .capacity-card{overflow:hidden}.capacity-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
-    .capacity-stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}.capacity-stat small{display:block;color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}.capacity-stat strong{display:block;margin-top:4px;font-size:24px;letter-spacing:-.04em}.capacity-stat p{margin:3px 0 0;color:var(--muted);font-size:10px;line-height:1.4}
-    .capacity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.capacity-team{border:1px solid var(--line);border-radius:15px;overflow:hidden}.capacity-team-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;background:var(--surface-2)}.capacity-team-head label{font-size:11px;color:var(--muted)}.capacity-team-head input{width:82px;margin-left:6px;padding:7px 8px;border:1px solid var(--line-strong);border-radius:9px;font:inherit}.capacity-rows{max-height:285px;overflow:auto}.capacity-row{display:grid;grid-template-columns:minmax(120px,1fr) 70px 92px;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);font-size:11px}.capacity-row:first-child{border-top:0}.capacity-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.capacity-load{text-align:right;font-variant-numeric:tabular-nums}.capacity-util{padding:5px 7px;border-radius:99px;text-align:center;font-size:9px;font-weight:800}.capacity-util.good{color:#176b36;background:#dff3e2}.capacity-util.warn{color:#8b6100;background:#fff1c8}.capacity-util.bad{color:#a33427;background:#fde3de}.capacity-note{margin-top:12px;padding:11px 13px;border-radius:12px;background:#f6f8f6;color:var(--muted);font-size:11px;line-height:1.45}
     @media(max-width:1360px) and (min-width:761px){.crumb{display:none}.filters{margin-left:0;width:100%;flex-wrap:nowrap}.filters .rollup-filter{display:none}}
     @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:360px;min-height:360px}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:900px){.command-momentum-card{grid-template-columns:1fr;gap:8px}.command-momentum-card .section-head p{max-width:none}.command-momentum-card .chart-host{height:290px}.capacity-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.capacity-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.command-momentum-card{grid-template-columns:1fr;gap:8px}.command-momentum-card .section-head p{max-width:none}.command-momentum-card .chart-host{height:290px}}
     @media(max-width:760px){.chart-host{height:280px}.command-momentum-card{padding:18px}.command-momentum-card .chart-host{height:270px}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:310px;min-height:310px}.small-multiples{grid-template-columns:1fr 1fr}}
     @media(max-width:480px){.small-multiples{grid-template-columns:1fr}.chart-host{height:250px}}
   </style>
@@ -188,15 +185,6 @@
         <div class="hero"><div><div class="eyebrow">Marketing decision operating system</div><h1>Know what is working. Decide what to do next.</h1><p>One cohort-consistent view of acquisition, conversion, geography, pipeline, and spend quality.</p></div><div class="asof" id="asOf">Loading latest cohort...</div></div>
         <div class="card status-strip"><div class="status-mark">↗</div><div><h3 id="statusTitle">Building your decision brief</h3><p id="statusCopy">Comparing funnel performance, spend coverage, and local opportunity.</p></div><span class="badge dark" id="statusBadge">LIVE COHORT</span></div>
         <div class="grid grid-4 section" id="commandMetrics"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-        <div class="card capacity-card section">
-          <div class="section-head"><div><div class="eyebrow">Sales capacity guardrail</div><h2>Can the team absorb the active lead inventory?</h2><p>Reconciles current Salesforce open leads with cohort fallout, then tests inside and outside rep load against adjustable planning limits.</p></div><span class="badge warn" id="capacityBadge">Loading Salesforce inventory</span></div>
-          <div class="capacity-summary" id="capacitySummary"></div>
-          <div class="capacity-grid">
-            <div class="capacity-team"><div class="capacity-team-head"><strong>Inside sales</strong><label>Capacity / rep <input id="insideCapacity" type="number" min="1" step="25" value="150" aria-label="Inside sales active lead capacity per rep"></label></div><div class="capacity-rows" id="insideCapacityRows"></div></div>
-            <div class="capacity-team"><div class="capacity-team-head"><strong>Outside sales</strong><label>Capacity / rep <input id="outsideCapacity" type="number" min="1" step="100" value="1200" aria-label="Outside sales active lead capacity per rep"></label></div><div class="capacity-rows" id="outsideCapacityRows"></div></div>
-          </div>
-          <div class="capacity-note" id="capacityNote">Capacity changes are advisory and never update Salesforce assignments.</div>
-        </div>
         <div class="card elevated command-opportunity-card section"><div class="section-head"><div><div class="eyebrow">Portfolio opportunity queue</div><h2>Campaign × county decisions worth attention</h2><p>Ranked by estimated win impact, evidence confidence, actionability, and recency.</p></div><div class="opportunity-toolbar"><select id="opportunityTypeFilter" aria-label="Decision type"><option value="All">All decisions</option><option value="Scale">Scale</option><option value="Recover">Recover</option><option value="Protect">Protect</option><option value="Test">Test</option><option value="Investigate">Investigate</option><option value="Fix data">Fix data</option></select></div></div><div class="opportunity-list" id="insightList"><div class="loading">Analyzing campaign and county opportunities...</div></div></div>
         <div class="card chart-card command-momentum-card section"><div class="section-head"><div><div class="eyebrow">Cohort momentum</div><h2>Is demand translating into residential wins?</h2><p>Observed monthly cohorts with portfolio reference and the latest decision window.</p></div></div><div class="chart-host" id="commandTrend" role="img" aria-label="Monthly cohort leads and wins with reference lines and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
         <div class="card decision-canvas section">
@@ -267,13 +255,12 @@
     <div class="guide-intro">Use one repeatable workflow: discover what needs attention, investigate the evidence, test a potential decision, and create an implementation brief.</div>
     <div class="guide-section"><h3>Discover → Investigate → Test → Implement</h3><ul><li><strong>Discover:</strong> choose an insight from the Command center priority queue.</li><li><strong>Investigate:</strong> the active question and filters follow you into Funnel lab or Geo intelligence; add the evidence you want carried forward.</li><li><strong>Test:</strong> Scenario studio opens with a relevant starting preset while preserving the same campaign, county / market, region, and period.</li><li><strong>Implement:</strong> choose <strong>Track automatically</strong>. The tool captures the authenticated owner, decision, scope, baseline, assumptions, evidence, expected impact, and review window without forms or uploads.</li></ul></div>
     <div class="guide-section"><h3>Decision tracker</h3><p>Open <strong>Decisions</strong> from the sidebar to see every tracked choice. Current lakehouse cohorts are compared with each frozen baseline automatically. Spend changes are labeled as observed implementation signals; conversion improvements remain outcome signals unless an external execution system confirms the action.</p></div>
-    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign source</strong> options come only from Salesforce leads that are currently open, unconverted, and marked with an active campaign. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily. <strong>Reset</strong> restores the seven-month operating-footprint view; <strong>Refresh</strong> forces fresh funnel, geography, capacity, catalog, and reconciliation requests.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
+    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign source</strong> options come only from Salesforce leads that are currently open, unconverted, and marked with an active campaign. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily. <strong>Reset</strong> restores the seven-month operating-footprint view; <strong>Refresh</strong> forces fresh funnel, geography, source-catalog, and reconciliation requests.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
     <div class="guide-section"><h3>Command center</h3><p>The opportunity queue ranks campaign × county decisions by estimated win impact, confidence, actionability, and the active time window. The decision canvas plots CAC against lead-to-win conversion; bubble size represents lead volume and color represents the recommended decision type. Campaign panels add benchmark and confidence context. Hover any opportunity to highlight it everywhere, or click it to investigate the exact pair.</p></div>
     <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall always preserves the complete stage sequence. Positive bars are strengths to protect, negative bars are recoverable gaps, and the callout beneath the chart names the highest-value action. Neutral bars mean the slice needs more mature benchmark evidence.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
-    <div class="guide-section"><h3>Sales capacity guardrail</h3><p>The Salesforce validation tile is a dated production check using <code>IS_Open__c = TRUE</code> and <code>IsConverted = FALSE</code>. The governed lakehouse tiles and campaign-source options use the accessible lead-funnel fact. A visible coverage gap means capacity is directional until the upstream model publishes every open lead. Adjust inside or outside capacity per rep to test overload and rerouting pressure; the tool never changes Salesforce assignments. Automation owners are grouped as unassigned, and excluded legacy assignments remain in inventory as <strong>Needs reassignment</strong> so totals are not artificially lowered. The current governed contract exposes the assigned outside rep but not the inside-owner field, so inside assignment is explicitly labeled unavailable rather than inferred.</p></div>
-    <div class="guide-section"><h3>Source semantics</h3><p>Salesforce current open inventory is intentionally shown beside—not forced to equal—the cohort metric <strong>open, no set, 30+ days</strong>. The latter is only an aged subset within selected lead-created cohorts. Salesforce reports such as SolarReviews Leads by County can also use event/status-update dates and formulas like Converted ÷ member rows, so use Data quality to understand definition differences before reconciling totals.</p></div>
+    <div class="guide-section"><h3>Source semantics</h3><p>The campaign-source list uses the governed active-lead inventory only to determine which filter options are currently relevant. Salesforce reports such as SolarReviews Leads by County can use event/status-update dates and formulas like Converted ÷ member rows, so use Data quality to understand definition differences before reconciling totals.</p></div>
   </div>
 </aside>
 <aside class="drawer" id="notesDrawer" aria-label="Notes">
@@ -307,8 +294,7 @@
   const $ = id => document.getElementById(id);
   const state = {
     view:"command", months:7, window:"", source:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
-    lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null, capacity:null,
-    insideCapacity:150, outsideCapacity:1200,
+    lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     filterCatalog:{sources:[],campaigns:[],rollups:[],ahjs:[]},
     loading:false, error:null, workflowStage:"discover", activeDecision:null, decisions:[], decisionProgress:{},
     opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:"",
@@ -411,11 +397,11 @@
   }
   async function loadData({force=false}={}){
     if(state.loading)return false;
-    if(force){state.reconciliation=null;state.capacity=null;state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]}}
+    if(force){state.reconciliation=null;state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]}}
     state.loading=true;state.error=null;setLoadingControls(true);renderError();
     try{
       const needsCatalog=!state.filterCatalog.campaigns.length&&!state.filterCatalog.ahjs.length;
-      const [funnel,geo,projection,reconciliation,freshness,catalog,capacity]=await Promise.all([
+      const [funnel,geo,projection,reconciliation,freshness,catalog,sourceInventory]=await Promise.all([
         fetchJson(`/api/marketing-funnel?${queryString()}`),
         fetchJson(`/api/marketing-geo?${queryString()}`),
         fetchJson(`/api/marketing-projection`).catch(()=>[]),
@@ -424,9 +410,9 @@
         needsCatalog?fetchJson(`/api/marketing-filter-options?${catalogQueryString()}`).catch(()=>null):null,
         fetchJson(`/api/marketing-capacity?${queryString()}`).catch(()=>null)
       ]);
-      state.funnelRows=funnel.filter(row=>!isExcludedMarketingRow(row));state.geoRows=geo.filter(row=>!isExcludedMarketingRow(row));state.projections=projection.filter(row=>!isExcludedMarketingRow(row));state.reconciliation=reconciliation;state.capacity=capacity;
+      state.funnelRows=funnel.filter(row=>!isExcludedMarketingRow(row));state.geoRows=geo.filter(row=>!isExcludedMarketingRow(row));state.projections=projection.filter(row=>!isExcludedMarketingRow(row));state.reconciliation=reconciliation;
       if(catalog)state.filterCatalog={...state.filterCatalog,campaigns:(catalog.campaigns||[]).filter(value=>!isExcludedIdentity(value)),rollups:(catalog.rollups||[]).filter(value=>!isExcludedIdentity(value)),ahjs:(catalog.ahjs||[]).filter(value=>value&&value!=="Unknown"&&!/^\(?[A-Z]{2}\)?$/.test(value.trim()))};
-      if(capacity)state.filterCatalog.sources=(capacity.sourceOptions||[]).filter(value=>value&&!isExcludedIdentity(value));
+      if(sourceInventory)state.filterCatalog.sources=(sourceInventory.sourceOptions||[]).filter(value=>value&&!isExcludedIdentity(value));
       populateFilters(); renderAll();
       if(freshness){$("freshnessLabel").textContent=`${freshness.objects_found}/${freshness.objects_checked} sources online`}
       return true;
@@ -787,45 +773,6 @@
   function clearDecision(){
     state.activeDecision=null;state.workflowStage="discover";renderDecisionWorkspace();renderInvestigationPrompts();renderImprovementTarget();
   }
-  function capacityTone(load,capacity){
-    const ratio=capacity?load/capacity:0;
-    return ratio>1?"bad":ratio>=.85?"warn":"good";
-  }
-  function renderCapacityRows(rows,capacity,target){
-    const systemBuckets=new Set(["Automation / unassigned","Needs reassignment","Inside assignment unavailable"]);
-    target.innerHTML=(rows||[]).map(row=>{
-      const system=systemBuckets.has(row.rep),tone=system?"bad":capacityTone(row.activeLeads,capacity);
-      const delta=Number(row.activeLeads)-capacity;
-      const capacityAction=system?"Reroute":delta>0?`${fmtNum(delta)} over`:`${fmtNum(Math.abs(delta))} open`;
-      return `<div class="capacity-row"><strong title="${esc(row.rep)}">${esc(row.rep)}</strong><span class="capacity-load">${fmtNum(row.activeLeads)} leads</span><span class="capacity-util ${tone}" title="${system?"Assignment requires routing":`${Math.round((row.activeLeads/Math.max(1,capacity))*100)}% utilized`}">${esc(capacityAction)}</span></div>`;
-    }).join("")||'<div class="empty">No active assignments for this selection.</div>';
-  }
-  function renderCapacity(){
-    const data=state.capacity,t=aggregate(filteredFunnelRows());
-    if(!data){
-      $("capacityBadge").className="badge warn";$("capacityBadge").textContent="Inventory unavailable";
-      $("capacitySummary").innerHTML=metric("Cohort aged fallout",fmtNum(t.openNoSet30Plus),"Open without a set after 30 days","neutral");
-      $("insideCapacityRows").innerHTML=$("outsideCapacityRows").innerHTML='<div class="empty">Salesforce inventory is unavailable.</div>';
-      return;
-    }
-    const validatedOpen=Number(data.salesforceValidation?.openLeads||0),validatedActive=Number(data.salesforceValidation?.activeCampaignOpenLeads||0);
-    const governedOpen=Number(data.governedOpen||0),inventoryGap=Math.max(0,validatedOpen-governedOpen),aged=Number(data.ageBands?.["61Plus"]||0);
-    const nonHumanBuckets=["Automation / unassigned","Needs reassignment","Inside assignment unavailable"];
-    const insideOver=(data.insideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.insideCapacity).length;
-    const outsideOver=(data.outsideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.outsideCapacity).length;
-    const needsRoute=[...(data.insideLoads||[]),...(data.outsideLoads||[])].filter(r=>nonHumanBuckets.includes(r.rep)).reduce((total,row)=>total+Number(row.activeLeads||0),0);
-    const hasPressure=insideOver+outsideOver>0||needsRoute>0;
-    $("capacityBadge").className=`badge ${inventoryGap?"bad":hasPressure?"warn":"good"}`;$("capacityBadge").textContent=inventoryGap?"Source coverage gap":hasPressure?"Capacity attention":"Within planning limits";
-    $("capacitySummary").innerHTML=[
-      `<div class="capacity-stat"><small>Salesforce validated open</small><strong>${fmtNum(validatedOpen)}</strong><p>Production check · ${esc(data.salesforceValidation?.validatedAt||"")}</p></div>`,
-      `<div class="capacity-stat"><small>Governed lakehouse open</small><strong>${fmtNum(governedOpen)}</strong><p>${fmtNum(inventoryGap)} open leads missing from this fact</p></div>`,
-      `<div class="capacity-stat"><small>Governed active-campaign open</small><strong>${fmtNum(data.activeCampaignOpen)}</strong><p>${fmtNum(Math.max(0,validatedActive-Number(data.activeCampaignOpen||0)))} below Salesforce validation</p></div>`,
-      `<div class="capacity-stat"><small>Governed active leads 61+</small><strong>${fmtNum(aged)}</strong><p>${fmtNum(t.openNoSet30Plus)} recent-cohort leads open without a set 30+</p></div>`
-    ].join("");
-    renderCapacityRows(data.insideLoads,state.insideCapacity,$("insideCapacityRows"));
-    renderCapacityRows(data.outsideLoads,state.outsideCapacity,$("outsideCapacityRows"));
-    $("capacityNote").innerHTML=`${inventoryGap?`<strong>Coverage alert: the governed fact is missing ${fmtNum(inventoryGap)} of the ${fmtNum(validatedOpen)} Salesforce-validated open leads.</strong> Capacity and source options currently describe the governed subset. `:`<strong>${insideOver} inside and ${outsideOver} outside rep${outsideOver===1?"":"s"} exceed the current planning limits.</strong> `}${needsRoute?`${fmtNum(needsRoute)} assignments are in automation, unassigned, reassignment, or governance-gap buckets. `:""}Adjust capacity per rep to test load; this scenario is advisory and never writes to Salesforce.`;
-  }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
     $("asOf").textContent=t.loadedAt?`Cohorts loaded ${new Date(t.loadedAt).toLocaleDateString()}`:"No cohort activity";
@@ -838,7 +785,7 @@
       metric("Active pipeline",fmtNum(t.activePipeline),`${fmtMoney(t.activePipelineRevenue)} potential revenue`,"neutral"),
       metric(coverage.leadFirst?"Expected remaining wins":"Revenue / spend",coverage.leadFirst?fmtNum(t.expectedRemainingWins):`${(t.roi||0).toFixed(1)}×`,coverage.leadFirst?`${fmtMoney(t.expectedRemainingRevenue)} expected`:`${fmtMoney(t.cpw)} cost per win`,coverage.leadFirst?"neutral":"positive")
     ].join("");
-    renderCapacity();renderOpportunityQueue();renderOpportunityMatrix();renderOpportunityVisuals();
+    renderOpportunityQueue();renderOpportunityMatrix();renderOpportunityVisuals();
     drawTrend($("commandTrend"),rows,[
       {key:"leads",label:"Leads",color:"#39b54a"},
       {key:"wins",label:"Residential wins",color:"#10231a",axis:1}
@@ -1068,7 +1015,7 @@
     const text=$("noteText").value.trim();if(!text)return;
     try{await fetchJson("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({view:state.view,element_key:`${state.view}-workspace`,element_label:viewTitles[state.view],target_type:"view",feedback_type:"decision",note_text:text,context:assistantContext()})});$("noteText").value="";loadNotes()}catch(e){alert(e.message)}
   }
-  function assistantContext(){return {view:state.view,filters:{period:periodLabel(),campaignSource:state.source||"All active sources",campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},active_decision:state.activeDecision,workflow_stage:state.workflowStage,funnel:aggregate(filteredFunnelRows()),salesforceInventory:state.capacity,top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
+  function assistantContext(){return {view:state.view,filters:{period:periodLabel(),campaignSource:state.source||"All active sources",campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},active_decision:state.activeDecision,workflow_stage:state.workflowStage,funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
   async function askAssistant(){
     const question=$("assistantQuestion").value.trim();if(!question)return;const out=$("assistantAnswer");out.hidden=false;out.textContent="Analyzing the current decision context...";
     try{const result=await fetchJson("/api/ask-claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,view:state.view,context:assistantContext()})});out.textContent=result.answer||result.summary||JSON.stringify(result,null,2)}catch(e){out.textContent=e.message}
@@ -1127,7 +1074,7 @@
       <div class="brief-section"><h3>Scope</h3><div class="decision-context">${activeFilterContext().map(item=>`<span>${esc(item)}</span>`).join("")}</div></div>
       <div class="brief-section"><h3>Assumptions</h3><p class="sub">${esc(assumptions.length?assumptions.join(" · "):"Baseline unchanged")}</p></div>
       <div class="brief-section"><h3>Evidence carried forward</h3><ul class="brief-evidence">${(decision?.evidence?.length?decision.evidence:["No evidence has been added yet."]).map(item=>`<li>${esc(item)}</li>`).join("")}</ul></div>
-      <div class="brief-section"><h3>Interpretation guardrail</h3><p class="sub">This is a directional scenario based on the selected live cohort. ${esc(coverageInfo(b).copy)} Confirm operational capacity and measurement ownership before implementation.</p></div>`;
+      <div class="brief-section"><h3>Interpretation guardrail</h3><p class="sub">This is a directional scenario based on the selected live cohort. ${esc(coverageInfo(b).copy)} Confirm operational readiness and measurement ownership before implementation.</p></div>`;
   }
   function openDecisionBrief(){
     if(!state.activeDecision)startScenario("baseline");
@@ -1244,8 +1191,6 @@
   $("ahjFilter").addEventListener("input",e=>{clearTimeout(ahjFilterTimer);ahjFilterTimer=setTimeout(()=>applyAhjFilter(e.target.value),300)});
   $("ahjFilter").addEventListener("change",e=>applyAhjFilter(e.target.value));
   $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;state.source="";state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]};loadData()});
-  $("insideCapacity").addEventListener("input",e=>{state.insideCapacity=Math.max(1,Number(e.target.value)||1);renderCapacity()});
-  $("outsideCapacity").addEventListener("input",e=>{state.outsideCapacity=Math.max(1,Number(e.target.value)||1);renderCapacity()});
   $("refreshButton").addEventListener("click",refreshData);$("resetFiltersButton").addEventListener("click",resetFilters);$("retryButton").addEventListener("click",refreshData);
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));

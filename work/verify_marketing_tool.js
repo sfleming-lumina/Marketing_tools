@@ -45,7 +45,8 @@ const reconciliation = {
   }]
 };
 const capacity = {
-  salesforceOpen:6472,activeCampaignOpen:4765,
+  governedOpen:3471,activeCampaignOpen:3104,
+  salesforceValidation:{validatedAt:"2026-07-30",openLeads:6472,activeCampaignOpenLeads:4765},
   ageBands:{"0To7":238,"8To30":561,"31To60":392,"61Plus":3574},
   sourceOptions:["EnergySage","SolarReviews","Jonathan Bissell Test"],
   insideLoads:[{rep:"Needs reassignment",activeLeads:2839},{rep:"Angelo Nauls",activeLeads:206}],
@@ -116,7 +117,7 @@ setImmediate(() => {
   assert(!output.includes("Jonathan Bissell") && !getElement("rollupFilter").innerHTML.includes("Jonathan Bissell"), "Excluded Jonathan Bissell data leaked into the dashboard.");
   assert(getElement("campaignTable").innerHTML.includes('data-label="Sets"') && getElement("campaignTable").innerHTML.includes('data-label="Runs"'), "Campaign stage volumes did not render.");
   assert(getElement("campaignTable").innerHTML.includes("no set") && getElement("campaignTable").innerHTML.includes("no run") && getElement("campaignTable").innerHTML.includes("no win"), "Campaign fallout detail did not render.");
-  assert(getElement("capacitySummary").innerHTML.includes("6,472") && getElement("capacitySummary").innerHTML.includes("4,765"), "Salesforce open-lead reconciliation did not render.");
+  assert(getElement("capacitySummary").innerHTML.includes("6,472") && getElement("capacitySummary").innerHTML.includes("3,471") && getElement("capacitySummary").innerHTML.includes("3,001"), "Salesforce-to-governed open-lead reconciliation did not render.");
   assert(getElement("insideCapacityRows").innerHTML.includes("Needs reassignment") && !getElement("sourceFilter").innerHTML.includes("Jonathan Bissell"), "Capacity reassignment bucket or active-source exclusion is incorrect.");
   assert(getElement("outsideCapacityRows").innerHTML.includes("1,235") && getElement("capacityNote").innerHTML.includes("advisory"), "Outside capacity load or advisory guardrail did not render.");
   assert(output.includes("Fairfax County") && output.includes("76.2"), "Geo opportunity ranking did not render.");
@@ -130,6 +131,8 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="ahjFilter"') && dashboardHtml.includes('id="cacTrend"'), "AHJ filtering or CAC visualization is missing.");
   assert(dashboardHtml.includes('<script src="/assets/echarts.min.js"></script>') && dashboardHtml.includes("renderEchartTrend"), "The local ECharts runtime or trend renderer is missing.");
   assert(dashboardHtml.includes('id="opportunityQuadrant"') && dashboardHtml.includes('id="funnelWaterfall"') && dashboardHtml.includes('id="campaignMultiples"'), "Decision quadrant, funnel waterfall, or campaign small multiples are missing.");
+  assert(dashboardHtml.includes('id="resetFiltersButton"') && dashboardHtml.includes("refresh-spin") && dashboardHtml.includes('id="refreshStatus"'), "Reset control or animated refresh feedback is missing.");
+  assert(dashboardHtml.includes('id="waterfallAction"') && dashboardHtml.includes("Improve speed-to-lead") && dashboardHtml.includes("Protect appointments"), "Actionable funnel-gap guidance is missing.");
   assert(dashboardHtml.includes(".decision-canvas-grid>.chart-card.compact .chart-host{height:100%;min-height:360px"), "The CAC/conversion scatter plot does not fill its decision-canvas column.");
   assert(dashboardHtml.includes("new ResizeObserver(()=>chart.resize())") && dashboardHtml.includes("renderCampaignMultiples(rows);renderOpportunityQuadrant(rows)"), "The scatter plot does not respond after campaign panels expand its container.");
   assert(dashboardHtml.includes("markLine") && dashboardHtml.includes("markArea") && dashboardHtml.includes("markPoint") && dashboardHtml.includes("aria:{enabled:true"), "Chart benchmarks, focus bands, annotations, or accessibility configuration are missing.");
@@ -144,6 +147,13 @@ setImmediate(() => {
   assert(getElement("insightList").innerHTML.includes("Efficient Search") && getElement("insightList").innerHTML.includes("Fairfax County"), "Multi-campaign/AHJ opportunity queue did not render.");
   assert(getElement("opportunityMatrix").innerHTML.includes("matrix-cell") && getElement("opportunityMatrix").innerHTML.includes("Fairfax County"), "Clickable Campaign/AHJ matrix did not render.");
   assert(dashboardHtml.includes('id="matrixMetric"') && dashboardHtml.includes('id="improvementTarget"'), "Metric switching or improvement-target modeling is missing.");
+  const sparseWaterfall = app.funnelWaterfallModel({leads:3,sets:0,runs:0,wins:0,benchmark:null});
+  assert(sparseWaterfall.steps.length === 6 && sparseWaterfall.steps.every(Number.isFinite), "Sparse funnel drill-down did not preserve every finite waterfall stage.");
+  assert(sparseWaterfall.actionTone === "neutral" && sparseWaterfall.actionCopy.includes("sample maturity"), "Sparse funnel drill-down did not explain insufficient benchmark evidence.");
+  const zeroStageWaterfall = app.funnelWaterfallModel({leads:20,sets:0,runs:0,wins:0,benchmark:.1});
+  assert(zeroStageWaterfall.steps[0] > 0 && zeroStageWaterfall.steps.every(Number.isFinite) && zeroStageWaterfall.actionTone === "warn", "Zero-stage drill-down collapsed despite having a usable benchmark.");
+  const benchmarkWaterfall = app.funnelWaterfallModel(aggregate);
+  assert(benchmarkWaterfall.steps.length === 6 && benchmarkWaterfall.labels.includes("Lead volume"), "Benchmark waterfall does not render the fixed decomposition sequence.");
   const decisions = app.decisionInsights();
   assert(decisions.length === 3 && decisions.every(item => item.question && item.view && item.evidence.length), "Command-center insights are not actionable decision objects.");
   assert(getElement("insightList").innerHTML.includes("Investigate") && dashboardHtml.includes("Discover → Investigate → Test → Implement"), "Guided decision workflow is not visible.");
@@ -166,9 +176,16 @@ setImmediate(() => {
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-capacity")&&url.includes("region=Operating+footprint")), "Salesforce capacity inventory was not requested.");
-  getElement("stateFilter").value = "Maryland";
-  getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
-  setImmediate(() => {
+  const funnelRequestsBeforeRefresh = global.requestedUrls.filter(url=>url.includes("marketing-funnel")).length;
+  const refreshPromise = app.refreshData();
+  assert(getElement("refreshButton").classList.contains("is-loading") && getElement("refreshButton").disabled, "Refresh control did not enter its animated loading state.");
+  refreshPromise.then(() => {
+    assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")).length > funnelRequestsBeforeRefresh, "Refresh did not issue a fresh funnel request.");
+    assert(global.requestedUrls.filter(url=>url.includes("marketing-reconciliation")).length >= 2, "Forced refresh reused cached reconciliation data.");
+    assert(!getElement("refreshButton").classList.contains("is-loading") && !getElement("refreshButton").disabled, "Refresh control did not leave its loading state.");
+    getElement("stateFilter").value = "Maryland";
+    getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
+    setImmediate(() => {
     assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=Maryland")), "Changing operating region did not reload funnel data.");
     assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=Maryland")), "Changing operating region did not reload geography data.");
     assert(getElement("campaignTable").innerHTML.includes("Efficient Search"), "Expanded campaign portfolio did not render.");
@@ -182,7 +199,16 @@ setImmediate(() => {
       assert(app.state.activeDecision.improvementTarget.metricKey === "leadToWinRate", "Selected opportunity did not carry its improvement target.");
       assert(getElement("improvementTarget").classList.contains("show") && getElement("improvementTarget").innerHTML.includes("Potential wins"), "Improvement target did not render in Funnel lab.");
       assert(app.decisionTrackingPayload().primaryMetric === "leadToWin", "Improvement target did not carry into automatic tracking.");
-      console.log("Marketing Intelligence workspace verified OK.");
+      setImmediate(() => {
+        app.state.source = "EnergySage"; app.state.rollup = "Co-op"; app.state.ahj = "Fairfax County"; app.state.region = "Maryland"; app.state.months = 3;
+        app.resetFilters().then(() => {
+          assert(app.state.months === 7 && app.state.region === "Operating footprint" && !app.state.source && !app.state.rollup && !app.state.ahj, "Reset did not restore the default filter state.");
+          assert(getElement("monthsFilter").value === "7" && getElement("stateFilter").value === "Operating footprint", "Reset did not restore visible filter controls.");
+          assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=7")&&url.includes("region=Operating+footprint")), "Reset did not reload the default portfolio.");
+          console.log("Marketing Intelligence workspace verified OK.");
+        });
+      });
     });
+  });
   });
 });

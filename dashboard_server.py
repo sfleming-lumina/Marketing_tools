@@ -87,6 +87,13 @@ OFFICIAL_REPORT_BENCHMARKS = {
     },
 }
 
+SALESFORCE_OPEN_LEAD_VALIDATION = {
+    "validatedAt": "2026-07-30",
+    "openLeads": 6472,
+    "activeCampaignOpenLeads": 4765,
+    "definition": "Production Salesforce Lead where IS_Open__c = TRUE and IsConverted = FALSE.",
+}
+
 
 def build_ahj_performance_query(months=6, campaign=None, market=None):
     conditions = ["campaign_name IS NOT NULL", "reporting_market_label IS NOT NULL"]
@@ -502,7 +509,7 @@ def build_marketing_capacity_query(source=None, region=None):
         ),
         summary AS (
             SELECT
-                (SELECT COUNT(*) FROM all_open) AS salesforceOpen,
+                (SELECT COUNT(*) FROM all_open) AS governedOpen,
                 COUNT(*) AS activeCampaignOpen,
                 COUNTIF(lead_age_days BETWEEN 0 AND 7) AS age0To7,
                 COUNTIF(lead_age_days BETWEEN 8 AND 30) AS age8To30,
@@ -552,8 +559,9 @@ def shape_marketing_capacity_row(row):
         ]
 
     return {
-        "salesforceOpen": row["salesforceOpen"] or 0,
+        "governedOpen": row["governedOpen"] or 0,
         "activeCampaignOpen": row["activeCampaignOpen"] or 0,
+        "salesforceValidation": SALESFORCE_OPEN_LEAD_VALIDATION,
         "ageBands": {
             "0To7": row["age0To7"] or 0,
             "8To30": row["age8To30"] or 0,
@@ -565,8 +573,8 @@ def shape_marketing_capacity_row(row):
         "outsideLoads": loads("outsideLoads"),
         "loadedAt": row["loadedAt"].isoformat() if row["loadedAt"] else None,
         "definitions": {
-            "salesforceOpen": "IS_Open__c = TRUE and IsConverted = FALSE.",
-            "activeCampaignOpen": "Salesforce open leads whose Active_Campaign__c is TRUE.",
+            "governedOpen": "Open, unconverted leads represented in the governed lead-funnel fact.",
+            "activeCampaignOpen": "Governed open leads whose active-campaign flag is TRUE.",
             "capacity": "Advisory scenario only; no Salesforce assignments are changed.",
             "insideAssignment": "The governed lead-funnel contract does not yet expose IS_Lead_Owner__c; inside assignments are labeled unavailable instead of inferred.",
         },
@@ -1344,8 +1352,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing capacity query failed: {exc}"}
         if not row:
             return HTTPStatus.OK, {
-                "salesforceOpen": 0,
+                "governedOpen": 0,
                 "activeCampaignOpen": 0,
+                "salesforceValidation": SALESFORCE_OPEN_LEAD_VALIDATION,
                 "ageBands": {"0To7": 0, "8To30": 0, "31To60": 0, "61Plus": 0},
                 "sourceOptions": [],
                 "insideLoads": [],

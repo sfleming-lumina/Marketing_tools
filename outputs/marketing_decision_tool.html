@@ -35,7 +35,8 @@
     select,.filter-input{appearance:none;border:1px solid var(--line-strong);background:var(--surface);padding:9px 34px 9px 11px;border-radius:10px;color:var(--ink);max-width:210px;box-shadow:0 1px 1px rgba(16,35,26,.025)}
     .select-wrap:after{content:"⌄";position:absolute;right:11px;top:7px;color:var(--muted);pointer-events:none}
     .select-wrap.ahj-filter:after{content:"⌕"}
-    .icon-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:var(--ink)}
+    .filter-actions{display:flex;align-items:center;gap:7px}.control-btn{height:38px;border:1px solid var(--line-strong);background:var(--surface);border-radius:10px;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:700;transition:background .16s,border-color .16s,box-shadow .16s,transform .16s}.control-btn:hover{border-color:#9dbba3;background:#f8fbf8}.control-btn:active{transform:translateY(1px)}.control-btn:disabled{cursor:wait;opacity:.68}.icon-btn{width:38px;padding:0}.reset-btn{padding:0 11px;font-size:11px}.control-icon{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.refresh-icon{transition:transform .2s ease}.icon-btn.is-loading .refresh-icon{animation:refresh-spin .75s linear infinite}.icon-btn.is-complete{border-color:#8bc898;background:var(--green-soft);color:var(--green-dark)}@keyframes refresh-spin{to{transform:rotate(360deg)}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .content{padding:32px 34px 64px;max-width:1680px;margin:auto}
     .view{display:none}.view.active{display:block}
     .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}.eyebrow{font-weight:750;color:var(--green-dark);font-size:11px;text-transform:uppercase;letter-spacing:.14em}
@@ -88,11 +89,14 @@
     @media(max-width:760px){
       .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}.filters .rollup-filter{display:none}.filters .select-wrap,.filters select,.filters .filter-input{width:100%;max-width:none}.filters .icon-btn{position:absolute;right:14px;top:11px}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:17px;border-radius:17px}.chart-card{min-height:370px}.chart-card canvas{height:270px}.health-row{grid-template-columns:92px 58px 1fr}.health-delta{grid-column:2/-1;text-align:left}.portfolio-table{overflow:visible;border:0}.portfolio-table table,.portfolio-table tbody{display:block;min-width:0}.portfolio-table thead{display:none}.portfolio-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:#fff}.portfolio-table td,.portfolio-table th{display:block;width:auto!important;padding:0;border:0;text-align:left!important}.portfolio-table td:first-child{grid-column:1/-1;padding-bottom:4px}.portfolio-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.portfolio-table td:first-child:before{display:none}.slider-row{grid-template-columns:105px 1fr 50px}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}.decision-workspace.show{grid-template-columns:1fr}.workflow-steps{overflow:auto;padding-bottom:2px}.decision-actions{flex-wrap:wrap}.evidence-strip,.scenario-output{align-items:flex-start;flex-direction:column}.brief-grid{grid-template-columns:1fr}.opportunity-row{grid-template-columns:1fr 1fr}.opportunity-main{grid-column:1/-1}.opportunity-row .insight-action{justify-self:end}.target-grid{grid-template-columns:1fr 1fr}.target-grid>div:first-child{grid-column:1/-1}
     }
+    @media(max-width:760px){.filters .icon-btn{position:static;right:auto;top:auto}.filters .filter-actions{grid-column:1/-1;justify-content:flex-end}}
+    @media(prefers-reduced-motion:reduce){.icon-btn.is-loading .refresh-icon{animation:none}}
     /* Lumina Intelligence analytical layer */
     .chart-card{position:relative;height:auto;min-height:398px;overflow:visible}
     .chart-host{width:100%;height:310px;display:block;margin-top:8px}
     .chart-host>canvas.chart-fallback{width:100%;height:300px;display:block;cursor:crosshair}
     .chart-card.compact{min-height:350px}.chart-card.compact .chart-host{height:265px}.chart-card.tall .chart-host{height:360px}
+    .waterfall-action{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:start;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);color:var(--muted);font-size:11px}.waterfall-action .action-mark{width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:var(--amber-soft);color:#8a5a00;font-weight:850}.waterfall-action.good .action-mark{background:var(--green-soft);color:var(--green-dark)}.waterfall-action.neutral .action-mark{background:#edf2ee;color:#647168}.waterfall-action strong{display:block;color:var(--ink);font-size:12px}.waterfall-action p{margin:2px 0 0}
     .command-momentum-card{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);align-items:center;gap:24px;min-height:0;padding:18px 22px}
     .command-momentum-card .section-head{margin:0}
     .command-momentum-card .section-head p{max-width:250px}
@@ -157,7 +161,10 @@
           <div class="select-wrap rollup-filter"><select id="rollupFilter" aria-label="Campaign rollup"><option value="">All rollups</option></select></div>
           <div class="select-wrap ahj-filter"><input class="filter-input" id="ahjFilter" list="ahjOptions" aria-label="County or operating market" placeholder="All counties / markets"><datalist id="ahjOptions"></datalist></div>
           <div class="select-wrap geo-filter"><select id="stateFilter" aria-label="Operating region"><option value="Operating footprint" selected>Operating footprint</option><option value="Maryland">Maryland</option><option value="Pennsylvania">Pennsylvania</option><option value="Outside operating footprint">Outside operating footprint</option><option value="Unresolved">Unresolved</option><option value="">All data</option></select></div>
-          <button class="icon-btn" id="refreshButton" aria-label="Refresh data">↻</button>
+          <div class="filter-actions">
+            <button class="control-btn reset-btn" id="resetFiltersButton" type="button"><svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Reset</span></button>
+            <button class="control-btn icon-btn" id="refreshButton" type="button" aria-label="Refresh data" title="Refresh data"><svg class="control-icon refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg><span class="sr-only" id="refreshStatus" aria-live="polite">Refresh data</span></button>
+          </div>
         </div>
       </div>
     </header>
@@ -213,7 +220,7 @@
           <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Conversion movement</div><h2>Which funnel stage is changing the outcome?</h2><p>Observed conversion, reference level, and the latest cohort focus range.</p></div></div><div class="chart-host" id="funnelTrend" role="img" aria-label="Monthly funnel conversion rates by stage with reference levels and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
           <div class="card chart-card"><div class="section-head"><div><div class="eyebrow">Acquisition economics</div><h2>Is customer acquisition cost moving in the right direction?</h2><p>Effective spend divided by cohort wins; interpret alongside spend coverage.</p></div><span class="badge" id="cacBadge">Evaluating</span></div><div class="chart-host" id="cacTrend" role="img" aria-label="Monthly customer acquisition cost per cohort win with reference line and hover details."><canvas class="chart-fallback"></canvas></div><div class="chart-tooltip" aria-hidden="true"></div></div>
         </div>
-        <div class="card chart-card tall section"><div class="section-head"><div><div class="eyebrow">Funnel gap decomposition</div><h2>What separates observed wins from benchmark potential?</h2><p>Volume and stage conversion contributions reveal the intervention with the greatest recoverable impact.</p></div><span class="badge" id="waterfallBadge">Portfolio</span></div><div class="chart-host" id="funnelWaterfall" role="img" aria-label="Waterfall showing expected wins and funnel-stage gaps through observed wins."></div></div>
+        <div class="card chart-card tall section"><div class="section-head"><div><div class="eyebrow">Funnel gap decomposition</div><h2>What separates observed wins from benchmark potential?</h2><p>Volume and stage conversion contributions reveal the intervention with the greatest recoverable impact.</p></div><span class="badge" id="waterfallBadge">Portfolio</span></div><div class="chart-host" id="funnelWaterfall" role="img" aria-label="Waterfall showing expected wins and funnel-stage gaps through observed wins."></div><div class="waterfall-action neutral" id="waterfallAction" aria-live="polite"></div></div>
         <div class="card portfolio-card section"><div class="section-head"><div><div class="eyebrow">Campaign portfolio</div><h2>Where performance compounds—or falls out</h2><p>Stage volume, conversion, aged fallout, CAC, and spend coverage are shown on one cohort-consistent row.</p></div></div><div class="table-wrap portfolio-table"><table><thead><tr><th>Campaign</th><th>Leads</th><th>Sets</th><th>Runs</th><th>Wins</th><th>L → S</th><th>S → R</th><th>R → W</th><th>Aged fallout</th><th>CAC</th><th>Coverage</th></tr></thead><tbody id="campaignTable"></tbody></table></div></div>
       </section>
 
@@ -260,12 +267,12 @@
     <div class="guide-intro">Use one repeatable workflow: discover what needs attention, investigate the evidence, test a potential decision, and create an implementation brief.</div>
     <div class="guide-section"><h3>Discover → Investigate → Test → Implement</h3><ul><li><strong>Discover:</strong> choose an insight from the Command center priority queue.</li><li><strong>Investigate:</strong> the active question and filters follow you into Funnel lab or Geo intelligence; add the evidence you want carried forward.</li><li><strong>Test:</strong> Scenario studio opens with a relevant starting preset while preserving the same campaign, county / market, region, and period.</li><li><strong>Implement:</strong> choose <strong>Track automatically</strong>. The tool captures the authenticated owner, decision, scope, baseline, assumptions, evidence, expected impact, and review window without forms or uploads.</li></ul></div>
     <div class="guide-section"><h3>Decision tracker</h3><p>Open <strong>Decisions</strong> from the sidebar to see every tracked choice. Current lakehouse cohorts are compared with each frozen baseline automatically. Spend changes are labeled as observed implementation signals; conversion improvements remain outcome signals unless an external execution system confirms the action.</p></div>
-    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign source</strong> options come only from Salesforce leads that are currently open, unconverted, and marked with an active campaign. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
+    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign source</strong> options come only from Salesforce leads that are currently open, unconverted, and marked with an active campaign. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily. <strong>Reset</strong> restores the seven-month operating-footprint view; <strong>Refresh</strong> forces fresh funnel, geography, capacity, catalog, and reconciliation requests.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
     <div class="guide-section"><h3>Command center</h3><p>The opportunity queue ranks campaign × county decisions by estimated win impact, confidence, actionability, and the active time window. The decision canvas plots CAC against lead-to-win conversion; bubble size represents lead volume and color represents the recommended decision type. Campaign panels add benchmark and confidence context. Hover any opportunity to highlight it everywhere, or click it to investigate the exact pair.</p></div>
-    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall decomposes benchmark win potential through each stage gap to observed wins. Positive bars are strengths to protect; negative bars are recoverable gaps.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
+    <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall always preserves the complete stage sequence. Positive bars are strengths to protect, negative bars are recoverable gaps, and the callout beneath the chart names the highest-value action. Neutral bars mean the slice needs more mature benchmark evidence.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
-    <div class="guide-section"><h3>Sales capacity guardrail</h3><p><strong>Salesforce open</strong> uses the governed lakehouse equivalent of <code>IS_Open__c = TRUE</code> and excludes converted leads. <strong>Active-campaign open</strong> further requires the governed active-campaign flag. Adjust inside or outside capacity per rep to test overload and rerouting pressure; the tool never changes Salesforce assignments. Automation owners are grouped as unassigned, and excluded legacy assignments remain in inventory as <strong>Needs reassignment</strong> so the total is not artificially lowered. The current governed contract exposes the assigned outside rep but not the inside-owner field, so inside assignment is explicitly labeled unavailable rather than inferred.</p></div>
+    <div class="guide-section"><h3>Sales capacity guardrail</h3><p>The Salesforce validation tile is a dated production check using <code>IS_Open__c = TRUE</code> and <code>IsConverted = FALSE</code>. The governed lakehouse tiles and campaign-source options use the accessible lead-funnel fact. A visible coverage gap means capacity is directional until the upstream model publishes every open lead. Adjust inside or outside capacity per rep to test overload and rerouting pressure; the tool never changes Salesforce assignments. Automation owners are grouped as unassigned, and excluded legacy assignments remain in inventory as <strong>Needs reassignment</strong> so totals are not artificially lowered. The current governed contract exposes the assigned outside rep but not the inside-owner field, so inside assignment is explicitly labeled unavailable rather than inferred.</p></div>
     <div class="guide-section"><h3>Source semantics</h3><p>Salesforce current open inventory is intentionally shown beside—not forced to equal—the cohort metric <strong>open, no set, 30+ days</strong>. The latter is only an aged subset within selected lead-created cohorts. Salesforce reports such as SolarReviews Leads by County can also use event/status-update dates and formulas like Converted ÷ member rows, so use Data quality to understand definition differences before reconciling totals.</p></div>
   </div>
 </aside>
@@ -396,8 +403,16 @@
     if(state.region)q.set("region",state.region);
     return q.toString();
   }
-  async function loadData(){
-    if(state.loading)return; state.loading=true; state.error=null; renderError();
+  function setLoadingControls(loading,completed=false){
+    const refresh=$("refreshButton"),reset=$("resetFiltersButton"),status=$("refreshStatus");
+    refresh.disabled=loading;reset.disabled=loading;refresh.classList.toggle("is-loading",loading);refresh.classList.toggle("is-complete",completed&&!loading);
+    refresh.setAttribute("aria-busy",String(loading));refresh.setAttribute("aria-label",loading?"Refreshing data":"Refresh data");refresh.title=loading?"Refreshing…":completed?"Data refreshed":"Refresh data";
+    status.textContent=loading?"Refreshing data":completed?"Data refreshed":"Refresh data";
+  }
+  async function loadData({force=false}={}){
+    if(state.loading)return false;
+    if(force){state.reconciliation=null;state.capacity=null;state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]}}
+    state.loading=true;state.error=null;setLoadingControls(true);renderError();
     try{
       const needsCatalog=!state.filterCatalog.campaigns.length&&!state.filterCatalog.ahjs.length;
       const [funnel,geo,projection,reconciliation,freshness,catalog,capacity]=await Promise.all([
@@ -414,8 +429,18 @@
       if(capacity)state.filterCatalog.sources=(capacity.sourceOptions||[]).filter(value=>value&&!isExcludedIdentity(value));
       populateFilters(); renderAll();
       if(freshness){$("freshnessLabel").textContent=`${freshness.objects_found}/${freshness.objects_checked} sources online`}
-    }catch(error){state.error=error.message;renderError();renderAll()}
-    finally{state.loading=false}
+      return true;
+    }catch(error){state.error=error.message;renderError();renderAll();return false}
+    finally{state.loading=false;setLoadingControls(false,!state.error);if(!state.error)setTimeout(()=>setLoadingControls(false,false),1800)}
+  }
+  function refreshData(){return loadData({force:true})}
+  function resetFilters(){
+    if(state.loading)return false;
+    Object.assign(state,{months:7,window:"",source:"",campaign:"",rollup:"",ahj:"",region:"Operating footprint",lens:"auto",opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:""});
+    state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]};
+    $("monthsFilter").value="7";$("sourceFilter").value="";$("rollupFilter").value="";$("ahjFilter").value="";$("stateFilter").value="Operating footprint";$("opportunityTypeFilter").value="All";$("matrixMetric").value="leadToWinRate";
+    $("lensToggle").querySelectorAll("button").forEach(button=>button.classList.toggle("active",button.dataset.lens==="auto"));
+    return loadData({force:true});
   }
   function renderError(){
     $("errorBanner").classList.toggle("show",Boolean(state.error)); $("errorText").textContent=state.error||"";
@@ -619,19 +644,45 @@
     renderCampaignMultiples(rows);renderOpportunityQuadrant(rows);
     requestAnimationFrame(()=>chartInstance($("opportunityQuadrant"))?.resize());
   }
+  const waterfallStageMeta=[
+    {label:"Benchmark potential",short:"Benchmark",action:"Use the cohort benchmark as the decision anchor."},
+    {label:"Lead volume",short:"Hold volume",action:"Hold lead volume constant while isolating conversion; test allocation only after conversion is stable."},
+    {label:"Lead → set gap",short:"Improve setting",action:"Improve speed-to-lead, qualification, and setter follow-up."},
+    {label:"Set → run gap",short:"Protect appointments",action:"Reduce cancellations and strengthen appointment confirmation."},
+    {label:"Run → win gap",short:"Coach close",action:"Coach consultation quality, offer fit, and post-appointment follow-up."},
+    {label:"Observed wins",short:"Track wins",action:"Track realized residential wins against the saved decision baseline."}
+  ];
+  const finiteNumber=value=>Number.isFinite(Number(value))?Number(value):0;
+  function funnelWaterfallModel(t,selected=null){
+    const leads=finiteNumber(selected?.leads??t.leads),sets=finiteNumber(selected?.row?.sets??t.sets),runs=finiteNumber(selected?.row?.runs??t.runs),wins=finiteNumber(selected?.wins??t.wins);
+    const actual={setRate:leads?sets/leads:0,runRate:sets?runs/sets:0,winRate:runs?wins/runs:0};
+    const actualProduct=actual.setRate*actual.runRate*actual.winRate;
+    const cohortBenchmark=finiteNumber(selected?.row?.benchmarkLeadToWinRate??t.benchmark);
+    const hasBenchmark=leads>0&&cohortBenchmark>0;
+    const scale=hasBenchmark&&actualProduct>0?Math.pow(cohortBenchmark/actualProduct,1/3):1;
+    const balancedRate=hasBenchmark?Math.pow(cohortBenchmark,1/3):0;
+    const target=actualProduct>0?{setRate:Math.min(1,Math.max(0,actual.setRate*scale)),runRate:Math.min(1,Math.max(0,actual.runRate*scale)),winRate:Math.min(1,Math.max(0,actual.winRate*scale))}:{setRate:balancedRate,runRate:balancedRate,winRate:balancedRate};
+    const expected=hasBenchmark?leads*target.setRate*target.runRate*target.winRate:wins;
+    const afterVolume=expected,afterSet=leads*actual.setRate*target.runRate*target.winRate,afterRun=leads*actual.setRate*actual.runRate*target.winRate;
+    const steps=[expected,afterVolume-expected,afterSet-afterVolume,afterRun-afterSet,wins-afterRun,wins].map(finiteNumber);
+    const gaps=steps.slice(1,-1),negativeIndexes=gaps.map((value,index)=>({value,index:index+1})).filter(item=>item.value<-.05).sort((a,b)=>a.value-b.value);
+    let focusIndex=negativeIndexes[0]?.index;
+    if(focusIndex==null){const material=gaps.map((value,index)=>({value,index:index+1})).filter(item=>Math.abs(item.value)>.05).sort((a,b)=>Math.abs(b.value)-Math.abs(a.value));focusIndex=material[0]?.index??(hasBenchmark?5:2)}
+    const focus=waterfallStageMeta[focusIndex],focusValue=steps[focusIndex],actionTone=!hasBenchmark?"neutral":focusValue<-.05?"warn":"good";
+    const actionTitle=!hasBenchmark?"Build decision-grade benchmark evidence":focusValue<-.05?`${focus.short}: recover ${fmtNum(Math.abs(focusValue))} wins`:`${focus.short}: protect the current advantage`;
+    const actionCopy=!hasBenchmark?"This slice has no usable mature-cohort benchmark. The full stage sequence remains visible, but the team should investigate sample maturity before changing allocation.":focus.action;
+    return {steps,labels:waterfallStageMeta.map(item=>item.label),shortLabels:waterfallStageMeta.map(item=>item.short),actions:waterfallStageMeta.map(item=>item.action),hasBenchmark,actionTone,actionTitle,actionCopy};
+  }
   function renderFunnelWaterfall(){
     const element=$("funnelWaterfall"),chart=chartInstance(element),selected=opportunityRows().find(row=>row.key===state.selectedOpportunityKey);
-    const t=aggregate(filteredFunnelRows()),b=selected?.benchmarks||opportunityBenchmarks(filteredGeoRows());
-    const leads=selected?.leads??t.leads,sets=selected?.row?.sets??t.sets,runs=selected?.row?.runs??t.runs,wins=selected?.wins??t.wins;
-    const expected=leads*(b.setRate||0)*(b.runRateFromSets||0)*(b.winRateFromRuns||0);
-    const afterSet=sets*(b.runRateFromSets||0)*(b.winRateFromRuns||0),afterRun=runs*(b.winRateFromRuns||0);
-    const steps=[expected,afterSet-expected,afterRun-afterSet,wins-afterRun,wins],labels=["Benchmark potential","Lead → set gap","Set → run gap","Run → win gap","Observed wins"];
+    const model=funnelWaterfallModel(aggregate(filteredFunnelRows()),selected),{steps,labels}=model;
     $("waterfallBadge").textContent=selected?`${selected.campaign} × ${selected.ahj}`:"Selected portfolio";
-    if(!chart){if(element)element.innerHTML=`<div class="empty">Observed ${fmtNum(wins)} wins versus ${fmtNum(expected)} benchmark potential.</div>`;return}
+    $("waterfallAction").className=`waterfall-action ${model.actionTone}`;$("waterfallAction").innerHTML=`<span class="action-mark">${model.actionTone==="good"?"✓":model.actionTone==="warn"?"!":"i"}</span><div><strong>${esc(model.actionTitle)}</strong><p>${esc(model.actionCopy)}</p></div>`;
+    if(!chart){if(element)element.innerHTML=`<div class="empty">Observed ${fmtNum(steps[steps.length-1])} wins versus ${fmtNum(steps[0])} benchmark potential.</div>`;return}
     chart.resize();const bases=[],values=[],colors=[];let running=0;
-    steps.forEach((value,index)=>{if(index===0||index===steps.length-1){bases.push(0);values.push(Math.max(0,value));running=value;colors.push(index===0?"#3478b8":"#21864a")}else{const next=running+value;bases.push(Math.max(0,Math.min(running,next)));values.push(Math.abs(value));running=next;colors.push(value>=0?"#21864a":"#d75b47")}});
-    chart.setOption({...baseChartOption(),tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"},formatter:params=>{const item=params.find(p=>p.seriesName==="Contribution");const index=item?.dataIndex??0;return `<strong>${labels[index]}</strong><br>${index===0||index===labels.length-1?fmtNum(steps[index]):`${steps[index]>=0?"+":""}${fmtNum(steps[index])} wins`}`;}},
-      grid:{left:62,right:24,top:24,bottom:62},xAxis:{type:"category",data:labels,axisLabel:{interval:0,fontSize:10,color:"#5f6d64"},axisTick:{show:false},axisLine:{lineStyle:{color:"#cbd5cc"}}},
+    steps.forEach((value,index)=>{if(index===0||index===steps.length-1){bases.push(0);values.push(Math.max(0,value));running=value;colors.push(index===0?"#3478b8":"#21864a")}else{const next=running+value;bases.push(Math.max(0,Math.min(running,next)));values.push(Math.max(Math.abs(value),value===0?.001:0));running=next;colors.push(!model.hasBenchmark?"#91a097":value>=0?"#21864a":"#d75b47")}});
+    chart.setOption({...baseChartOption(),tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"},formatter:params=>{const item=params.find(p=>p.seriesName==="Contribution");const index=item?.dataIndex??0;const value=index===0||index===labels.length-1?`${fmtNum(steps[index])} wins`:`${steps[index]>=0?"+":""}${fmtNum(steps[index])} wins`;return `<strong>${labels[index]}</strong><br>${value}<br><span style="color:#c7d5cc">${esc(model.hasBenchmark?model.actions[index]:"Insufficient benchmark evidence—investigate cohort maturity.")}</span>`;}},
+      grid:{left:62,right:24,top:24,bottom:72},xAxis:{type:"category",data:model.shortLabels,axisLabel:{interval:0,fontSize:10,color:"#5f6d64",width:86,overflow:"break",lineHeight:13},axisTick:{show:false},axisLine:{lineStyle:{color:"#cbd5cc"}}},
       yAxis:{type:"value",name:"Cohort wins",nameLocation:"middle",nameGap:44,splitLine:{lineStyle:{color:"#e7ebe5"}},axisLine:{show:false}},
       series:[{name:"Base",type:"bar",stack:"total",silent:true,itemStyle:{color:"transparent"},emphasis:{disabled:true},data:bases},{name:"Contribution",type:"bar",stack:"total",barMaxWidth:62,data:values.map((value,index)=>({value,itemStyle:{color:colors[index],borderRadius:[6,6,0,0]}})),label:{show:true,position:"top",color:"#33443a",fontWeight:700,formatter:params=>indexSafeLabel(params.dataIndex,steps)}}]
     },true);
@@ -757,22 +808,23 @@
       $("insideCapacityRows").innerHTML=$("outsideCapacityRows").innerHTML='<div class="empty">Salesforce inventory is unavailable.</div>';
       return;
     }
-    const gap=Math.max(0,Number(data.salesforceOpen||0)-t.openNoSet30Plus),aged=Number(data.ageBands?.["61Plus"]||0);
+    const validatedOpen=Number(data.salesforceValidation?.openLeads||0),validatedActive=Number(data.salesforceValidation?.activeCampaignOpenLeads||0);
+    const governedOpen=Number(data.governedOpen||0),inventoryGap=Math.max(0,validatedOpen-governedOpen),aged=Number(data.ageBands?.["61Plus"]||0);
     const nonHumanBuckets=["Automation / unassigned","Needs reassignment","Inside assignment unavailable"];
     const insideOver=(data.insideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.insideCapacity).length;
     const outsideOver=(data.outsideLoads||[]).filter(r=>!nonHumanBuckets.includes(r.rep)&&r.activeLeads>state.outsideCapacity).length;
     const needsRoute=[...(data.insideLoads||[]),...(data.outsideLoads||[])].filter(r=>nonHumanBuckets.includes(r.rep)).reduce((total,row)=>total+Number(row.activeLeads||0),0);
     const hasPressure=insideOver+outsideOver>0||needsRoute>0;
-    $("capacityBadge").className=`badge ${hasPressure?"bad":"good"}`;$("capacityBadge").textContent=hasPressure?"Capacity attention":"Within planning limits";
+    $("capacityBadge").className=`badge ${inventoryGap?"bad":hasPressure?"warn":"good"}`;$("capacityBadge").textContent=inventoryGap?"Source coverage gap":hasPressure?"Capacity attention":"Within planning limits";
     $("capacitySummary").innerHTML=[
-      `<div class="capacity-stat"><small>Salesforce open</small><strong>${fmtNum(data.salesforceOpen)}</strong><p>Current open, unconverted inventory</p></div>`,
-      `<div class="capacity-stat"><small>Active-campaign open</small><strong>${fmtNum(data.activeCampaignOpen)}</strong><p>${esc(state.source||"All active campaign sources")}</p></div>`,
-      `<div class="capacity-stat"><small>Cohort open, no set 30+</small><strong>${fmtNum(t.openNoSet30Plus)}</strong><p>Aged subset—not total open inventory</p></div>`,
-      `<div class="capacity-stat"><small>Active leads 61+ days</small><strong>${fmtNum(aged)}</strong><p>${fmtNum(gap)} Salesforce open leads outside this cohort subset</p></div>`
+      `<div class="capacity-stat"><small>Salesforce validated open</small><strong>${fmtNum(validatedOpen)}</strong><p>Production check · ${esc(data.salesforceValidation?.validatedAt||"")}</p></div>`,
+      `<div class="capacity-stat"><small>Governed lakehouse open</small><strong>${fmtNum(governedOpen)}</strong><p>${fmtNum(inventoryGap)} open leads missing from this fact</p></div>`,
+      `<div class="capacity-stat"><small>Governed active-campaign open</small><strong>${fmtNum(data.activeCampaignOpen)}</strong><p>${fmtNum(Math.max(0,validatedActive-Number(data.activeCampaignOpen||0)))} below Salesforce validation</p></div>`,
+      `<div class="capacity-stat"><small>Governed active leads 61+</small><strong>${fmtNum(aged)}</strong><p>${fmtNum(t.openNoSet30Plus)} recent-cohort leads open without a set 30+</p></div>`
     ].join("");
     renderCapacityRows(data.insideLoads,state.insideCapacity,$("insideCapacityRows"));
     renderCapacityRows(data.outsideLoads,state.outsideCapacity,$("outsideCapacityRows"));
-    $("capacityNote").innerHTML=`<strong>${insideOver} inside and ${outsideOver} outside rep${outsideOver===1?"":"s"} exceed the current planning limits.</strong> ${needsRoute?`${fmtNum(needsRoute)} assignments are in automation, unassigned, reassignment, or governance-gap buckets. `:""}Adjust capacity per rep to test load; this scenario is advisory and never writes to Salesforce.`;
+    $("capacityNote").innerHTML=`${inventoryGap?`<strong>Coverage alert: the governed fact is missing ${fmtNum(inventoryGap)} of the ${fmtNum(validatedOpen)} Salesforce-validated open leads.</strong> Capacity and source options currently describe the governed subset. `:`<strong>${insideOver} inside and ${outsideOver} outside rep${outsideOver===1?"":"s"} exceed the current planning limits.</strong> `}${needsRoute?`${fmtNum(needsRoute)} assignments are in automation, unassigned, reassignment, or governance-gap buckets. `:""}Adjust capacity per rep to test load; this scenario is advisory and never writes to Salesforce.`;
   }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
@@ -1194,12 +1246,12 @@
   $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;state.source="";state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("insideCapacity").addEventListener("input",e=>{state.insideCapacity=Math.max(1,Number(e.target.value)||1);renderCapacity()});
   $("outsideCapacity").addEventListener("input",e=>{state.outsideCapacity=Math.max(1,Number(e.target.value)||1);renderCapacity()});
-  $("refreshButton").addEventListener("click",loadData);$("retryButton").addEventListener("click",loadData);
+  $("refreshButton").addEventListener("click",refreshData);$("resetFiltersButton").addEventListener("click",resetFilters);$("retryButton").addEventListener("click",refreshData);
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("saveNote").addEventListener("click",saveNote);$("askAssistant").addEventListener("click",askAssistant);
   window.addEventListener("resize",()=>{echartInstances.forEach?.(chart=>chart.resize());if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
-  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderAll,loadData};
+  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,funnelWaterfallModel,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderAll,loadData,refreshData,resetFilters};
   renderScenario(); loadData();
 })();
 </script>

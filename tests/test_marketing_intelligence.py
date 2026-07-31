@@ -135,8 +135,8 @@ def test_capacity_query_uses_current_active_salesforce_inventory():
 
 def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
     shaped = shape_marketing_capacity_row({
-        "salesforceOpen": 6472,
-        "activeCampaignOpen": 4765,
+        "governedOpen": 3471,
+        "activeCampaignOpen": 3104,
         "age0To7": 238,
         "age8To30": 561,
         "age31To60": 392,
@@ -149,8 +149,9 @@ def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
         "outsideLoads": [{"rep": "Kelly Stelmack", "activeLeads": 1235}],
         "loadedAt": datetime(2026, 7, 30, tzinfo=timezone.utc),
     })
-    assert shaped["salesforceOpen"] == 6472
-    assert shaped["activeCampaignOpen"] == 4765
+    assert shaped["governedOpen"] == 3471
+    assert shaped["activeCampaignOpen"] == 3104
+    assert shaped["salesforceValidation"]["openLeads"] == 6472
     assert shaped["ageBands"]["61Plus"] == 3574
     assert shaped["insideLoads"][0]["rep"] == "Needs reassignment"
     assert "Jonathan Bissell" not in str(shaped)
@@ -380,8 +381,8 @@ def test_filter_options_handler_returns_arrays_and_region_binding(monkeypatch):
 
 def test_capacity_handler_binds_source_and_returns_current_inventory(monkeypatch):
     fake = FakeClient([{
-        "salesforceOpen": 4070,
-        "activeCampaignOpen": 4070,
+        "governedOpen": 3000,
+        "activeCampaignOpen": 2500,
         "age0To7": 100,
         "age8To30": 400,
         "age31To60": 300,
@@ -398,7 +399,8 @@ def test_capacity_handler_binds_source_and_returns_current_inventory(monkeypatch
         "region": ["Operating footprint"],
     })
     assert status == HTTPStatus.OK
-    assert payload["activeCampaignOpen"] == 4070
+    assert payload["activeCampaignOpen"] == 2500
+    assert payload["salesforceValidation"]["activeCampaignOpenLeads"] == 4765
     assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["source"]
 
 

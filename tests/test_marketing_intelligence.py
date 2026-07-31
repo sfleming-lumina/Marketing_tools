@@ -1,7 +1,9 @@
 import sys
 from datetime import date, datetime, timezone
 from http import HTTPStatus
+from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -402,6 +404,17 @@ def test_capacity_handler_binds_source_and_returns_current_inventory(monkeypatch
     assert payload["activeCampaignOpen"] == 2500
     assert payload["salesforceValidation"]["activeCampaignOpenLeads"] == 4765
     assert [parameter.name for parameter in fake.last_job_config.query_parameters] == ["source"]
+
+
+def test_dashboard_shell_disables_browser_caching():
+    handler = object.__new__(DashboardHandler)
+    handler.path = "/marketing_decision_tool.html"
+    headers = []
+    handler.send_header = lambda name, value: headers.append((name, value))
+    with patch.object(SimpleHTTPRequestHandler, "end_headers"):
+        handler.end_headers()
+    assert ("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0") in headers
+    assert ("Pragma", "no-cache") in headers
 
 
 def test_marketing_query_errors_are_returned_as_bad_gateway(monkeypatch):

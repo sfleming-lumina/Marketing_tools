@@ -44,15 +44,6 @@ const reconciliation = {
     spendParityStatus:"Review", spendCompleteLeadShare:1
   }]
 };
-const sourceInventory = {
-  governedOpen:3471,activeCampaignOpen:3104,
-  salesforceValidation:{validatedAt:"2026-07-30",openLeads:6472,activeCampaignOpenLeads:4765},
-  ageBands:{"0To7":238,"8To30":561,"31To60":392,"61Plus":3574},
-  sourceOptions:["EnergySage","SolarReviews","Jonathan Bissell Test"],
-  insideLoads:[{rep:"Needs reassignment",activeLeads:2839},{rep:"Angelo Nauls",activeLeads:206}],
-  outsideLoads:[{rep:"Kelly Stelmack",activeLeads:1235}],
-  definitions:{capacity:"Advisory scenario only; no Salesforce assignments are changed."}
-};
 
 global.fetch = (url, options = {}) => {
   const path = String(url);
@@ -80,7 +71,6 @@ global.fetch = (url, options = {}) => {
   if (path.includes("marketing-funnel")) payload = apiFunnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
   else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
-  else if (path.includes("marketing-capacity")) payload = sourceInventory;
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
   else if (path.includes("marketing-decisions")) payload = [];
@@ -118,7 +108,7 @@ setImmediate(() => {
   assert(getElement("campaignTable").innerHTML.includes('data-label="Sets"') && getElement("campaignTable").innerHTML.includes('data-label="Runs"'), "Campaign stage volumes did not render.");
   assert(getElement("campaignTable").innerHTML.includes("no set") && getElement("campaignTable").innerHTML.includes("no run") && getElement("campaignTable").innerHTML.includes("no win"), "Campaign fallout detail did not render.");
   assert(!dashboardHtml.includes("Sales capacity guardrail") && !dashboardHtml.includes('id="capacitySummary"') && !dashboardHtml.includes('id="insideCapacity"'), "Sales capacity guardrail remains in the marketing workspace.");
-  assert(getElement("sourceFilter").innerHTML.includes("SolarReviews") && !getElement("sourceFilter").innerHTML.includes("Jonathan Bissell"), "Active-source options were not preserved after removing the capacity surface.");
+  assert(getElement("campaignFilter").innerHTML.includes("Efficient Search") && getElement("campaignFilter").innerHTML.includes("All active campaigns") && !getElement("campaignFilter").innerHTML.includes("Jonathan Bissell"), "Active-campaign options were not restored correctly.");
   assert(output.includes("Fairfax County") && output.includes("76.2"), "Geo opportunity ranking did not render.");
   assert(getElement("qualityMetrics").innerHTML.includes("Marketing Report 2026_Official.xlsx"), "Workbook reconciliation did not render.");
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
@@ -174,7 +164,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="decisionsDrawer"') && dashboardHtml.includes("No uploads or status entry required"), "Automatic decision tracker surface is missing.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
-  assert(global.requestedUrls.some(url=>url.includes("marketing-capacity")&&url.includes("region=Operating+footprint")), "Active-lead source inventory was not requested.");
+  assert(!global.requestedUrls.some(url=>url.includes("marketing-capacity")), "Removed capacity inventory is still requested by the marketing workspace.");
   const funnelRequestsBeforeRefresh = global.requestedUrls.filter(url=>url.includes("marketing-funnel")).length;
   const refreshPromise = app.refreshData();
   assert(getElement("refreshButton").classList.contains("is-loading") && getElement("refreshButton").disabled, "Refresh control did not enter its animated loading state.");
@@ -199,9 +189,9 @@ setImmediate(() => {
       assert(getElement("improvementTarget").classList.contains("show") && getElement("improvementTarget").innerHTML.includes("Potential wins"), "Improvement target did not render in Funnel lab.");
       assert(app.decisionTrackingPayload().primaryMetric === "leadToWin", "Improvement target did not carry into automatic tracking.");
       setImmediate(() => {
-        app.state.source = "EnergySage"; app.state.rollup = "Co-op"; app.state.ahj = "Fairfax County"; app.state.region = "Maryland"; app.state.months = 3;
+        app.state.campaign = "EnergySage"; app.state.rollup = "Co-op"; app.state.ahj = "Fairfax County"; app.state.region = "Maryland"; app.state.months = 3;
         app.resetFilters().then(() => {
-          assert(app.state.months === 7 && app.state.region === "Operating footprint" && !app.state.source && !app.state.rollup && !app.state.ahj, "Reset did not restore the default filter state.");
+          assert(app.state.months === 7 && app.state.region === "Operating footprint" && !app.state.campaign && !app.state.rollup && !app.state.ahj, "Reset did not restore the default filter state.");
           assert(getElement("monthsFilter").value === "7" && getElement("stateFilter").value === "Operating footprint", "Reset did not restore visible filter controls.");
           assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=7")&&url.includes("region=Operating+footprint")), "Reset did not reload the default portfolio.");
           console.log("Marketing Intelligence workspace verified OK.");

@@ -121,7 +121,7 @@
     .opportunity-row.is-selected{border-color:var(--green);background:linear-gradient(90deg,var(--green-soft),var(--surface) 38%);box-shadow:inset 3px 0 0 var(--green)}
     .matrix-cell.is-hovered{box-shadow:inset 0 0 0 2px currentColor}.matrix-cell.is-selected{box-shadow:inset 0 0 0 3px var(--forest),0 0 0 2px #fff}
     .primary{box-shadow:0 4px 12px rgba(57,181,74,.18)}.primary:hover{background:#44c154}.secondary{border-color:var(--line-strong);background:var(--surface)}
-    .filters #monthsFilter{max-width:122px}.filters #sourceFilter{max-width:180px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
+    .filters #monthsFilter{max-width:122px}.filters #campaignFilter{max-width:180px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
     @media(max-width:1360px) and (min-width:761px){.crumb{display:none}.filters{margin-left:0;width:100%;flex-wrap:nowrap}.filters .rollup-filter{display:none}}
     @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:360px;min-height:360px}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:900px){.command-momentum-card{grid-template-columns:1fr;gap:8px}.command-momentum-card .section-head p{max-width:none}.command-momentum-card .chart-host{height:290px}}
@@ -154,7 +154,7 @@
         <div class="crumb">Marketing Intelligence / <strong id="crumbTitle">Command center</strong></div>
         <div class="filters">
           <div class="select-wrap"><select id="monthsFilter" aria-label="Trailing period"><option value="30d">Last 30 days</option><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
-          <div class="select-wrap source-filter"><select id="sourceFilter" aria-label="Campaign source" title="Only sources with currently open, active-campaign Salesforce leads"><option value="">All active sources</option></select></div>
+          <div class="select-wrap campaign-filter"><select id="campaignFilter" aria-label="Campaign"><option value="">All active campaigns</option></select></div>
           <div class="select-wrap rollup-filter"><select id="rollupFilter" aria-label="Campaign rollup"><option value="">All rollups</option></select></div>
           <div class="select-wrap ahj-filter"><input class="filter-input" id="ahjFilter" list="ahjOptions" aria-label="County or operating market" placeholder="All counties / markets"><datalist id="ahjOptions"></datalist></div>
           <div class="select-wrap geo-filter"><select id="stateFilter" aria-label="Operating region"><option value="Operating footprint" selected>Operating footprint</option><option value="Maryland">Maryland</option><option value="Pennsylvania">Pennsylvania</option><option value="Outside operating footprint">Outside operating footprint</option><option value="Unresolved">Unresolved</option><option value="">All data</option></select></div>
@@ -255,12 +255,11 @@
     <div class="guide-intro">Use one repeatable workflow: discover what needs attention, investigate the evidence, test a potential decision, and create an implementation brief.</div>
     <div class="guide-section"><h3>Discover → Investigate → Test → Implement</h3><ul><li><strong>Discover:</strong> choose an insight from the Command center priority queue.</li><li><strong>Investigate:</strong> the active question and filters follow you into Funnel lab or Geo intelligence; add the evidence you want carried forward.</li><li><strong>Test:</strong> Scenario studio opens with a relevant starting preset while preserving the same campaign, county / market, region, and period.</li><li><strong>Implement:</strong> choose <strong>Track automatically</strong>. The tool captures the authenticated owner, decision, scope, baseline, assumptions, evidence, expected impact, and review window without forms or uploads.</li></ul></div>
     <div class="guide-section"><h3>Decision tracker</h3><p>Open <strong>Decisions</strong> from the sidebar to see every tracked choice. Current lakehouse cohorts are compared with each frozen baseline automatically. Spend changes are labeled as observed implementation signals; conversion improvements remain outcome signals unless an external execution system confirms the action.</p></div>
-    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign source</strong> options come only from Salesforce leads that are currently open, unconverted, and marked with an active campaign. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily. <strong>Reset</strong> restores the seven-month operating-footprint view; <strong>Refresh</strong> forces fresh funnel, geography, source-catalog, and reconciliation requests.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
+    <div class="guide-section"><h3>Filters and operating regions</h3><p><strong>Campaign</strong> lists campaigns with cohort activity in the selected period and operating region. Campaign and county / market selections re-query the lakehouse so the funnel, trends, CAC, geography, scenarios, and assistant context all use the same exact slice. County grain deliberately recombines lead-attribution rows with their downstream AHJs; resolved AHJ examples remain available in each cohort for investigation. <strong>Last 30 days</strong> uses the current weekly cohort plus four prior weekly cohort starts because the governed runtime is weekly/monthly, not daily. <strong>Reset</strong> restores the seven-month operating-footprint view; <strong>Refresh</strong> forces fresh funnel, geography, campaign-catalog, and reconciliation requests.</p><dl class="guide-key"><dt>Maryland</dt><dd>Operational <strong>MD</strong> region, including MD/DC/VA activity assigned to MD Ops.</dd><dt>Pennsylvania</dt><dd>Operational <strong>PA</strong> region, including Delaware activity assigned to PA Ops.</dd><dt>Outside</dt><dd>Records whose resolved operational region is neither MD nor PA.</dd><dt>Unresolved</dt><dd>Records with no usable Ops Region or state fallback.</dd></dl></div>
     <div class="guide-section"><h3>Command center</h3><p>The opportunity queue ranks campaign × county decisions by estimated win impact, confidence, actionability, and the active time window. The decision canvas plots CAC against lead-to-win conversion; bubble size represents lead volume and color represents the recommended decision type. Campaign panels add benchmark and confidence context. Hover any opportunity to highlight it everywhere, or click it to investigate the exact pair.</p></div>
     <div class="guide-section"><h3>Funnel lab</h3><ul><li><strong>Green</strong> marks improving or efficient performance, <strong>amber</strong> indicates watch conditions, and <strong>red</strong> identifies intervention areas.</li><li><strong>Auto</strong> switches to lead-first when spend coverage is incomplete.</li><li><strong>Spend</strong> shows attributable spend even when coverage warrants caution.</li><li><strong>Lead cohort</strong> follows leads from creation through later outcomes.</li><li>Trend reference lines show the selected cohort average; the shaded latest-period range and inflection marker focus attention without hiding the observed values.</li><li>The waterfall always preserves the complete stage sequence. Positive bars are strengths to protect, negative bars are recoverable gaps, and the callout beneath the chart names the highest-value action. Neutral bars mean the slice needs more mature benchmark evidence.</li><li>CAC means effective attributed spend ÷ cohort wins and is qualified by the coverage badge.</li><li>Aged fallout separates leads open without a set after 30 days, sets without a run after 30 days, and runs without a win after 60 days.</li></ul></div>
     <div class="guide-section"><h3>Geo intelligence</h3><p>Rank counties and AHJs using cohort conversion, benchmark delta, active pipeline, sample strength, and spend coverage. Use the operating-region filter before comparing markets.</p></div>
     <div class="guide-section"><h3>Scenario studio</h3><p>Adjust assumptions to explore directional outcomes. Scenarios are planning aids, not forecasts; the baseline always comes from the selected live cohort.</p></div>
-    <div class="guide-section"><h3>Source semantics</h3><p>The campaign-source list uses the governed active-lead inventory only to determine which filter options are currently relevant. Salesforce reports such as SolarReviews Leads by County can use event/status-update dates and formulas like Converted ÷ member rows, so use Data quality to understand definition differences before reconciling totals.</p></div>
   </div>
 </aside>
 <aside class="drawer" id="notesDrawer" aria-label="Notes">
@@ -293,9 +292,9 @@
   const API_BASE = "";
   const $ = id => document.getElementById(id);
   const state = {
-    view:"command", months:7, window:"", source:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
+    view:"command", months:7, window:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
-    filterCatalog:{sources:[],campaigns:[],rollups:[],ahjs:[]},
+    filterCatalog:{campaigns:[],rollups:[],ahjs:[]},
     loading:false, error:null, workflowStage:"discover", activeDecision:null, decisions:[], decisionProgress:{},
     opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:"",
     scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
@@ -380,7 +379,7 @@
   function queryString(){
     const q=new URLSearchParams({months:String(state.months)});
     if(state.window)q.set("window",state.window);
-    if(state.source)q.set("source",state.source); if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.ahj)q.set("ahj",state.ahj); if(state.region)q.set("region",state.region);
+    if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.ahj)q.set("ahj",state.ahj); if(state.region)q.set("region",state.region);
     return q.toString();
   }
   function catalogQueryString(){
@@ -397,22 +396,20 @@
   }
   async function loadData({force=false}={}){
     if(state.loading)return false;
-    if(force){state.reconciliation=null;state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]}}
+    if(force){state.reconciliation=null;state.filterCatalog={campaigns:[],rollups:[],ahjs:[]}}
     state.loading=true;state.error=null;setLoadingControls(true);renderError();
     try{
       const needsCatalog=!state.filterCatalog.campaigns.length&&!state.filterCatalog.ahjs.length;
-      const [funnel,geo,projection,reconciliation,freshness,catalog,sourceInventory]=await Promise.all([
+      const [funnel,geo,projection,reconciliation,freshness,catalog]=await Promise.all([
         fetchJson(`/api/marketing-funnel?${queryString()}`),
         fetchJson(`/api/marketing-geo?${queryString()}`),
         fetchJson(`/api/marketing-projection`).catch(()=>[]),
         state.reconciliation||fetchJson(`/api/marketing-reconciliation`),
         fetchJson(`/api/freshness`).catch(()=>null),
-        needsCatalog?fetchJson(`/api/marketing-filter-options?${catalogQueryString()}`).catch(()=>null):null,
-        fetchJson(`/api/marketing-capacity?${queryString()}`).catch(()=>null)
+        needsCatalog?fetchJson(`/api/marketing-filter-options?${catalogQueryString()}`).catch(()=>null):null
       ]);
       state.funnelRows=funnel.filter(row=>!isExcludedMarketingRow(row));state.geoRows=geo.filter(row=>!isExcludedMarketingRow(row));state.projections=projection.filter(row=>!isExcludedMarketingRow(row));state.reconciliation=reconciliation;
       if(catalog)state.filterCatalog={...state.filterCatalog,campaigns:(catalog.campaigns||[]).filter(value=>!isExcludedIdentity(value)),rollups:(catalog.rollups||[]).filter(value=>!isExcludedIdentity(value)),ahjs:(catalog.ahjs||[]).filter(value=>value&&value!=="Unknown"&&!/^\(?[A-Z]{2}\)?$/.test(value.trim()))};
-      if(sourceInventory)state.filterCatalog.sources=(sourceInventory.sourceOptions||[]).filter(value=>value&&!isExcludedIdentity(value));
       populateFilters(); renderAll();
       if(freshness){$("freshnessLabel").textContent=`${freshness.objects_found}/${freshness.objects_checked} sources online`}
       return true;
@@ -422,9 +419,9 @@
   function refreshData(){return loadData({force:true})}
   function resetFilters(){
     if(state.loading)return false;
-    Object.assign(state,{months:7,window:"",source:"",campaign:"",rollup:"",ahj:"",region:"Operating footprint",lens:"auto",opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:""});
-    state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]};
-    $("monthsFilter").value="7";$("sourceFilter").value="";$("rollupFilter").value="";$("ahjFilter").value="";$("stateFilter").value="Operating footprint";$("opportunityTypeFilter").value="All";$("matrixMetric").value="leadToWinRate";
+    Object.assign(state,{months:7,window:"",campaign:"",rollup:"",ahj:"",region:"Operating footprint",lens:"auto",opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:""});
+    state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};
+    $("monthsFilter").value="7";$("campaignFilter").value="";$("rollupFilter").value="";$("ahjFilter").value="";$("stateFilter").value="Operating footprint";$("opportunityTypeFilter").value="All";$("matrixMetric").value="leadToWinRate";
     $("lensToggle").querySelectorAll("button").forEach(button=>button.classList.toggle("active",button.dataset.lens==="auto"));
     return loadData({force:true});
   }
@@ -446,7 +443,7 @@
     }
     if(state.campaign&&!state.filterCatalog.campaigns.includes(state.campaign))state.filterCatalog.campaigns.push(state.campaign);
     if(state.ahj&&!state.filterCatalog.ahjs.includes(state.ahj))state.filterCatalog.ahjs.push(state.ahj);
-    populateSelect($("sourceFilter"),state.filterCatalog.sources,"All active sources",state.source);
+    populateSelect($("campaignFilter"),state.filterCatalog.campaigns,"All active campaigns",state.campaign);
     populateSelect($("rollupFilter"),state.filterCatalog.rollups,"All rollups",state.rollup);
     populateDatalist($("ahjOptions"),state.filterCatalog.ahjs,state.ahj);
   }
@@ -456,8 +453,7 @@
   function activeFilterContext(){
     return [
       `Period: ${periodLabel()}`,
-      `Active source: ${state.source||"All active sources"}`,
-      `Campaign: ${state.campaign||"All campaigns"}`,
+      `Campaign: ${state.campaign||"All active campaigns"}`,
       `County / market: ${state.ahj||"All"}`,
       `Region: ${state.region||"All data"}`
     ];
@@ -795,7 +791,7 @@
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
     const periods=monthlyTotals(rows),latest=periods.at(-1)?.totals||t,priorRows=periods.slice(0,-1),prior=priorRows.length?aggregate(rows.filter(row=>row.month!==periods.at(-1).month)):null;
     $("focusContext").innerHTML=[
-      `<span>Campaign: <strong>${esc(state.campaign||"All campaigns")}</strong></span>`,
+      `<span>Campaign: <strong>${esc(state.campaign||"All active campaigns")}</strong></span>`,
       `<span>County / market: <strong>${esc(state.ahj||"All")}</strong></span>`,
       `<span>Region: <strong>${esc(state.region||"All data")}</strong></span>`
     ].join("");
@@ -1015,7 +1011,7 @@
     const text=$("noteText").value.trim();if(!text)return;
     try{await fetchJson("/api/notes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({view:state.view,element_key:`${state.view}-workspace`,element_label:viewTitles[state.view],target_type:"view",feedback_type:"decision",note_text:text,context:assistantContext()})});$("noteText").value="";loadNotes()}catch(e){alert(e.message)}
   }
-  function assistantContext(){return {view:state.view,filters:{period:periodLabel(),campaignSource:state.source||"All active sources",campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},active_decision:state.activeDecision,workflow_stage:state.workflowStage,funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
+  function assistantContext(){return {view:state.view,filters:{period:periodLabel(),campaign:state.campaign||"All",rollup:state.rollup||"All",ahj:state.ahj||"All",operatingRegion:state.region||"All data"},active_decision:state.activeDecision,workflow_stage:state.workflowStage,funnel:aggregate(filteredFunnelRows()),top_geographies:filteredGeoRows().slice().sort((a,b)=>b.opportunityScore-a.opportunityScore).slice(0,5),scenario:state.scenario}}
   async function askAssistant(){
     const question=$("assistantQuestion").value.trim();if(!question)return;const out=$("assistantAnswer");out.hidden=false;out.textContent="Analyzing the current decision context...";
     try{const result=await fetchJson("/api/ask-claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,view:state.view,context:assistantContext()})});out.textContent=result.answer||result.summary||JSON.stringify(result,null,2)}catch(e){out.textContent=e.message}
@@ -1114,7 +1110,7 @@
       decisionType:state.activeDecision?.tag||"Test",
       question:state.activeDecision?.question||"What change should we implement for the selected portfolio?",
       action:generatedDecisionAction(),sourceView:state.activeDecision?.view||"scenario",
-      filters:{campaignSource:state.source,campaign:state.campaign,rollup:state.rollup,ahj:state.ahj,operatingRegion:state.region,months:state.months,window:state.window},
+      filters:{campaign:state.campaign,rollup:state.rollup,ahj:state.ahj,operatingRegion:state.region,months:state.months,window:state.window},
       primaryMetric,horizonDays:decisionHorizonDays(),
       baseline:snapshot(b),scenario:{...state.scenario},expected,
       evidence:state.activeDecision?.evidence||[],dataConfidence:confidence.label
@@ -1179,7 +1175,7 @@
   $("refreshDecisions").addEventListener("click",loadDecisions);
   $("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
   $("monthsFilter").addEventListener("change",e=>{state.window=e.target.value==="30d"?"30d":"";if(!state.window)state.months=Number(e.target.value);state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={...state.filterCatalog,campaigns:[],rollups:[],ahjs:[]};loadData()});
-  $("sourceFilter").addEventListener("change",e=>{state.source=e.target.value;state.campaign="";loadData()});
+  $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;loadData()});
   $("rollupFilter").addEventListener("change",e=>{state.rollup=e.target.value;loadData()});
   let ahjFilterTimer;
   function applyAhjFilter(value){
@@ -1190,7 +1186,7 @@
   }
   $("ahjFilter").addEventListener("input",e=>{clearTimeout(ahjFilterTimer);ahjFilterTimer=setTimeout(()=>applyAhjFilter(e.target.value),300)});
   $("ahjFilter").addEventListener("change",e=>applyAhjFilter(e.target.value));
-  $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;state.source="";state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={sources:[],campaigns:[],rollups:[],ahjs:[]};loadData()});
+  $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("refreshButton").addEventListener("click",refreshData);$("resetFiltersButton").addEventListener("click",resetFilters);$("retryButton").addEventListener("click",refreshData);
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));

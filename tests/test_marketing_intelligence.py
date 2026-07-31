@@ -123,7 +123,7 @@ def test_filter_options_query_returns_complete_campaign_and_ahj_catalog():
     assert "INTERVAL @months MONTH" in query
 
 
-def test_active_campaign_catalog_uses_salesforce_status_not_current_leads():
+def test_active_campaign_catalog_uses_governed_status_not_current_leads():
     sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260728_marketing_funnel_analysis.sql"
     sql = sql_path.read_text(encoding="utf-8")
     catalog_sql = sql.split(
@@ -133,10 +133,11 @@ def test_active_campaign_catalog_uses_salesforce_status_not_current_leads():
         "`lumina-lakehouse.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime`",
         1,
     )[0]
-    assert "FROM `lumina-lakehouse.salesforce.campaign`" in catalog_sql
-    assert "COALESCE(is_active, FALSE)" in catalog_sql
+    assert "FROM `lumina-lakehouse.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime`" in catalog_sql
+    assert "UPPER(campaign_status) IN ('PLANNED', 'IN PROGRESS')" in catalog_sql
     assert "jonathan\\s+bissell" in catalog_sql
     assert "fact_lead_funnel_attributed_clean" not in catalog_sql
+    assert "salesforce.campaign" not in catalog_sql
 
 
 def test_capacity_query_uses_current_active_salesforce_inventory():

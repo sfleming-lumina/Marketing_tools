@@ -385,7 +385,7 @@ SELECT *
 FROM `lumina-lakehouse.analytics_rpt.rpt_marketing_period_projection`;
 
 
--- Authoritative Salesforce campaign catalog for the dashboard selector.
+-- Governed active campaign catalog for the dashboard selector.
 -- This is intentionally independent of the selected cohort period and current
 -- open-lead inventory: an active campaign remains selectable before it has
 -- generated a lead in the reporting window.
@@ -395,21 +395,33 @@ OPTIONS (
   description = 'Current active Salesforce campaigns available to the marketing dashboard. Refresh with this deployment script.'
 )
 AS
+WITH latest_campaign AS (
+  SELECT
+    campaign_sf_id,
+    NULLIF(TRIM(campaign_name), '') AS campaign_name,
+    NULLIF(TRIM(campaign_status), '') AS campaign_status,
+    rpt_loaded_at
+  FROM `lumina-lakehouse.marketing_tool_ops.rpt_marketing_funnel_analysis_runtime`
+  WHERE campaign_sf_id IS NOT NULL
+    AND NULLIF(TRIM(campaign_name), '') IS NOT NULL
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY campaign_sf_id
+    ORDER BY rpt_loaded_at DESC
+  ) = 1
+)
 SELECT
-  id AS campaign_sf_id,
-  NULLIF(TRIM(name), '') AS campaign_name,
-  COALESCE(is_active, FALSE) AS is_active,
-  NULLIF(TRIM(status), '') AS campaign_status,
+  campaign_sf_id,
+  campaign_name,
+  TRUE AS is_active,
+  campaign_status,
   REGEXP_CONTAINS(
-    LOWER(COALESCE(name, '')),
+    LOWER(campaign_name),
     r'(^|[^a-z])(test|testing|demo|training|dummy|fake|sandbox|do not use)([^a-z]|$)'
   ) AS is_test_record,
   CURRENT_TIMESTAMP() AS loaded_at
-FROM `lumina-lakehouse.salesforce.campaign`
-WHERE COALESCE(is_active, FALSE)
-  AND NOT COALESCE(_fivetran_deleted, FALSE)
-  AND NULLIF(TRIM(name), '') IS NOT NULL
-  AND NOT REGEXP_CONTAINS(LOWER(name), r'jonathan\s+bissell');
+FROM latest_campaign
+WHERE UPPER(campaign_status) IN ('PLANNED', 'IN PROGRESS')
+  AND NOT REGEXP_CONTAINS(LOWER(campaign_name), r'jonathan\s+bissell');
 
 
 -- Current Salesforce lead inventory used by the dashboard's campaign-source

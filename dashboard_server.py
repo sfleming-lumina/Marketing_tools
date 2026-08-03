@@ -994,6 +994,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             status, result = self._create_marketing_decision(self._read_json_body())
             self._send_json(status, result)
             return
+        if parsed.path == "/api/marketing-decisions/archive":
+            status, result = self._archive_marketing_decision(self._read_json_body())
+            self._send_json(status, result)
+            return
         if parsed.path == "/api/freshness/refresh":
             result = self._source_freshness()
             result["refresh_mode"] = "metadata_check"
@@ -1104,9 +1108,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             limit = min(100, max(1, int((params.get("limit", ["30"])[0]) or "30")))
         except ValueError:
             return HTTPStatus.BAD_REQUEST, {"detail": "limit must be an integer."}
+        include_archived = str((params.get("includeArchived", ["false"])[0]) or "false").lower() == "true"
+        archive_filter = "" if include_archived else "WHERE status != 'Archived'"
         query = f"""
             SELECT *
             FROM `{DECISIONS_TABLE_REF}`
+            {archive_filter}
             ORDER BY created_at DESC
             LIMIT @limit
         """
@@ -1118,6 +1125,31 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except Exception as exc:
             return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision ledger query failed: {exc}"}
         return HTTPStatus.OK, [self._shape_marketing_decision(row) for row in rows]
+
+    def _archive_marketing_decision(self, payload):
+        decision_id = str(payload.get("decisionId") or "").strip()
+        if not decision_id:
+            return HTTPStatus.BAD_REQUEST, {"detail": "decisionId is required."}
+        query = f"""
+            UPDATE `{DECISIONS_TABLE_REF}`
+            SET status = 'Archived'
+            WHERE decision_id = @decision_id
+              AND created_by_email = @created_by_email
+              AND status != 'Archived'
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("decision_id", "STRING", decision_id),
+            bigquery.ScalarQueryParameter("created_by_email", "STRING", self._iap_user()),
+        ])
+        try:
+            job = self.client.query(query, job_config=job_config)
+            job.result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision archive failed: {exc}"}
+        affected = getattr(job, "num_dml_affected_rows", None)
+        if affected == 0:
+            return HTTPStatus.NOT_FOUND, {"detail": "Decision was not found, was already archived, or belongs to another user."}
+        return HTTPStatus.OK, {"decisionId": decision_id, "status": "Archived"}
 
     def _create_marketing_decision(self, payload):
         question = str(payload.get("question") or "").strip()
@@ -1500,24 +1532,82 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             return None
 
+    def _ground_assistant_context(self, context, allow_data_api_fallback=False):
+        """Fill a missing client slice through the same governed APIs used by the dashboard."""
+        grounded = dict(context) if isinstance(context, dict) else {}
+        if not allow_data_api_fallback:
+            return grounded
+        query_filters = grounded.get("query_filters") or {}
+        params = {}
+        for source, target in (
+            ("months", "months"), ("window", "window"), ("campaign", "campaign"),
+            ("rollup", "rollup"), ("ahj", "ahj"), ("region", "region"),
+        ):
+            value = query_filters.get(source)
+            if value not in (None, ""):
+                params[target] = [str(value)]
+        fallback_sources = []
+        if not grounded.get("summary_metrics"):
+            status, rows = self._marketing_funnel(params)
+            if status == HTTPStatus.OK:
+                grounded["summary_metrics"] = aggregate_marketing_funnel_rows(rows)
+                campaign_rows = {}
+                for row in rows:
+                    campaign_rows.setdefault(row.get("campaign") or "Unclassified", []).append(row)
+                grounded["campaign_breakdown"] = [
+                    {"campaign": name, **aggregate_marketing_funnel_rows(items)}
+                    for name, items in campaign_rows.items()
+                ][:12]
+                fallback_sources.append("marketing-funnel")
+        if not grounded.get("top_geographies"):
+            status, rows = self._marketing_geo(params)
+            if status == HTTPStatus.OK:
+                grounded["top_geographies"] = sorted(
+                    rows, key=lambda row: self._num(row.get("opportunityScore")), reverse=True
+                )[:10]
+                fallback_sources.append("marketing-geo")
+        data_scope = dict(grounded.get("data_scope") or {})
+        data_scope["server_grounded"] = bool(fallback_sources)
+        data_scope["fallback_endpoints"] = fallback_sources
+        grounded["data_scope"] = data_scope
+        return grounded
+
+    @staticmethod
+    def _assistant_answer_text(insights):
+        if not isinstance(insights, dict):
+            return str(insights or "")
+        lines = [str(insights.get("executive_summary") or insights.get("headline") or "").strip()]
+        recommendations = insights.get("recommendations") or []
+        if recommendations:
+            lines.append("\nRecommended actions:")
+            for item in recommendations[:3]:
+                if isinstance(item, dict) and item.get("action"):
+                    lines.append(f"• {item['action']}")
+        watchouts = insights.get("watchouts") or []
+        if watchouts:
+            lines.append(f"\nWatchout: {watchouts[0]}")
+        return "\n".join(line for line in lines if line)
+
     def _fallback_insights(self, question, context, reason):
         planner = context.get("campaign_planner", {}) if isinstance(context, dict) else {}
         top_rows = planner.get("top_recommendations", []) if isinstance(planner, dict) else []
+        if not top_rows and isinstance(context, dict):
+            top_rows = context.get("campaign_breakdown", [])
         top_rows = [row for row in top_rows if isinstance(row, dict)]
         summary = context.get("summary_metrics", {}) if isinstance(context, dict) else {}
         filters = context.get("filters", {}) if isinstance(context, dict) else {}
         total_spend = sum(self._num(row.get("spend")) for row in top_rows) or self._num(summary.get("spend"))
-        total_wins = sum(self._num(row.get("wins")) for row in top_rows)
-        blended_cpw = total_spend / total_wins if total_wins else self._num(summary.get("cost_per_win"))
+        total_wins = sum(self._num(row.get("wins")) for row in top_rows) or self._num(summary.get("wins"))
+        blended_cpw = total_spend / total_wins if total_wins else self._num(summary.get("cpw") or summary.get("cost_per_win"))
         risk_rows = [row for row in top_rows if row.get("decision") in {"Hold", "Avoid"}]
         highest_cpw = max(
-            (row for row in (risk_rows or top_rows) if self._num(row.get("cost_per_win")) > 0),
-            key=lambda row: self._num(row.get("cost_per_win")),
+            (row for row in (risk_rows or top_rows) if self._num(row.get("cpw") or row.get("cost_per_win")) > 0),
+            key=lambda row: self._num(row.get("cpw") or row.get("cost_per_win")),
             default={},
         )
         best_efficiency = max(
             top_rows,
-            key=lambda row: self._num(row.get("revenue_per_spend")),
+            key=lambda row: self._num(row.get("roi") or row.get("revenue_per_spend")),
             default={},
         )
 
@@ -1528,11 +1618,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "metric": f"{highest_cpw.get('decision', 'Review')} campaign cost per win",
                 "evidence": (
                     f"{self._label(highest_cpw)} shows cost per win of "
-                    f"{self._currency(highest_cpw.get('cost_per_win'))} versus blended CPW of "
+                    f"{self._currency(highest_cpw.get('cpw') or highest_cpw.get('cost_per_win'))} versus blended CPW of "
                     f"{self._currency(blended_cpw)}."
                 ),
                 "why_it_matters": (
-                    f"Lead-to-win is {self._percent(highest_cpw.get('lead_to_win_rate'))} with "
+                    f"Lead-to-win is {self._percent(highest_cpw.get('leadToWin') or highest_cpw.get('lead_to_win_rate'))} with "
                     f"{highest_cpw.get('sample_size_bucket', 'unknown')} confidence."
                 ),
                 "severity": "high" if highest_cpw.get("decision") == "Avoid" else "medium",
@@ -1550,7 +1640,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             recommendations.append({
                 "action": f"Prioritize the next review of {self._label(best_efficiency)}",
                 "rationale": (
-                    f"It has stronger revenue per spend at {self._num(best_efficiency.get('revenue_per_spend')):.1f}x "
+                    f"It has stronger revenue per spend at {self._num(best_efficiency.get('roi') or best_efficiency.get('revenue_per_spend')):.1f}x "
                     f"and is currently gated as {best_efficiency.get('decision', 'Review')}."
                 ),
                 "expected_impact": "Focuses decision time on the strongest evidence-backed campaign.",
@@ -1564,16 +1654,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         })
 
         return {
-            "headline": "Live campaign gates identify the next decisions",
+            "headline": "The current slice identifies the next decisions",
             "executive_summary": (
-                f"For {filters.get('market', 'the selected market')} / {filters.get('source', 'the selected source')}, "
+                f"For {filters.get('period', 'the selected period')}, {filters.get('campaign', filters.get('source', 'the selected campaign'))}, "
+                f"and {filters.get('operatingRegion', filters.get('market', 'the selected region'))}, "
                 f"the ranked live campaign rows show {self._currency(total_spend)} in actual spend and blended CPW of "
-                f"{self._currency(blended_cpw)}. Scale and Test recommendations require both efficient CPW and credible conversion."
+                f"{self._currency(blended_cpw)}. This directly addresses “{question[:180]}” using only the active dashboard slice."
             ),
             "weak_spots": weak_spots,
             "recommendations": recommendations,
             "watchouts": [
-                "These recommendations use the dashboard context supplied to the assistant, not an open-ended BigQuery query.",
+                "These recommendations use the active dashboard slice and, when needed, its governed data API—not an open-ended BigQuery query.",
                 f"Fallback insight mode was used because Claude returned no usable structured text: {reason}.",
             ],
             "next_actions": [
@@ -1615,38 +1706,49 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         return status in {429, 500, 502, 503, 529} or "overload" in text or "rate" in text
 
     def _ask_claude(self, payload):
-        if not ANTHROPIC_API_KEY:
-            return HTTPStatus.SERVICE_UNAVAILABLE, {"detail": "Claude is not configured for this environment."}
-
         question = str(payload.get("question", "")).strip()
         if not question:
             raise ValueError("Question is required.")
 
-        context = payload.get("context", {})
-        context_json = json.dumps(context, indent=2, default=str)[:20_000]
+        context = self._ground_assistant_context(
+            payload.get("context", {}), bool(payload.get("allowDataApiFallback"))
+        )
+        if not ANTHROPIC_API_KEY:
+            insights = self._fallback_insights(question, context, "Claude is not configured")
+            return HTTPStatus.OK, {
+                "answer": self._assistant_answer_text(insights),
+                "insights": insights,
+                "model": "governed-data-api-fallback",
+                "fallback": True,
+            }
+        context_json = json.dumps(context, indent=2, default=str)[:40_000]
         body = {
             "model": ANTHROPIC_MODEL,
             "max_tokens": 1600,
             "system": (
                 "You are Claude helping Lumina Solar's marketing team interpret an internal "
-                "performance dashboard. Give executives and marketing operators decision-grade "
-                "insights, not generic commentary. Use the supplied dashboard context only, call "
-                "out exact evidence, compare against blended benchmarks, and convert findings "
-                "into actions. Return JSON only with this shape: "
+                "performance dashboard. The supplied context is one exact, current data slice. "
+                "Treat its filters (period, campaign, rollup, county/market, and operating region) "
+                "as hard scope boundaries. Read the active decision, workflow stage, evidence, "
+                "summary metrics, monthly cohorts, campaign breakdown, geography rows, and scenario "
+                "before answering the user's question directly. Never silently generalize beyond "
+                "the slice or invent missing data. Distinguish observed baseline data from projected "
+                "scenario values. Give decision-grade insight with exact evidence and concrete actions. "
+                "Return JSON only with this shape: "
                 '{"headline": string, "executive_summary": string, '
                 '"weak_spots": [{"name": string, "metric": string, "evidence": string, '
                 '"why_it_matters": string, "severity": "high"|"medium"|"low"}], '
                 '"recommendations": [{"action": string, "rationale": string, '
                 '"expected_impact": string, "confidence": "high"|"medium"|"low"}], '
                 '"watchouts": [string], "next_actions": [string]}. '
-                "Keep each string concise. If the evidence is directional/demo-mode, say so."
+                "Keep each string concise. State any sample, spend-coverage, maturity, or scope limitation."
             ),
             "messages": [
                 {
                     "role": "user",
                     "content": (
-                        f"Dashboard context:\n{context_json}\n\n"
-                        f"Marketing user's question:\n{question}"
+                        f"CURRENT FILTERED DASHBOARD SLICE:\n{context_json}\n\n"
+                        f"QUESTION TO ANSWER FROM THAT SLICE:\n{question}"
                     ),
                 }
             ],
@@ -1680,7 +1782,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                         continue
                     insights = self._fallback_insights(question, context, f"Claude temporarily unavailable: {detail}")
                     return HTTPStatus.OK, {
-                        "answer": insights["executive_summary"],
+                        "answer": self._assistant_answer_text(insights),
                         "insights": insights,
                         "model": ANTHROPIC_MODEL,
                         "fallback": True,
@@ -1692,7 +1794,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                     continue
                 insights = self._fallback_insights(question, context, "Claude request failed after retries")
                 return HTTPStatus.OK, {
-                    "answer": insights["executive_summary"],
+                    "answer": self._assistant_answer_text(insights),
                     "insights": insights,
                     "model": ANTHROPIC_MODEL,
                     "fallback": True,
@@ -1701,7 +1803,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if result is None:
             insights = self._fallback_insights(question, context, "Claude returned no response")
             return HTTPStatus.OK, {
-                "answer": insights["executive_summary"],
+                "answer": self._assistant_answer_text(insights),
                 "insights": insights,
                 "model": ANTHROPIC_MODEL,
                 "fallback": True,
@@ -1715,7 +1817,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             ]) or 'none'}"
             insights = self._fallback_insights(question, context, reason)
             return HTTPStatus.OK, {
-                "answer": insights["executive_summary"],
+                "answer": self._assistant_answer_text(insights),
                 "insights": insights,
                 "model": result.get("model", ANTHROPIC_MODEL),
                 "fallback": True,
@@ -1725,7 +1827,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             insights = self._fallback_insights(question, context, "unstructured Claude response")
             insights["watchouts"].insert(0, "Claude returned text, but not in the structured format needed for the insight panel.")
         return HTTPStatus.OK, {
-            "answer": answer,
+            "answer": self._assistant_answer_text(insights),
+            "raw_answer": answer,
             "insights": insights,
             "model": result.get("model", ANTHROPIC_MODEL),
         }

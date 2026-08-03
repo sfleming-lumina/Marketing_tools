@@ -42,3 +42,46 @@ def test_fallback_uses_live_campaign_recommendations():
     assert "actual spend" in insights["executive_summary"]
     assert "capacity-adjusted" not in rendered.lower()
     assert "planned spend" not in rendered.lower()
+
+
+def test_fallback_answers_from_current_slice_contract():
+    handler = DashboardHandler.__new__(DashboardHandler)
+    context = {
+        "filters": {
+            "period": "Last 3 months",
+            "campaign": "EnergySage",
+            "operatingRegion": "Maryland",
+        },
+        "summary_metrics": {"spend": 12000, "wins": 6, "cpw": 2000},
+        "campaign_breakdown": [
+            {"campaign": "EnergySage", "spend": 12000, "wins": 6, "cpw": 2000, "leadToWin": 0.12, "roi": 4.5},
+        ],
+        "active_decision": {"question": "Should we expand?"},
+    }
+
+    insights = handler._fallback_insights("Should we increase budget?", context, "fixture")
+
+    assert "Last 3 months" in insights["executive_summary"]
+    assert "EnergySage" in insights["executive_summary"]
+    assert "Maryland" in insights["executive_summary"]
+    assert "Should we increase budget?" in insights["executive_summary"]
+
+
+def test_missing_assistant_slice_is_rehydrated_from_governed_data_api():
+    handler = DashboardHandler.__new__(DashboardHandler)
+    handler._marketing_funnel = lambda params: (200, [{
+        "campaign": "EnergySage", "leads": 100, "sets": 40, "runs": 30,
+        "wins": 10, "revenue": 400000, "effectiveSpend": 20000,
+    }])
+    handler._marketing_geo = lambda params: (200, [{
+        "geography": "Montgomery County", "opportunityScore": 87,
+    }])
+
+    context = handler._ground_assistant_context({
+        "query_filters": {"months": 3, "campaign": "EnergySage", "region": "Maryland"},
+    }, allow_data_api_fallback=True)
+
+    assert context["summary_metrics"]["wins"] == 10
+    assert context["campaign_breakdown"][0]["campaign"] == "EnergySage"
+    assert context["top_geographies"][0]["geography"] == "Montgomery County"
+    assert context["data_scope"]["fallback_endpoints"] == ["marketing-funnel", "marketing-geo"]

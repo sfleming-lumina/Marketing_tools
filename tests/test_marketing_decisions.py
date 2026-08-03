@@ -26,6 +26,21 @@ class InsertClient:
         return self.errors
 
 
+class ArchiveClient:
+    def __init__(self, affected=1):
+        self.num_dml_affected_rows = affected
+        self.query_text = ""
+        self.job_config = None
+
+    def query(self, query, job_config=None):
+        self.query_text = query
+        self.job_config = job_config
+        return self
+
+    def result(self):
+        return []
+
+
 def decision(created_at, **overrides):
     value = {
         "decision_id": "decision-1",
@@ -118,3 +133,33 @@ def test_create_decision_rejects_invalid_tracking_metric(monkeypatch):
     })
     assert status == HTTPStatus.BAD_REQUEST
     assert "not supported" in payload["detail"]
+
+
+def test_archive_decision_is_owner_scoped_and_preserves_ledger(monkeypatch):
+    client = ArchiveClient()
+    monkeypatch.setattr(DashboardHandler, "_client", client)
+    handler = DashboardHandler.__new__(DashboardHandler)
+    handler._iap_user = lambda: "jane.doe@luminasolar.com"
+
+    status, payload = handler._archive_marketing_decision({"decisionId": "decision-1"})
+
+    assert status == HTTPStatus.OK
+    assert payload == {"decisionId": "decision-1", "status": "Archived"}
+    assert "SET status = 'Archived'" in client.query_text
+    assert "created_by_email = @created_by_email" in client.query_text
+    parameters = {item.name: item.value for item in client.job_config.query_parameters}
+    assert parameters == {
+        "decision_id": "decision-1",
+        "created_by_email": "jane.doe@luminasolar.com",
+    }
+
+
+def test_archive_decision_reports_missing_or_inaccessible_record(monkeypatch):
+    monkeypatch.setattr(DashboardHandler, "_client", ArchiveClient(affected=0))
+    handler = DashboardHandler.__new__(DashboardHandler)
+    handler._iap_user = lambda: "jane.doe@luminasolar.com"
+
+    status, payload = handler._archive_marketing_decision({"decisionId": "decision-1"})
+
+    assert status == HTTPStatus.NOT_FOUND
+    assert "another user" in payload["detail"]

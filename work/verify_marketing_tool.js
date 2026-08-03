@@ -152,6 +152,11 @@ setImmediate(() => {
   const originalEvidenceCount = app.state.activeDecision.evidence.length;
   app.addDecisionEvidence("funnel");
   assert(app.state.activeDecision.evidence.length === originalEvidenceCount + 1, "Investigation evidence was not carried forward.");
+  getElement("geoEvidenceChoice").value = "Fairfax County||Efficient Search||VA||County";
+  const geoEvidenceCount = app.state.activeDecision.evidence.length;
+  app.addDecisionEvidence("geo");
+  assert(app.state.activeDecision.evidence.length === geoEvidenceCount + 1 && app.state.activeDecision.evidence.at(-1).includes("Fairfax County · Efficient Search"), "A ranked geography could not be added without changing the header filters.");
+  assert(getElement("activeDecisionEvidence").innerHTML.includes("Fairfax County") && getElement("geoEvidenceCopy").textContent.includes("Captured"), "Added geography evidence was not visibly confirmed in the decision workspace.");
   app.startScenario();
   assert(app.state.workflowStage === "test" && app.state.view === "scenario", "Investigation did not hand off to Scenario studio.");
   assert(getElement("scenarioOutputTitle").textContent.includes(app.state.activeDecision.question), "Scenario did not retain the active decision question.");
@@ -162,6 +167,20 @@ setImmediate(() => {
   assert(trackingPayload.baseline.wins === 28 && trackingPayload.expected.wins > trackingPayload.baseline.wins, "Automatic tracking did not freeze baseline and expected outcomes.");
   assert(trackingPayload.filters.operatingRegion === "Operating footprint" && trackingPayload.horizonDays >= 30, "Automatic tracking did not retain scope and review horizon.");
   assert(dashboardHtml.includes('id="decisionsDrawer"') && dashboardHtml.includes("No uploads or status entry required"), "Automatic decision tracker surface is missing.");
+  const presentationData = {
+    scope:"region:Operating footprint",scopeLabel:"MD Ops + PA Ops",period:"Last 7 months",
+    funnelRows,geoRows,summary:aggregate,decisions:[{
+      question:"Scale efficient search?",action:"Run a controlled budget test.",status:"Monitoring",
+      created_by_name:"Test User",operating_region:"Maryland",review_after:"2026-08-28"
+    }]
+  };
+  const presentationSlides = app.buildPresentationSlides(presentationData);
+  assert(presentationSlides.length === 6 && presentationSlides.every(slide=>slide.id&&slide.html.includes("presentation-slide")), "Selectable presentation elements did not build a complete story.");
+  assert(presentationSlides.find(slide=>slide.id==="geography").html.includes("Ops-region rollup"), "Operating-region presentation rollup is missing.");
+  assert(presentationSlides.find(slide=>slide.id==="decisions").html.includes("Scale efficient search?"), "Tracked decisions did not carry into presentation mode.");
+  const statePresentationQuery = app.presentationQuery("state:VA");
+  assert(statePresentationQuery.includes("state=VA") && !statePresentationQuery.includes("region="), "Physical-state presentation scope is not independent from Ops region.");
+  assert(dashboardHtml.includes('data-drawer="presentation"') && dashboardHtml.includes('id="presentationDrawer"') && dashboardHtml.includes('id="presentationShell"'), "The low-clutter presentation entry point or overlay is missing.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
   assert(!global.requestedUrls.some(url=>url.includes("marketing-capacity")), "Removed capacity inventory is still requested by the marketing workspace.");

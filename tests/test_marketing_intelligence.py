@@ -103,6 +103,11 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
         assert "INTERVAL @months MONTH" in query
 
 
+def test_physical_state_filter_uses_governed_portfolio_state_fallback():
+    for query in (build_marketing_funnel_query(state="VA"), build_marketing_geo_query(state="VA")):
+        assert "COALESCE(NULLIF(TRIM(normalized_operating_state), ''), NULLIF(TRIM(resolved_state), ''), NULLIF(TRIM(reporting_market_state), ''), 'Unresolved') = @state" in query
+
+
 def test_operating_footprint_filter_is_explicit_and_requires_no_region_parameter():
     for query in (
         build_marketing_funnel_query(region="Operating footprint"),

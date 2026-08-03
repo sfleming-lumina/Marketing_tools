@@ -267,6 +267,7 @@ def _marketing_filter_conditions(
 ):
     conditions = ["campaign_name IS NOT NULL", *_marketing_identity_exclusions()]
     portfolio_geography_sql = _marketing_portfolio_geography_sql()
+    portfolio_state_sql = _marketing_portfolio_state_sql()
     if campaign:
         conditions.append("campaign_name = @campaign")
     if source:
@@ -274,7 +275,7 @@ def _marketing_filter_conditions(
     if rollup:
         conditions.append("campaign_reporting_rollup_name = @rollup")
     if state:
-        conditions.append("resolved_state = @state")
+        conditions.append(f"{portfolio_state_sql} = @state")
     if county:
         conditions.append(f"{portfolio_geography_sql} = @county")
     if ahj:

@@ -28,7 +28,7 @@
     .nav-icon{width:22px;height:22px;display:grid;place-items:center;border:1px solid currentColor;border-radius:7px;font-size:11px}
     .side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:18px 10px 0}
     .live{display:flex;align-items:center;gap:8px;font-size:12px;color:#9db0a5}.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(57,181,74,.12)}
-    .side-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:14px}.side-actions button{min-width:0;padding:9px 5px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:10px;font-size:11px}
+    .side-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:14px}.side-actions button{min-width:0;padding:9px 5px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#fff;border-radius:10px;font-size:11px}.side-actions button[data-drawer="presentation"]{grid-column:1/-1;background:rgba(255,255,255,.06)}
     main{min-width:0}.topbar{position:sticky;top:0;z-index:15;background:rgba(244,243,237,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(203,213,204,.75);padding:14px 28px}
     .top-row{display:flex;align-items:center;gap:12px}.mobile-menu{display:none}.crumb{font-size:12px;color:var(--muted);white-space:nowrap}.crumb strong{color:var(--ink)}
     .filters{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}.select-wrap{position:relative}
@@ -56,8 +56,8 @@
     .insight-action{align-self:center;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:750;white-space:nowrap}.insight-action:hover{border-color:var(--green);background:var(--green-soft)}
     .decision-workspace{display:none;margin-bottom:20px;padding:16px 18px;background:#fff;border:1px solid #bde6c3;border-radius:17px;box-shadow:0 10px 30px rgba(24,50,34,.07)}.decision-workspace.show{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
     .workflow-steps{display:flex;align-items:center;gap:5px;margin-bottom:8px}.workflow-step{display:flex;align-items:center;gap:6px;color:#8a978f;font-size:10px;font-weight:760;text-transform:uppercase;letter-spacing:.06em}.workflow-step:after{content:"›";margin-left:2px;color:#c2cbc5}.workflow-step:last-child:after{display:none}.workflow-step span{width:19px;height:19px;display:grid;place-items:center;border:1px solid #ccd6cf;border-radius:50%;font-size:9px}.workflow-step.complete,.workflow-step.active{color:var(--green-dark)}.workflow-step.complete span{background:var(--green);border-color:var(--green);color:#0b2412}.workflow-step.active span{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
-    .decision-workspace h3{font-size:16px}.decision-workspace p{margin:3px 0 0;color:var(--muted);font-size:12px}.decision-context{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.decision-context span{padding:4px 8px;background:#f0f4f1;border-radius:999px;color:#506057;font-size:10px}.decision-actions{display:flex;align-items:center;gap:8px}.text-btn{border:0;background:transparent;color:var(--muted);padding:8px;font-size:11px}.text-btn:hover{color:var(--ink)}
-    .evidence-strip{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 15px;margin-bottom:16px;background:#f7f9f7;border:1px solid var(--line);border-radius:14px}.evidence-strip p{margin:2px 0 0;color:var(--muted);font-size:11px}.evidence-strip .decision-actions{flex-shrink:0}
+    .decision-workspace h3{font-size:16px}.decision-workspace p{margin:3px 0 0;color:var(--muted);font-size:12px}.decision-context{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.decision-context span{padding:4px 8px;background:#f0f4f1;border-radius:999px;color:#506057;font-size:10px}.evidence-summary{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px;margin-top:9px;padding:8px 10px;border-left:3px solid var(--green);background:var(--green-soft);border-radius:0 9px 9px 0;color:#405348;font-size:10px}.evidence-summary strong{color:var(--green-dark);white-space:nowrap}.decision-actions{display:flex;align-items:center;gap:8px}.text-btn{border:0;background:transparent;color:var(--muted);padding:8px;font-size:11px}.text-btn:hover{color:var(--ink)}
+    .evidence-strip{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 15px;margin-bottom:16px;background:#f7f9f7;border:1px solid var(--line);border-radius:14px}.evidence-strip p{margin:2px 0 0;color:var(--muted);font-size:11px}.evidence-strip .decision-actions{flex-shrink:0}.evidence-strip select{max-width:260px;background-color:#fff}.evidence-strip.is-confirmed{border-color:#9fd5a8;background:var(--green-soft)}
     .opportunity-list{display:grid;gap:10px}.opportunity-row{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(82px,.45fr)) auto;gap:13px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:14px;transition:.15s}.opportunity-row:hover{border-color:#b9d9bf;box-shadow:0 6px 18px rgba(24,50,34,.06)}.opportunity-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.opportunity-title h3{font-size:13px}.opportunity-main p{margin:4px 0 0;color:var(--muted);font-size:11px}.opportunity-stat small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.opportunity-stat strong{display:block;font-size:15px;margin-top:2px}.opportunity-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.opportunity-toolbar select{max-width:155px}.confidence{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:10px}.confidence:before{content:"";width:6px;height:6px;border-radius:50%;background:#91a097}.confidence.high:before{background:var(--green)}.confidence.medium:before{background:var(--amber)}.confidence.low:before{background:var(--red)}
     .matrix-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px}.matrix{border-collapse:separate;border-spacing:0;min-width:820px}.matrix th{position:sticky;top:0;z-index:2;text-transform:none;letter-spacing:0;font-size:10px;text-align:center;min-width:105px}.matrix th:first-child{left:0;z-index:3;text-align:left;min-width:180px}.matrix td{padding:5px;border-right:1px solid #edf1ee;border-bottom:1px solid #edf1ee;text-align:center}.matrix td:first-child{position:sticky;left:0;z-index:1;background:#fff;text-align:left;padding:10px 12px}.matrix-cell{width:100%;min-height:48px;border:0;border-radius:9px;padding:7px 5px;font-size:10px;font-weight:760}.matrix-cell.good{background:#dff3e2;color:#126726}.matrix-cell.warn{background:#fff1c8;color:#7b5300}.matrix-cell.bad{background:#fde3de;color:#9c3026}.matrix-cell.neutral{background:#edf2ee;color:#647168}.matrix-cell:hover{box-shadow:inset 0 0 0 2px currentColor}.matrix-cell small{display:block;font-size:8px;font-weight:600;opacity:.76;margin-top:2px}.matrix-legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:10px}.matrix-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:4px}
     .target-card{display:none;margin-bottom:18px;padding:18px;border:1px solid #bde6c3;background:linear-gradient(120deg,#f5fbf6,#fff);border-radius:16px}.target-card.show{display:block}.target-grid{display:grid;grid-template-columns:minmax(160px,1fr) repeat(4,minmax(95px,.55fr));gap:12px;align-items:center}.target-grid small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.target-grid strong{display:block;font-size:17px;margin-top:3px}.target-arrow{color:var(--green-dark);font-weight:800}.target-copy{margin:4px 0 0;color:var(--muted);font-size:11px}
@@ -84,12 +84,15 @@
     .brief-section{padding:16px 0;border-bottom:1px solid var(--line)}.brief-section:first-child{padding-top:0}.brief-section:last-child{border:0}.brief-section h3{margin-bottom:8px}.brief-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.brief-field label{display:block;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}.brief-field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px}.brief-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.brief-metric{padding:11px;background:#f5f8f5;border-radius:11px}.brief-metric small{display:block;color:var(--muted)}.brief-metric strong{display:block;margin-top:2px;font-size:16px}.brief-evidence{margin:0;padding-left:18px;color:var(--muted)}.brief-evidence li+li{margin-top:5px}
     .decision-list{display:grid;gap:12px}.tracked-decision{padding:16px;border:1px solid var(--line);border-radius:15px}.tracked-decision.archived{opacity:.72;background:#f7f9f7}.tracked-decision-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.tracked-decision h3{font-size:14px}.tracked-decision p{margin:5px 0 0;color:var(--muted);font-size:11px}.tracked-decision-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}.tracked-decision-meta span{padding:4px 7px;background:#f0f4f1;border-radius:999px;color:#59685f;font-size:9px}.tracked-decision-actions{display:flex;justify-content:flex-end;margin-top:10px}.archive-btn{border:0;background:transparent;color:var(--muted);font-size:10px;padding:5px 0}.archive-btn:hover{color:var(--red)}.progress-track{height:6px;margin-top:12px;background:#edf1ee;border-radius:999px;overflow:hidden}.progress-track span{display:block;height:100%;background:var(--green);border-radius:inherit}.decision-empty{padding:35px 15px;text-align:center;color:var(--muted)}.auto-capture{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;padding:12px;background:var(--green-soft);border-radius:12px;color:#24552f}.auto-capture strong{font-size:12px}.auto-capture p{margin:2px 0 0;font-size:10px;color:#4b6b53}.decision-list-controls{display:flex;align-items:center;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:11px}.decision-list-controls label{display:flex;align-items:center;gap:7px}
     .assistant-answer{white-space:pre-wrap;background:#f7f9f7;border-radius:14px;padding:16px;margin-top:14px}.note-item{padding:14px 0;border-bottom:1px solid var(--line)}.note-item p{margin:5px 0}.note-item small{color:var(--muted)}.guide-intro{padding:16px;border-radius:15px;background:var(--green-soft);color:#24552f;margin-bottom:18px}.guide-section{padding:17px 0;border-bottom:1px solid var(--line)}.guide-section:last-child{border:0}.guide-section h3{margin-bottom:7px}.guide-section p{margin:0;color:var(--muted)}.guide-section ul{margin:9px 0 0;padding-left:20px;color:var(--muted)}.guide-section li+li{margin-top:5px}.guide-key{display:grid;grid-template-columns:115px 1fr;gap:7px 12px;margin-top:10px}.guide-key dt{font-weight:700}.guide-key dd{margin:0;color:var(--muted)}
+    .presentation-builder{display:grid;gap:18px}.presentation-builder-group>label{display:block;margin-bottom:7px;color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.07em;text-transform:uppercase}.presentation-builder select{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}.presentation-section-list{display:grid;gap:8px}.presentation-section-option{display:grid;grid-template-columns:20px 1fr;gap:9px;align-items:start;padding:11px 12px;border:1px solid var(--line);border-radius:12px}.presentation-section-option:has(input:checked){border-color:#a9d7b1;background:var(--green-soft)}.presentation-section-option strong{display:block;font-size:12px}.presentation-section-option small{display:block;margin-top:2px;color:var(--muted);font-size:10px;line-height:1.35}.presentation-builder-note{padding:11px 12px;border-radius:11px;background:#f5f8f5;color:var(--muted);font-size:10px;line-height:1.45}.presentation-shell{position:fixed;inset:0;z-index:100;display:none;background:#e9eee9;color:var(--ink)}.presentation-shell.open{display:flex;flex-direction:column}.presentation-toolbar{height:64px;display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);align-items:center;gap:16px;padding:0 20px;background:#10231a;color:#fff}.presentation-toolbar h2{font-size:15px}.presentation-toolbar small{display:block;margin-top:2px;color:#aabcb1}.presentation-progress{text-align:center;color:#c9d6ce;font-size:11px}.presentation-toolbar-actions{display:flex;justify-content:flex-end;gap:7px}.presentation-toolbar button{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:9px;padding:8px 10px;font-size:11px}.presentation-stage{flex:1;min-height:0;display:grid;place-items:center;padding:20px}.presentation-slide{width:min(calc(100vw - 40px),calc((100vh - 104px)*16/9));aspect-ratio:16/9;overflow:hidden;padding:clamp(28px,3.2vw,58px);background:#fff;border-radius:10px;box-shadow:0 24px 70px rgba(14,35,23,.17);display:flex;flex-direction:column}.presentation-slide-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:18px;border-bottom:1px solid var(--line)}.presentation-slide-head h1{font-size:clamp(27px,3vw,46px);margin:5px 0 0}.presentation-scope{text-align:right;color:var(--muted);font-size:11px}.presentation-content{flex:1;min-height:0;padding-top:24px;overflow:hidden}.presentation-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.presentation-kpi{padding:16px;border:1px solid var(--line);border-radius:14px;background:#f8faf8}.presentation-kpi small{display:block;color:var(--muted)}.presentation-kpi strong{display:block;margin-top:5px;font-size:clamp(20px,2.3vw,34px);letter-spacing:-.04em}.presentation-callout{margin-top:18px;padding:18px 20px;border-radius:15px;background:#10231a;color:#fff}.presentation-callout p{margin:4px 0 0;color:#b8c8be}.presentation-funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.presentation-funnel-stage{padding:18px;border-radius:14px;background:#f4f7f4;border:1px solid var(--line)}.presentation-funnel-stage small{color:var(--muted)}.presentation-funnel-stage strong{display:block;font-size:clamp(24px,2.6vw,38px);margin:5px 0}.presentation-funnel-stage em{font-style:normal;color:var(--green-dark);font-size:11px}.presentation-table{width:100%;min-width:0;font-size:11px}.presentation-table th,.presentation-table td{padding:9px 10px}.presentation-table th:not(:first-child),.presentation-table td:not(:first-child){text-align:right}.presentation-table td:first-child{font-weight:700}.presentation-two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:100%}.presentation-panel{padding:18px;border:1px solid var(--line);border-radius:15px;overflow:hidden}.presentation-panel h3{margin-bottom:12px}.presentation-rank-list{display:grid;gap:9px}.presentation-rank-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(2,70px);gap:9px;align-items:center;padding-bottom:8px;border-bottom:1px solid #edf1ee}.presentation-rank-row:last-child{border:0}.presentation-rank-row small{display:block;color:var(--muted)}.presentation-rank-row strong:not(:first-child){text-align:right}.presentation-decision-list{display:grid;gap:10px}.presentation-decision{padding:14px 16px;border:1px solid var(--line);border-radius:13px}.presentation-decision-head{display:flex;justify-content:space-between;gap:15px}.presentation-decision p{margin:4px 0 0;color:var(--muted);font-size:10px}.presentation-decision-meta{margin-top:8px;color:var(--muted);font-size:9px}.presentation-nav{position:fixed;left:50%;bottom:13px;z-index:101;transform:translateX(-50%);display:flex;gap:8px}.presentation-nav button{width:38px;height:38px;border:0;border-radius:50%;background:#10231a;color:#fff;box-shadow:0 8px 22px rgba(14,35,23,.2)}.presentation-nav button:disabled{opacity:.35}.presentation-empty{display:grid;place-items:center;height:100%;color:var(--muted);text-align:center}
     .mobile-brand{display:none}.tooltip{border-bottom:1px dotted #7a8b81}
     @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.filters .rollup-filter{display:none}.content{padding:28px 24px 55px}.scenario-compare{grid-template-columns:1fr}.health-grid{grid-template-columns:1fr}}
     @media(max-width:760px){
       .app{display:block}.sidebar{position:fixed;left:0;transform:translateX(-105%);transition:.25s;width:260px}.sidebar.open{transform:none}.mobile-menu{display:block;border:0;background:transparent;font-size:20px}.mobile-brand{display:block;width:104px}.crumb{display:none}.topbar{padding:11px 14px}.top-row{flex-wrap:wrap}.filters{order:2;flex-basis:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-left:0}.filters .rollup-filter{display:none}.filters .select-wrap,.filters select,.filters .filter-input{width:100%;max-width:none}.filters .icon-btn{position:absolute;right:14px;top:11px}.content{padding:22px 15px 45px}.hero{display:block}.asof{margin-top:12px}.grid-4,.grid-2{grid-template-columns:1fr}.status-strip{grid-template-columns:auto 1fr}.status-strip>.badge{grid-column:1/-1;width:max-content}.section-head{align-items:flex-start;flex-direction:column}.card{padding:17px;border-radius:17px}.chart-card{min-height:370px}.chart-card canvas{height:270px}.health-row{grid-template-columns:92px 58px 1fr}.health-delta{grid-column:2/-1;text-align:left}.portfolio-table{overflow:visible;border:0}.portfolio-table table,.portfolio-table tbody{display:block;min-width:0}.portfolio-table thead{display:none}.portfolio-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:#fff}.portfolio-table td,.portfolio-table th{display:block;width:auto!important;padding:0;border:0;text-align:left!important}.portfolio-table td:first-child{grid-column:1/-1;padding-bottom:4px}.portfolio-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.portfolio-table td:first-child:before{display:none}.slider-row,.slider-row.money-row{grid-template-columns:92px minmax(0,1fr) 50px}.slider-row.money-row .money-input{grid-column:2/-1}.scenario-metrics{grid-template-columns:repeat(2,1fr)}.quality-row{grid-template-columns:1fr 1fr}.quality-row div{text-align:left!important}.quality-row .quality-secondary{display:none}.decision-workspace.show{grid-template-columns:1fr}.workflow-steps{overflow:auto;padding-bottom:2px}.decision-actions{flex-wrap:wrap}.evidence-strip,.scenario-output{align-items:flex-start;flex-direction:column}.brief-grid{grid-template-columns:1fr}.opportunity-row{grid-template-columns:1fr 1fr}.opportunity-main{grid-column:1/-1}.opportunity-row .insight-action{justify-self:end}.target-grid{grid-template-columns:1fr 1fr}.target-grid>div:first-child{grid-column:1/-1}
     }
     @media(max-width:760px){.filters .icon-btn{position:static;right:auto;top:auto}.filters .filter-actions{grid-column:1/-1;justify-content:flex-end}}
+    @media(max-width:760px){.presentation-toolbar{grid-template-columns:1fr auto}.presentation-progress{display:none}.presentation-toolbar-actions button:not(#closePresentation){display:none}.presentation-stage{padding:8px}.presentation-slide{width:calc(100vw - 16px);aspect-ratio:auto;height:calc(100vh - 82px);padding:24px 18px}.presentation-kpis{grid-template-columns:1fr 1fr}.presentation-two-col{grid-template-columns:1fr}.presentation-panel:last-child{display:none}.presentation-funnel{grid-template-columns:1fr 1fr}}
+    @media print{body>*:not(.presentation-shell){display:none!important}.presentation-shell{display:block!important;position:static;background:#fff}.presentation-toolbar,.presentation-nav{display:none!important}.presentation-stage{display:block;padding:0}.presentation-slide{width:100%;height:auto;aspect-ratio:16/9;box-shadow:none;border-radius:0;page-break-after:always}}
     @media(prefers-reduced-motion:reduce){.icon-btn.is-loading .refresh-icon{animation:none}}
     /* Lumina Intelligence analytical layer */
     .chart-card{position:relative;height:auto;min-height:398px;overflow:visible}
@@ -143,7 +146,7 @@
     </nav>
     <div class="side-foot">
       <div class="live"><span class="live-dot"></span><span id="freshnessLabel">Checking data...</span></div>
-      <div class="side-actions"><button data-drawer="guide">Guide</button><button data-drawer="decisions">Decisions</button><button data-drawer="notes">Notes</button><button data-drawer="assistant">Ask AI</button></div>
+      <div class="side-actions"><button data-drawer="guide">Guide</button><button data-drawer="decisions">Decisions</button><button data-drawer="notes">Notes</button><button data-drawer="assistant">Ask AI</button><button data-drawer="presentation">Present</button></div>
     </div>
   </aside>
   <main>
@@ -173,6 +176,7 @@
           <h3 id="activeDecisionTitle">Active decision</h3>
           <p id="activeDecisionCopy"></p>
           <div class="decision-context" id="activeDecisionContext"></div>
+          <div class="evidence-summary" id="activeDecisionEvidence" hidden></div>
         </div>
         <div class="decision-actions">
           <button class="text-btn" id="clearDecision">Clear</button>
@@ -214,7 +218,7 @@
 
       <section class="view" id="view-geo">
         <div class="hero"><div><div class="eyebrow">County & AHJ intelligence</div><h1>See where campaigns earn the right to scale.</h1><p>Rank local performance using cohort conversion, sample confidence, pipeline, spend coverage, and the campaign benchmark.</p></div></div>
-        <div class="evidence-strip" id="geoEvidence" hidden><div><strong>Ground the decision in local performance</strong><p id="geoEvidenceCopy">Confirm the AHJ signal, sample size, benchmark delta, and CAC before changing allocation.</p></div><div class="decision-actions"><button class="secondary" data-add-evidence="geo">Add geography evidence</button><button class="primary" data-test-from="geo">Test this decision</button></div></div>
+        <div class="evidence-strip" id="geoEvidence" hidden><div><strong>Ground the decision in local performance</strong><p id="geoEvidenceCopy">Choose a ranked market or capture the complete filtered slice.</p></div><div class="decision-actions"><select id="geoEvidenceChoice" aria-label="Geography evidence to add"><option value="">Current filtered slice</option></select><button class="secondary" data-add-evidence="geo">Add selected evidence</button><button class="primary" data-test-from="geo">Test this decision</button></div></div>
         <div class="grid grid-4" id="geoMetrics"></div>
         <div class="grid grid-3 section">
           <div class="card elevated" style="grid-column:span 2"><div class="section-head"><div><div class="eyebrow">Opportunity map</div><h2>County / AHJ leaderboard</h2></div><span class="badge good">Cohort-ranked</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>County / AHJ</th><th>Campaign</th><th>Leads</th><th>Win rate</th><th>vs benchmark</th><th>CAC</th><th>Pipeline</th><th>Score</th></tr></thead><tbody id="geoTable"></tbody></table></div></div>
@@ -285,6 +289,27 @@
   </div>
   <div class="drawer-foot"><button class="secondary" id="refreshDecisions" style="width:100%">Refresh outcome monitoring</button></div>
 </aside>
+<aside class="drawer" id="presentationDrawer" aria-label="Build presentation">
+  <div class="drawer-head"><div><div class="eyebrow">Presentation mode</div><h2>Build the story</h2></div><button class="close" data-close aria-label="Close">×</button></div>
+  <div class="drawer-body">
+    <div class="presentation-builder">
+      <div class="presentation-builder-group"><label for="presentationScope">Presentation scope</label><select id="presentationScope"></select></div>
+      <div class="presentation-builder-group"><label>Elements to include</label><div class="presentation-section-list" id="presentationSectionList"></div></div>
+      <div class="presentation-builder-note">Presentation mode is read-only. Selecting a scope here does not change the dashboard filters, active decision, or scenario.</div>
+    </div>
+  </div>
+  <div class="drawer-foot"><button class="primary" id="startPresentation" style="width:100%">Start presentation</button></div>
+</aside>
+
+<section class="presentation-shell" id="presentationShell" aria-label="Marketing presentation" aria-hidden="true">
+  <div class="presentation-toolbar">
+    <div><h2 id="presentationTitle">Marketing decision story</h2><small id="presentationSubtitle">Current dashboard slice</small></div>
+    <div class="presentation-progress" id="presentationProgress">1 / 1</div>
+    <div class="presentation-toolbar-actions"><button id="printPresentation">Print / PDF</button><button id="fullscreenPresentation">Full screen</button><button id="closePresentation">Close</button></div>
+  </div>
+  <div class="presentation-stage" id="presentationStage"></div>
+  <div class="presentation-nav"><button id="previousPresentation" aria-label="Previous page">←</button><button id="nextPresentation" aria-label="Next page">→</button></div>
+</section>
 
 <script src="/assets/echarts.min.js"></script>
 <script>
@@ -296,9 +321,10 @@
     view:"command", months:7, window:"", campaign:"", rollup:"", ahj:"", region:"Operating footprint",
     lens:"auto", funnelRows:[], geoRows:[], projections:[], reconciliation:null,
     filterCatalog:{campaigns:[],rollups:[],ahjs:[]},
-    loading:false, error:null, workflowStage:"discover", activeDecision:null, decisions:[], decisionProgress:{},showArchivedDecisions:false,
+    loading:false, error:null, workflowStage:"discover", activeDecision:null, lastEvidenceNotice:null, decisions:[], decisionProgress:{},showArchivedDecisions:false,
     opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:"",
-    scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0}
+    scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0},
+    presentation:{scope:"current",sections:["overview","funnel","campaigns","geography","decisions","scenario"],slides:[],index:0,data:null}
   };
   const viewTitles = {command:"Command center",funnel:"Funnel lab",geo:"Geo intelligence",scenario:"Scenario studio",quality:"Data quality"};
   const fmtNum = value => new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(Number(value)||0);
@@ -689,7 +715,7 @@
       improvementTarget:{metricKey:opportunity.metricKey,label:opportunity.metricLabel,current:opportunity.current,target:opportunity.target,estimatedWinImpact:opportunity.estimatedWinImpact,estimatedRevenueImpact:opportunity.estimatedRevenueImpact,confidence:opportunity.confidence},
       startedAt:new Date().toISOString(),status:"Investigating"
     };
-    state.workflowStage="investigate";state.campaign=opportunity.campaign;state.ahj=opportunity.ahj;
+    state.workflowStage="investigate";state.lastEvidenceNotice=null;state.campaign=opportunity.campaign;state.ahj=opportunity.ahj;
     loadData();setView("funnel");renderDecisionWorkspace();
   }
   function renderImprovementTarget(){
@@ -736,6 +762,9 @@
     $("activeDecisionTitle").textContent=decision.question||decision.title;
     $("activeDecisionCopy").textContent=decision.copy||"Review the evidence, test the change, and create an implementation brief.";
     $("activeDecisionContext").innerHTML=activeFilterContext().map(item=>`<span>${esc(item)}</span>`).join("");
+    const evidence=decision.evidence||[],evidenceSummary=$("activeDecisionEvidence");
+    evidenceSummary.hidden=!evidence.length;
+    if(evidence.length)evidenceSummary.innerHTML=`<strong>${fmtNum(evidence.length)} evidence point${evidence.length===1?"":"s"}</strong><span>${esc(evidence[evidence.length-1])}</span>`;
     $("backToEvidence").hidden=state.workflowStage==="investigate";
     $("testDecision").hidden=state.workflowStage==="test"||state.workflowStage==="implement";
     renderInvestigationPrompts();renderImprovementTarget();
@@ -746,12 +775,16 @@
     $("geoEvidence").hidden=!active;
     if(active){
       $("funnelEvidenceCopy").textContent=`Active question: ${state.activeDecision.question}`;
-      $("geoEvidenceCopy").textContent=`Active question: ${state.activeDecision.question}`;
+      const notice=state.lastEvidenceNotice?.kind==="geo"?state.lastEvidenceNotice:null;
+      $("geoEvidenceCopy").textContent=notice?notice.copy:`Choose a ranked market below or capture the current filtered slice for “${state.activeDecision.question}”`;
+      $("geoEvidence").classList.toggle("is-confirmed",Boolean(notice));
+      const addButton=document.querySelector('[data-add-evidence="geo"]');
+      if(addButton)addButton.textContent=notice?(notice.added?"Added ✓":"Already added ✓"):"Add selected evidence";
     }
   }
   function beginInvestigation(id){
     const insight=decisionInsights().find(item=>item.id===id);if(!insight)return;
-    state.activeDecision={...insight,evidence:[...insight.evidence],startedAt:new Date().toISOString(),status:"Investigating"};
+    state.activeDecision={...insight,evidence:[...insight.evidence],startedAt:new Date().toISOString(),status:"Investigating"};state.lastEvidenceNotice=null;
     state.workflowStage="investigate";
     if(insight.campaign&&state.filterCatalog.campaigns.includes(insight.campaign)&&state.campaign!==insight.campaign){
       state.campaign=insight.campaign;loadData();
@@ -761,14 +794,19 @@
   function addDecisionEvidence(kind){
     if(!state.activeDecision)return;
     const t=aggregate(filteredFunnelRows()),rows=filteredGeoRows();
+    const selectedKey=kind==="geo"?$("geoEvidenceChoice")?.value:"",selected=selectedKey?rows.find(row=>geoEvidenceKey(row)===selectedKey):null;
+    const sliceLabel=[state.ahj||state.region||"All geographies",state.campaign||state.rollup||"All campaigns",periodLabel()].join(" · ");
     const evidence=kind==="geo"
-      ?`${fmtNum(rows.length)} local cohorts show ${fmtNum(sum(rows,"leads"))} leads, ${fmtNum(sum(rows,"wins"))} wins, and ${fmtNum(sum(rows,"activePipeline"))} active pipeline candidates.`
+      ?selected
+        ?`${selected.geography} · ${selected.campaign}: ${fmtNum(selected.leads)} leads, ${fmtNum(selected.wins)} wins (${fmtPct(selected.leadToWinRate)} lead-to-win; ${selected.conversionDeltaVsBenchmark==null?"no mature benchmark":`${selected.conversionDeltaVsBenchmark>=0?"+":""}${fmtPct(selected.conversionDeltaVsBenchmark)} pts vs mature benchmark`}), ${selected.costPerWin?`${fmtMoney(selected.costPerWin)} CAC`:"CAC unavailable"}, and ${fmtNum(selected.activePipeline)} active pipeline candidates; ${(selected.sampleSizeBucket||"sample confidence unavailable").toLowerCase()}.`
+        :`Current geography slice — ${sliceLabel}: ${fmtNum(rows.length)} local cohorts, ${fmtNum(sum(rows,"leads"))} leads, ${fmtNum(sum(rows,"wins"))} wins, and ${fmtNum(sum(rows,"activePipeline"))} active pipeline candidates.`
       :`${fmtNum(t.leads)} leads convert at ${fmtPct(t.setRate)} lead-to-set, ${fmtPct(t.runRate)} set-to-run, and ${fmtPct(t.winRate)} run-to-win; ${coverageInfo(t).label.toLowerCase()} spend coverage.`;
-    if(!state.activeDecision.evidence.includes(evidence))state.activeDecision.evidence.push(evidence);
-    state.activeDecision.status="Evidence grounded";renderDecisionWorkspace();
+    const added=!state.activeDecision.evidence.includes(evidence);if(added)state.activeDecision.evidence.push(evidence);
+    state.activeDecision.status="Evidence grounded";state.lastEvidenceNotice={kind,added,copy:added?`Captured: ${selected?`${selected.geography} · ${selected.campaign}`:sliceLabel}`:"That exact evidence is already attached to this decision."};renderDecisionWorkspace();
+    $("decisionWorkspace")?.scrollIntoView?.({behavior:"smooth",block:"start"});
   }
   function clearDecision(){
-    state.activeDecision=null;state.workflowStage="discover";renderDecisionWorkspace();renderInvestigationPrompts();renderImprovementTarget();
+    state.activeDecision=null;state.lastEvidenceNotice=null;state.workflowStage="discover";renderDecisionWorkspace();renderInvestigationPrompts();renderImprovementTarget();
   }
   function renderCommand(){
     const rows=filteredFunnelRows(),t=aggregate(rows),coverage=coverageInfo(t);
@@ -843,6 +881,10 @@
     ].join("");
     const portfolioCac=aggregate(filteredFunnelRows()).cpw;
     $("geoTable").innerHTML=rows.length?rows.slice(0,30).map((r,i)=>{const cacTone=performanceTone(r.costPerWin,portfolioCac,r.wins>=3,true);return `<tr><td class="rank">${i+1}</td><td><span class="strong">${esc(r.geography)}</span><span class="sub">${esc([r.county,r.state,r.geographyType].filter(Boolean).join(" · "))}</span></td><td>${esc(r.campaign)}</td><td>${fmtNum(r.leads)}</td><td>${fmtPct(r.leadToWinRate)}</td><td class="${(r.conversionDeltaVsBenchmark||0)>=0?"positive":"negative"}">${r.conversionDeltaVsBenchmark==null?"—":`${r.conversionDeltaVsBenchmark>=0?"+":""}${fmtPct(r.conversionDeltaVsBenchmark)}`}</td><td class="${cacTone==="good"?"positive":cacTone==="bad"?"negative":"neutral"}">${r.costPerWin?fmtMoney(r.costPerWin):"—"}</td><td>${fmtNum(r.activePipeline)}</td><td><strong>${r.opportunityScore}</strong><div class="bar"><span style="width:${Math.min(100,r.opportunityScore)}%"></span></div></td></tr>`}).join(""):`<tr><td colspan="9" class="empty">No local performance rows match these filters.</td></tr>`;
+    const choice=$("geoEvidenceChoice"),previous=choice.value;
+    choice.innerHTML=`<option value="">Current filtered slice (${fmtNum(rows.length)} cohorts)</option>`+rows.slice(0,30).map(r=>`<option value="${esc(geoEvidenceKey(r))}">${esc(r.geography)} · ${esc(r.campaign)}</option>`).join("");
+    const hasPrevious=previous&&rows.slice(0,30).some(row=>geoEvidenceKey(row)===previous);choice.value=hasPrevious?previous:"";
+    if(previous&&!hasPrevious)state.lastEvidenceNotice=null;
     const top=rows[0],recovery=rows.filter(r=>r.leads>=15&&r.conversionDeltaVsBenchmark<0).sort((a,b)=>a.conversionDeltaVsBenchmark-b.conversionDeltaVsBenchmark)[0],pipeline=rows.slice().sort((a,b)=>b.activePipeline-a.activePipeline)[0];
     const cards=[
       top?{t:`Scale signal: ${top.geography}`,c:`${fmtPct(top.leadToWinRate)} lead-to-win with ${fmtNum(top.leads)} leads.`}:{t:"No scale signal",c:"Broaden the filters to find local cohorts."},
@@ -851,6 +893,7 @@
     ];
     $("geoInsights").innerHTML=cards.map((x,i)=>`<div class="insight"><div class="insight-num">${i+1}</div><div><h3>${esc(x.t)}</h3><p>${esc(x.c)}</p></div></div>`).join("");
   }
+  function geoEvidenceKey(row){return [row.geography,row.campaign,row.state,row.geographyType].map(value=>value||"").join("||")}
   const scenarioDefs=[
     {key:"budget",label:"Budget",min:-50,max:100,suffix:"%"},
     {key:"cpl",label:"Cost per lead",min:-40,max:50,suffix:"%"},
@@ -1013,8 +1056,160 @@
     state.view=view;document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===`view-${view}`));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("crumbTitle").textContent=viewTitles[view];$("sidebar").classList.remove("open");window.scrollTo?.({top:0,behavior:"instant"});
     requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="funnel")renderFunnel();if(view==="scenario")renderScenario();renderDecisionWorkspace()});
   }
+  const presentationSectionDefs=[
+    {id:"overview",label:"Executive overview",copy:"Headline metrics, benchmark context, and the decision implication."},
+    {id:"funnel",label:"Funnel and momentum",copy:"Leads through wins, conversion rates, and recent cohort movement."},
+    {id:"campaigns",label:"Campaign performance",copy:"The leading campaigns by volume, conversion, CAC, and efficiency."},
+    {id:"geography",label:"State and region performance",copy:"MD Ops / PA Ops, physical-state rollups, and priority markets."},
+    {id:"decisions",label:"Tracked decisions",copy:"Active decisions, owners, review timing, and monitoring status."},
+    {id:"scenario",label:"Scenario and recommendation",copy:"Baseline versus the current budget, CPL, and conversion assumptions."}
+  ];
+  const presentationStateLabels={MD:"Maryland",DC:"District of Columbia",VA:"Virginia",PA:"Pennsylvania",DE:"Delaware"};
+  function presentationScopeOptions(){
+    const observed=[...new Set(state.geoRows.map(row=>row.state).filter(Boolean))];
+    const states=[...new Set(["MD","DC","VA","PA","DE",...observed])].sort((a,b)=>(presentationStateLabels[a]||a).localeCompare(presentationStateLabels[b]||b));
+    return [
+      {value:"current",label:"Current dashboard slice"},
+      {value:"region:Operating footprint",label:"Operating footprint (MD Ops + PA Ops)"},
+      {value:"region:Maryland",label:"MD Ops region"},
+      {value:"region:Pennsylvania",label:"PA Ops region"},
+      ...states.map(code=>({value:`state:${code}`,label:`Physical state · ${presentationStateLabels[code]||code}`}))
+    ];
+  }
+  function renderPresentationBuilder(){
+    const options=presentationScopeOptions();
+    if(!options.some(option=>option.value===state.presentation.scope))state.presentation.scope="current";
+    $("presentationScope").innerHTML=options.map(option=>`<option value="${esc(option.value)}"${option.value===state.presentation.scope?" selected":""}>${esc(option.label)}</option>`).join("");
+    $("presentationSectionList").innerHTML=presentationSectionDefs.map(section=>`<label class="presentation-section-option"><input type="checkbox" data-presentation-section="${section.id}"${state.presentation.sections.includes(section.id)?" checked":""}><span><strong>${esc(section.label)}</strong><small>${esc(section.copy)}</small></span></label>`).join("");
+  }
+  function presentationQuery(scope){
+    const q=new URLSearchParams({months:String(state.months)});
+    if(state.window)q.set("window",state.window);
+    if(state.campaign)q.set("campaign",state.campaign);
+    if(state.rollup)q.set("rollup",state.rollup);
+    if(scope==="current"){
+      if(state.ahj)q.set("ahj",state.ahj);
+      if(state.region)q.set("region",state.region);
+    }else{
+      const [kind,value]=scope.split(":",2);
+      if(kind==="region")q.set("region",value);
+      if(kind==="state")q.set("state",value);
+    }
+    return q.toString();
+  }
+  function presentationScopeLabel(scope){
+    if(scope==="current")return activeFilterContext().slice(1).map(item=>item.replace(/^[^:]+:\s*/,"")).join(" · ");
+    const [kind,value]=scope.split(":",2);
+    if(kind==="region")return value==="Maryland"?"MD Ops region":value==="Pennsylvania"?"PA Ops region":"MD Ops + PA Ops";
+    return `Physical state · ${presentationStateLabels[value]||value}`;
+  }
+  async function loadPresentationData(scope,sections){
+    let funnelRows,geoRows;
+    if(scope==="current"){
+      funnelRows=filteredFunnelRows().slice();geoRows=filteredGeoRows().slice();
+    }else{
+      const query=presentationQuery(scope),responses=await Promise.all([
+        fetchJson(`/api/marketing-funnel?${query}`),fetchJson(`/api/marketing-geo?${query}`)
+      ]);
+      funnelRows=responses[0].filter(row=>!isExcludedMarketingRow(row));geoRows=responses[1].filter(row=>!isExcludedMarketingRow(row));
+    }
+    let decisions=[];
+    if(sections.includes("decisions")){
+      try{decisions=await fetchJson("/api/marketing-decisions?limit=30")}catch(error){decisions=[]}
+    }
+    const [kind,value]=scope.includes(":")?scope.split(":",2):["current",""];
+    if(kind==="region")decisions=decisions.filter(decision=>value==="Operating footprint"?["Maryland","Pennsylvania"].includes(decision.operating_region):decision.operating_region===value);
+    if(kind==="state"){
+      const markets=new Set(geoRows.map(row=>row.ahj||row.geography).filter(Boolean));
+      decisions=decisions.filter(decision=>decision.ahj&&markets.has(decision.ahj));
+    }
+    if(scope==="current"){
+      decisions=decisions.filter(decision=>(!state.campaign||decision.campaign===state.campaign)&&(!state.ahj||decision.ahj===state.ahj)&&(!state.region||state.region==="Operating footprint"||decision.operating_region===state.region));
+    }
+    return {scope,scopeLabel:presentationScopeLabel(scope),period:periodLabel(),funnelRows,geoRows,decisions,summary:aggregate(funnelRows)};
+  }
+  function presentationHead(eyebrow,title,data){
+    const loaded=data.summary.loadedAt?` · Data ${new Date(data.summary.loadedAt).toLocaleDateString()}`:"";
+    return `<div class="presentation-slide-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1></div><div class="presentation-scope"><strong>${esc(data.scopeLabel)}</strong><br>${esc(data.period)}${esc(loaded)}</div></div>`;
+  }
+  function presentationKpi(label,value,detail=""){
+    return `<div class="presentation-kpi"><small>${esc(label)}</small><strong>${esc(value)}</strong>${detail?`<small>${esc(detail)}</small>`:""}</div>`;
+  }
+  function presentationScenarioValues(rows){
+    const b=aggregate(rows),m=key=>1+(state.scenario[key]||0)/100,baseSpend=b.spend||b.leads*(b.cpl||500),spend=baseSpend*m("budget"),cpl=(b.cpl||500)*m("cpl");
+    const leads=Math.max(0,spend/cpl),sets=leads*b.setRate*m("setRate"),runs=sets*b.runRate*m("runRate"),wins=runs*b.winRate*m("winRate"),revenue=wins*b.revenuePerWin*m("revenuePerWin");
+    return {baseline:{...b,spend:baseSpend},scenario:{...b,spend,cpl,leads,sets,runs,wins,revenue,cpw:wins?spend/wins:0,roi:spend?revenue/spend:0}};
+  }
+  function presentationOverviewSlide(data){
+    const t=data.summary,benchmark=t.benchmark||0,delta=benchmark?t.leadToWin/benchmark-1:null,confidence=coverageInfo(t);
+    const implication=!t.leads?"No cohort data is available for this scope.":delta!=null&&delta>=.08?"Conversion is outperforming the mature benchmark; protect quality while evaluating selective scale.":delta!=null&&delta<=-.08?"Conversion trails the mature benchmark; prioritize the largest stage and market recovery opportunities.":"Performance is near the mature benchmark; use campaign and geography evidence to choose the next test.";
+    return {id:"overview",html:`<article class="presentation-slide">${presentationHead("Executive overview","What the current cohort says",data)}<div class="presentation-content"><div class="presentation-kpis">${presentationKpi("Leads",fmtNum(t.leads))}${presentationKpi("Wins",fmtNum(t.wins),`${fmtPct(t.leadToWin)} lead → win`)}${presentationKpi("Spend",fmtMoney(t.spend),confidence.label)}${presentationKpi("CAC",fmtMoney(t.cpw),`${(t.roi||0).toFixed(1)}× revenue / spend`)}</div><div class="presentation-callout"><strong>Decision implication</strong><p>${esc(implication)}</p></div></div></article>`};
+  }
+  function presentationFunnelSlide(data){
+    const t=data.summary,months=monthlyTotals(data.funnelRows).slice(-6);
+    const stages=[{label:"Leads",value:t.leads,rate:null},{label:"Sets",value:t.sets,rate:t.setRate},{label:"Runs",value:t.runs,rate:t.runRate},{label:"Wins",value:t.wins,rate:t.winRate}];
+    const rows=months.map(item=>`<tr><td>${esc(trendMonth(item.month))}</td><td>${fmtNum(item.totals.leads)}</td><td>${fmtNum(item.totals.wins)}</td><td>${fmtPct(item.totals.leadToWin)}</td><td>${fmtMoney(item.totals.cpw)}</td></tr>`).join("");
+    return {id:"funnel",html:`<article class="presentation-slide">${presentationHead("Funnel and momentum","How demand becomes residential wins",data)}<div class="presentation-content"><div class="presentation-funnel">${stages.map(stage=>`<div class="presentation-funnel-stage"><small>${stage.label}</small><strong>${fmtNum(stage.value)}</strong><em>${stage.rate==null?"Cohort entry":fmtPct(stage.rate)+" from prior stage"}</em></div>`).join("")}</div><div style="margin-top:18px"><table class="presentation-table"><thead><tr><th>Cohort</th><th>Leads</th><th>Wins</th><th>Lead → win</th><th>CAC</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No monthly cohorts in this slice.</td></tr>'}</tbody></table></div></div></article>`};
+  }
+  function presentationCampaignSlide(data){
+    const campaigns=group(data.funnelRows,"campaign").map(item=>({name:item.name,...item.totals})).sort((a,b)=>b.leads-a.leads).slice(0,7);
+    const rows=campaigns.map(item=>`<tr><td>${esc(item.name)}</td><td>${fmtNum(item.leads)}</td><td>${fmtNum(item.wins)}</td><td>${fmtPct(item.leadToWin)}</td><td>${fmtMoney(item.cpw)}</td><td>${(item.roi||0).toFixed(1)}×</td></tr>`).join("");
+    return {id:"campaigns",html:`<article class="presentation-slide">${presentationHead("Campaign performance","Which campaigns carry the portfolio",data)}<div class="presentation-content"><table class="presentation-table"><thead><tr><th>Campaign</th><th>Leads</th><th>Wins</th><th>Lead → win</th><th>CAC</th><th>Rev / spend</th></tr></thead><tbody>${rows||'<tr><td colspan="6">No campaign rows in this scope.</td></tr>'}</tbody></table></div></article>`};
+  }
+  function presentationGeoGroup(rows,key){
+    const map=new Map();rows.forEach(row=>{const name=row[key]||"Unresolved";if(!map.has(name))map.set(name,[]);map.get(name).push(row)});
+    return [...map].map(([name,items])=>({name,...aggregate(items)})).sort((a,b)=>b.leads-a.leads);
+  }
+  function presentationGeoSlide(data){
+    const scopeKind=data.scope.includes(":")?data.scope.split(":",1)[0]:"current";
+    const primaryKey=scopeKind==="state"?"county":data.scope==="region:Operating footprint"||data.scope==="current"&&state.region==="Operating footprint"?"operatingRegion":"state";
+    const primaryTitle=primaryKey==="operatingRegion"?"Ops-region rollup":primaryKey==="state"?"Physical states":"Counties / markets";
+    const groups=presentationGeoGroup(data.geoRows,primaryKey).slice(0,6),markets=presentationGeoGroup(data.geoRows,"geography").slice(0,6);
+    const rankRows=items=>items.map(item=>`<div class="presentation-rank-row"><div><strong>${esc(item.name)}</strong><small>${fmtNum(item.leads)} leads · ${fmtNum(item.wins)} wins</small></div><strong>${fmtPct(item.leadToWin)}</strong><strong>${fmtMoney(item.cpw)}</strong></div>`).join("")||'<div class="presentation-empty">No geography rows in this scope.</div>';
+    return {id:"geography",html:`<article class="presentation-slide">${presentationHead("State and region performance","Where outcomes differ",data)}<div class="presentation-content presentation-two-col"><div class="presentation-panel"><h3>${primaryTitle}</h3><div class="presentation-rank-list">${rankRows(groups)}</div></div><div class="presentation-panel"><h3>Leading counties / markets</h3><div class="presentation-rank-list">${rankRows(markets)}</div></div></div></article>`};
+  }
+  function presentationDecisionSlide(data){
+    const rows=data.decisions.slice(0,6).map(decision=>`<div class="presentation-decision"><div class="presentation-decision-head"><strong>${esc(decision.question)}</strong>${badge(decision.status||"Monitoring",progressTone(decision.status||"Monitoring"))}</div><p>${esc(decision.action)}</p><div class="presentation-decision-meta">${esc(decision.created_by_name||"Authenticated owner")} · ${esc(decision.operating_region||"All regions")} · Review ${esc(new Date(`${decision.review_after}T00:00:00`).toLocaleDateString())}</div></div>`).join("");
+    return {id:"decisions",html:`<article class="presentation-slide">${presentationHead("Decision follow-through","What has been decided",data)}<div class="presentation-content"><div class="presentation-decision-list">${rows||'<div class="presentation-empty"><div><strong>No active tracked decisions match this scope.</strong><br>Create and track a scenario decision to include it here.</div></div>'}</div></div></article>`};
+  }
+  function presentationScenarioSlide(data){
+    const values=presentationScenarioValues(data.funnelRows),b=values.baseline,s=values.scenario,assumptions=scenarioDefs.filter(def=>state.scenario[def.key]).map(def=>`${def.label} ${state.scenario[def.key]>0?"+":""}${Math.round(state.scenario[def.key])}%`);
+    const active=state.activeDecision?.question||"What change should we implement for this portfolio?";
+    return {id:"scenario",html:`<article class="presentation-slide">${presentationHead("Scenario and recommendation","What changes under the proposed assumptions",data)}<div class="presentation-content"><div class="presentation-kpis">${presentationKpi("Budget",`${fmtMoney(b.spend)} → ${fmtMoney(s.spend)}`)}${presentationKpi("CPL",`${fmtMoney(b.cpl)} → ${fmtMoney(s.cpl)}`)}${presentationKpi("Wins",`${fmtNum(b.wins)} → ${fmtNum(s.wins)}`)}${presentationKpi("Revenue",`${fmtMoney(b.revenue)} → ${fmtMoney(s.revenue)}`)}</div><div class="presentation-callout"><strong>${esc(active)}</strong><p>${esc(assumptions.length?assumptions.join(" · "):"Baseline assumptions are unchanged. Use Scenario Studio to shape a proposed action before presenting.")}</p></div></div></article>`};
+  }
+  function buildPresentationSlides(data,sections=state.presentation.sections){
+    const builders={overview:presentationOverviewSlide,funnel:presentationFunnelSlide,campaigns:presentationCampaignSlide,geography:presentationGeoSlide,decisions:presentationDecisionSlide,scenario:presentationScenarioSlide};
+    return sections.filter(id=>builders[id]).map(id=>builders[id](data));
+  }
+  function renderPresentationSlide(){
+    const slides=state.presentation.slides,index=Math.max(0,Math.min(state.presentation.index,slides.length-1));state.presentation.index=index;
+    $("presentationStage").innerHTML=slides[index]?.html||'<div class="presentation-empty">No presentation elements selected.</div>';
+    $("presentationProgress").textContent=slides.length?`${index+1} / ${slides.length}`:"0 / 0";
+    $("previousPresentation").disabled=index<=0;$("nextPresentation").disabled=index>=slides.length-1;
+  }
+  async function startPresentation(){
+    const sections=[...document.querySelectorAll("[data-presentation-section]:checked")].map(input=>input.dataset.presentationSection);
+    if(!sections.length){alert("Choose at least one presentation element.");return}
+    const button=$("startPresentation");button.disabled=true;button.textContent="Building presentation...";
+    try{
+      state.presentation.scope=$("presentationScope").value;state.presentation.sections=sections;
+      const data=await loadPresentationData(state.presentation.scope,sections);state.presentation.data=data;state.presentation.slides=buildPresentationSlides(data,sections);state.presentation.index=0;
+      $("presentationTitle").textContent="Marketing decision story";$("presentationSubtitle").textContent=`${data.scopeLabel} · ${data.period}`;
+      closeDrawers();$("presentationShell").classList.add("open");$("presentationShell").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";renderPresentationSlide();
+    }catch(error){alert(`Presentation could not be built: ${error.message}`)}finally{button.disabled=false;button.textContent="Start presentation"}
+  }
+  function closePresentation(){
+    $("presentationShell").classList.remove("open");$("presentationShell").setAttribute("aria-hidden","true");document.body.style.overflow="";
+    if(document.fullscreenElement)document.exitFullscreen?.();
+  }
+  function movePresentation(delta){state.presentation.index+=delta;renderPresentationSlide()}
+  function printPresentation(){
+    if(!state.presentation.slides.length)return;
+    $("presentationStage").innerHTML=state.presentation.slides.map(slide=>slide.html).join("");
+    window.print?.();renderPresentationSlide();
+  }
   function openDrawer(name){
-    closeDrawers(); const drawer=$(name==="notes"?"notesDrawer":name==="guide"?"guideDrawer":name==="decision"?"decisionDrawer":name==="decisions"?"decisionsDrawer":"assistantDrawer");drawer.classList.add("open");$("drawerBackdrop").classList.add("open");if(name==="notes")loadNotes();if(name==="decisions")loadDecisions();
+    closeDrawers(); const drawer=$(name==="notes"?"notesDrawer":name==="guide"?"guideDrawer":name==="decision"?"decisionDrawer":name==="decisions"?"decisionsDrawer":name==="presentation"?"presentationDrawer":"assistantDrawer");drawer.classList.add("open");$("drawerBackdrop").classList.add("open");if(name==="notes")loadNotes();if(name==="decisions")loadDecisions();if(name==="presentation")renderPresentationBuilder();
   }
   function closeDrawers(){document.querySelectorAll(".drawer").forEach(d=>d.classList.remove("open"));$("drawerBackdrop").classList.remove("open")}
   async function loadNotes(){
@@ -1203,6 +1398,7 @@
   document.querySelectorAll("[data-drawer]").forEach(b=>b.addEventListener("click",()=>openDrawer(b.dataset.drawer)));
   document.querySelectorAll("[data-add-evidence]").forEach(b=>b.addEventListener("click",()=>addDecisionEvidence(b.dataset.addEvidence)));
   document.querySelectorAll("[data-test-from]").forEach(b=>b.addEventListener("click",()=>{addDecisionEvidence(b.dataset.testFrom);startScenario()}));
+  $("geoEvidenceChoice").addEventListener("change",()=>{state.lastEvidenceNotice=null;renderInvestigationPrompts()});
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",closeDrawers));$("drawerBackdrop").addEventListener("click",closeDrawers);
   $("insightList").addEventListener("click",event=>{const key=event.target?.dataset?.opportunityKey,id=event.target?.dataset?.investigate;if(key)beginOpportunity(key);else if(id)beginInvestigation(id)});
   $("opportunityMatrix").addEventListener("click",event=>{const key=event.target?.closest?.("[data-opportunity-key]")?.dataset?.opportunityKey||event.target?.dataset?.opportunityKey;if(key)beginOpportunity(key)});
@@ -1222,6 +1418,12 @@
   $("refreshDecisions").addEventListener("click",loadDecisions);
   $("showArchivedDecisions").addEventListener("change",event=>{state.showArchivedDecisions=event.target.checked;loadDecisions()});
   $("trackedDecisionList").addEventListener("click",event=>{const id=event.target?.dataset?.archiveDecision;if(id)archiveDecision(id)});
+  $("startPresentation").addEventListener("click",startPresentation);
+  $("previousPresentation").addEventListener("click",()=>movePresentation(-1));
+  $("nextPresentation").addEventListener("click",()=>movePresentation(1));
+  $("closePresentation").addEventListener("click",closePresentation);
+  $("printPresentation").addEventListener("click",printPresentation);
+  $("fullscreenPresentation").addEventListener("click",()=>$("presentationShell").requestFullscreen?.());
   $("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
   $("monthsFilter").addEventListener("change",e=>{state.window=e.target.value==="30d"?"30d":"";if(!state.window)state.months=Number(e.target.value);state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={...state.filterCatalog,campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;loadData()});
@@ -1241,7 +1443,8 @@
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("saveNote").addEventListener("click",saveNote);$("askAssistant").addEventListener("click",askAssistant);
   window.addEventListener("resize",()=>{echartInstances.forEach?.(chart=>chart.resize());if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
-  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,funnelWaterfallModel,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderAll,loadData,refreshData,resetFilters};
+  window.addEventListener("keydown",event=>{if(!$("presentationShell").classList.contains("open"))return;if(event.key==="ArrowRight")movePresentation(1);if(event.key==="ArrowLeft")movePresentation(-1);if(event.key==="Escape")closePresentation()});
+  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,funnelWaterfallModel,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderPresentationBuilder,presentationQuery,loadPresentationData,buildPresentationSlides,renderPresentationSlide,startPresentation,closePresentation,printPresentation,renderAll,loadData,refreshData,resetFilters};
   renderScenario(); loadData();
 })();
 </script>

@@ -24,6 +24,7 @@ assert(html.includes('data-scenario-money="${d.key}"'), "Scenario budget and CPL
 assert(html.includes('/api/marketing-decisions/archive') && html.includes('id="showArchivedDecisions"'), "Decision archive controls are missing.");
 assert(html.includes('id="geoEvidenceChoice"') && html.includes('activeDecisionEvidence') && html.includes('scrollIntoView'), "Geography evidence selection or visible confirmation is missing.");
 assert(html.includes('id="presentationSectionList"') && html.includes('data-presentation-section="${section.id}"'), "Selectable presentation elements are missing.");
+assert(html.includes("presentationLineChart") && html.includes("presentationTalkTrack") && html.includes("presentationRateBars"), "Presentation storytelling charts are missing.");
 assert(html.includes('value:"region:Maryland"') && html.includes('value:"region:Pennsylvania"') && html.includes('value:`state:${code}`'), "Presentation scope does not cover MD Ops, PA Ops, and physical states.");
 
 console.log("Notes and decision-assistant wiring verified OK.");

@@ -176,6 +176,9 @@ setImmediate(() => {
   };
   const presentationSlides = app.buildPresentationSlides(presentationData);
   assert(presentationSlides.length === 6 && presentationSlides.every(slide=>slide.id&&slide.html.includes("presentation-slide")), "Selectable presentation elements did not build a complete story.");
+  assert(presentationSlides.filter(slide=>["overview","funnel"].includes(slide.id)).every(slide=>slide.html.includes("<svg")&&slide.html.includes("presentation-talk-track")), "Presentation trend charts or talk tracks are missing.");
+  assert(presentationSlides.filter(slide=>["campaigns","geography"].includes(slide.id)).every(slide=>slide.html.includes("presentation-bar-track")) && dashboardHtml.includes('title="Mature benchmark"'), "Campaign or geography benchmark charts are missing.");
+  assert(presentationSlides.find(slide=>slide.id==="scenario").html.includes("presentation-scenario-bars") && presentationSlides.find(slide=>slide.id==="decisions").html.includes("Active decisions"), "Scenario comparison or decision-summary visuals are missing.");
   assert(presentationSlides.find(slide=>slide.id==="geography").html.includes("Ops-region rollup"), "Operating-region presentation rollup is missing.");
   assert(presentationSlides.find(slide=>slide.id==="decisions").html.includes("Scale efficient search?"), "Tracked decisions did not carry into presentation mode.");
   const statePresentationQuery = app.presentationQuery("state:VA");

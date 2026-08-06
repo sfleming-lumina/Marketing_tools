@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
 
 env:
   GCP_PROJECT_ID: lumina-lakehouse
@@ -83,6 +86,9 @@ jobs:
       - name: Apply marketing funnel analysis views
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260728_marketing_funnel_analysis.sql
 
+      - name: Refresh calendar-period marketing activity
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260806_marketing_activity_trends.sql
+
       - name: Validate active lead inventory
         run: |
           bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false --format=prettyjson \
@@ -156,3 +162,26 @@ jobs:
             --member="${DASHBOARD_IAP_MEMBER}" \
             --role=roles/iap.httpsResourceAccessor \
             --quiet
+
+  refresh-data:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Refresh cohort runtime tables
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260728_marketing_funnel_analysis.sql
+
+      - name: Refresh calendar-period marketing activity
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260806_marketing_activity_trends.sql

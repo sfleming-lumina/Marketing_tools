@@ -3,14 +3,18 @@ import os
 import re
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from urllib import error as urlerror
 from urllib import request as urlrequest
+from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
+import google.auth
+from google.auth.transport.requests import AuthorizedSession
 from google.cloud import bigquery
 
 
@@ -25,9 +29,21 @@ FUNNEL_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_funnel_analys
 PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_projection_runtime"
 ACTIVE_LEAD_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime"
 ACTIVE_CAMPAIGN_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime"
+TREND_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_activity_daily_runtime"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+OFFICIAL_WORKBOOK_ID = os.environ.get(
+    "OFFICIAL_WORKBOOK_ID", "1WV9Kw2m3ebo7kgieUV7mi5kvaMDNS6q-T8Jx1KL9R-4"
+).strip()
+OFFICIAL_WORKBOOK_URL = f"https://docs.google.com/spreadsheets/d/{OFFICIAL_WORKBOOK_ID}/edit"
+OFFICIAL_WORKBOOK_RANGES = (
+    "Actuals Net State Summary!A1:P300",
+    "Actuals Net State Detail!A1:Q1000",
+    "Forecast_Summary!A1:P196",
+)
+WORKBOOK_CACHE_SECONDS = int(os.environ.get("WORKBOOK_CACHE_SECONDS", "300"))
+WORKBOOK_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 SOURCE_OBJECTS = [
     "analytics_rpt.rpt_marketing_lead_cohort_performance",
@@ -37,6 +53,7 @@ SOURCE_OBJECTS = [
     "marketing_tool_ops.rpt_marketing_period_projection_runtime",
     "marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime",
     "marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime",
+    "marketing_tool_ops.rpt_marketing_activity_daily_runtime",
     "analytics_rpt.rpt_marketing_campaign_ahj_performance",
     "analytics_rpt.rpt_campaign_ahj_performance",
     "analytics_rpt.rpt_pipeline_funnel",
@@ -95,6 +112,78 @@ SALESFORCE_OPEN_LEAD_VALIDATION = {
     "activeCampaignOpenLeads": 4765,
     "definition": "Production Salesforce Lead where IS_Open__c = TRUE and IsConverted = FALSE.",
 }
+
+
+def _workbook_number(value):
+    if isinstance(value, (int, float)):
+        return value
+    if value in (None, "", "-", "N/A"):
+        return 0
+    cleaned = re.sub(r"[^0-9.\-]", "", str(value))
+    try:
+        return float(cleaned) if cleaned not in ("", "-", ".") else 0
+    except ValueError:
+        return 0
+
+
+def normalize_workbook_summary(values):
+    records = []
+    for row in values[2:]:
+        padded = list(row) + [None] * max(0, 16 - len(row))
+        category, state_name, metric = padded[:3]
+        if not category or not state_name or not metric:
+            continue
+        records.append(
+            {
+                "category": str(category),
+                "state": str(state_name),
+                "metric": str(metric),
+                "months": [_workbook_number(value) for value in padded[3:15]],
+                "total": _workbook_number(padded[15]),
+            }
+        )
+    return records
+
+
+def normalize_workbook_detail(values):
+    records = []
+    for row in values[2:]:
+        padded = list(row) + [None] * max(0, 17 - len(row))
+        category, resource, state_name, metric = padded[:4]
+        if not category or not resource or not state_name or not metric:
+            continue
+        records.append(
+            {
+                "category": str(category),
+                "resource": str(resource),
+                "state": str(state_name),
+                "metric": str(metric),
+                "months": [_workbook_number(value) for value in padded[4:16]],
+                "total": _workbook_number(padded[16]),
+            }
+        )
+    return records
+
+
+def normalize_workbook_forecast(values):
+    records = []
+    current_metric = ""
+    for row in values[2:]:
+        padded = list(row) + [None] * max(0, 16 - len(row))
+        if padded[1]:
+            current_metric = str(padded[1])
+        category = padded[2]
+        if not current_metric or not category or str(category) == "Total":
+            continue
+        records.append(
+            {
+                "category": str(category),
+                "metric": current_metric,
+                "months": [_workbook_number(value) for value in padded[3:15]],
+                "total": _workbook_number(padded[15]),
+            }
+        )
+    return records
 
 
 def build_ahj_performance_query(months=6, campaign=None, market=None):
@@ -217,6 +306,144 @@ OPERATING_REGION_FILTERS = {
     "Operating footprint",
 }
 MARKETING_WINDOWS = {"30d"}
+MARKETING_TREND_PERIODS = {
+    "7d",
+    "30d",
+    "60d",
+    "last_month",
+    "mtd",
+    "last_quarter",
+    "qtd",
+    "ytd",
+}
+
+
+def _shift_months(value, months):
+    month_index = value.year * 12 + value.month - 1 + months
+    year, zero_based_month = divmod(month_index, 12)
+    return date(year, zero_based_month + 1, 1)
+
+
+def _date_label(value):
+    return f"{value.strftime('%b')} {value.day}, {value.year}"
+
+
+def marketing_trend_period_bounds(period, today=None):
+    today = today or datetime.now(ZoneInfo("America/New_York")).date()
+    if period not in MARKETING_TREND_PERIODS:
+        raise ValueError("period is not a supported calendar trend filter.")
+
+    if period in {"7d", "30d", "60d"}:
+        days = int(period[:-1])
+        current_start = today - timedelta(days=days - 1)
+        current_end = today
+        comparison_end = current_start - timedelta(days=1)
+        comparison_start = comparison_end - timedelta(days=days - 1)
+        label = f"Last {days} days"
+    elif period == "last_month":
+        current_end = today.replace(day=1) - timedelta(days=1)
+        current_start = current_end.replace(day=1)
+        comparison_end = current_start - timedelta(days=1)
+        comparison_start = comparison_end.replace(day=1)
+        label = current_start.strftime("%B %Y")
+    elif period == "mtd":
+        current_start = today.replace(day=1)
+        current_end = today
+        comparison_start = _shift_months(current_start, -1)
+        next_comparison_month = _shift_months(comparison_start, 1)
+        comparison_end = min(
+            comparison_start + (current_end - current_start),
+            next_comparison_month - timedelta(days=1),
+        )
+        label = "Month to date"
+    elif period in {"last_quarter", "qtd"}:
+        quarter_start = date(today.year, ((today.month - 1) // 3) * 3 + 1, 1)
+        if period == "last_quarter":
+            current_end = quarter_start - timedelta(days=1)
+            current_start = _shift_months(quarter_start, -3)
+            comparison_end = current_start - timedelta(days=1)
+            comparison_start = _shift_months(current_start, -3)
+            label = f"Q{((current_start.month - 1) // 3) + 1} {current_start.year}"
+        else:
+            current_start = quarter_start
+            current_end = today
+            comparison_start = _shift_months(quarter_start, -3)
+            comparison_quarter_end = quarter_start - timedelta(days=1)
+            comparison_end = min(
+                comparison_start + (current_end - current_start),
+                comparison_quarter_end,
+            )
+            label = "Quarter to date"
+    else:
+        current_start = date(today.year, 1, 1)
+        current_end = today
+        comparison_start = date(today.year - 1, 1, 1)
+        comparison_year_end = date(today.year, 1, 1) - timedelta(days=1)
+        comparison_end = min(
+            comparison_start + (current_end - current_start),
+            comparison_year_end,
+        )
+        label = "Year to date"
+
+    return {
+        "period": period,
+        "label": label,
+        "current_start": current_start,
+        "current_end": current_end,
+        "comparison_start": comparison_start,
+        "comparison_end": comparison_end,
+        "current_label": f"{_date_label(current_start)}–{_date_label(current_end)}",
+        "comparison_label": f"{_date_label(comparison_start)}–{_date_label(comparison_end)}",
+    }
+
+
+def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=None):
+    conditions = [
+        "event_date BETWEEN @comparison_start AND @current_end",
+        "NOT REGEXP_CONTAINS(LOWER(COALESCE(campaign_name, '')), r'jonathan\\s+bissell')",
+    ]
+    if campaign:
+        conditions.append("campaign_name = @campaign")
+    if rollup:
+        conditions.append("campaign_reporting_rollup_name = @rollup")
+    if ahj:
+        conditions.append("resolved_county = @ahj")
+    if region == "Operating footprint":
+        conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
+    elif region:
+        conditions.append("operating_region_group = @region")
+    return f"""
+        SELECT
+            event_date AS date,
+            SUM(IF(event_type = 'Lead', event_count, 0)) AS leads,
+            SUM(IF(event_type = 'Set', event_count, 0)) AS sets,
+            SUM(IF(event_type = 'Run', event_count, 0)) AS runs,
+            SUM(IF(event_type = 'Win', event_count, 0)) AS wins,
+            SUM(IF(event_type = 'Win', event_value, 0)) AS winValue,
+            SUM(IF(event_type = 'Spend', event_value, 0)) AS spend,
+            MAX(loaded_at) AS loadedAt
+        FROM `{TREND_TABLE_REF}`
+        WHERE {' AND '.join(conditions)}
+        GROUP BY date
+        ORDER BY date
+    """
+
+
+def summarize_marketing_activity(rows):
+    summary = {
+        "leads": sum(row["leads"] for row in rows),
+        "sets": sum(row["sets"] for row in rows),
+        "runs": sum(row["runs"] for row in rows),
+        "wins": sum(row["wins"] for row in rows),
+        "winValue": sum(row["winValue"] for row in rows),
+        "spend": sum(row["spend"] for row in rows),
+    }
+    summary["setsPerLead"] = summary["sets"] / summary["leads"] if summary["leads"] else None
+    summary["runsPerSet"] = summary["runs"] / summary["sets"] if summary["sets"] else None
+    summary["winsPerRun"] = summary["wins"] / summary["runs"] if summary["runs"] else None
+    summary["costPerLead"] = summary["spend"] / summary["leads"] if summary["leads"] else None
+    summary["costPerWin"] = summary["spend"] / summary["wins"] if summary["wins"] else None
+    return summary
 
 
 def _marketing_portfolio_state_sql():
@@ -887,6 +1114,7 @@ def evaluate_marketing_decision_progress(decision, current, now=None):
 
 class DashboardHandler(SimpleHTTPRequestHandler):
     _client = None
+    _workbook_cache = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -983,6 +1211,15 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             status, result = self._marketing_reconciliation()
             self._send_json(status, result)
             return
+        if parsed.path == "/api/marketing-trends":
+            status, result = self._marketing_trends(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
+        if parsed.path == "/api/official-workbook":
+            params = parse_qs(parsed.query)
+            status, result = self._official_workbook(params.get("refresh", ["0"])[0] == "1")
+            self._send_json(status, result)
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -1012,6 +1249,64 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(status, result)
             return
         self._send_json(HTTPStatus.NOT_FOUND, {"detail": "Not found"})
+
+    def _official_workbook(self, force=False):
+        now = time.time()
+        cached = DashboardHandler._workbook_cache
+        if not force and cached and now - cached["cached_at"] < WORKBOOK_CACHE_SECONDS:
+            payload = dict(cached["payload"])
+            payload["cache"] = "hit"
+            return HTTPStatus.OK, payload
+        try:
+            credentials, _ = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+            )
+            session = AuthorizedSession(credentials)
+            query = urlencode(
+                [
+                    *(('ranges', value) for value in OFFICIAL_WORKBOOK_RANGES),
+                    ("majorDimension", "ROWS"),
+                    ("valueRenderOption", "UNFORMATTED_VALUE"),
+                    ("dateTimeRenderOption", "FORMATTED_STRING"),
+                ]
+            )
+            response = session.get(
+                f"https://sheets.googleapis.com/v4/spreadsheets/{OFFICIAL_WORKBOOK_ID}/values:batchGet?{query}",
+                timeout=30,
+            )
+            response.raise_for_status()
+            value_ranges = response.json().get("valueRanges", [])
+            if len(value_ranges) != len(OFFICIAL_WORKBOOK_RANGES):
+                raise RuntimeError("The workbook did not return every required reporting range.")
+            summary = normalize_workbook_summary(value_ranges[0].get("values", []))
+            detail = normalize_workbook_detail(value_ranges[1].get("values", []))
+            forecast = normalize_workbook_forecast(value_ranges[2].get("values", []))
+            if not summary:
+                raise RuntimeError("The governed workbook summary is empty.")
+            payload = {
+                "source": {
+                    "title": "Marketing Report 2026_Official",
+                    "spreadsheetId": OFFICIAL_WORKBOOK_ID,
+                    "url": OFFICIAL_WORKBOOK_URL,
+                    "ranges": list(OFFICIAL_WORKBOOK_RANGES),
+                },
+                "months": list(WORKBOOK_MONTHS),
+                "summary": summary,
+                "detail": detail,
+                "forecast": forecast,
+                "refreshedAt": datetime.now(timezone.utc).isoformat(),
+                "cache": "bypassed" if force else "miss",
+            }
+            DashboardHandler._workbook_cache = {"cached_at": now, "payload": payload}
+            return HTTPStatus.OK, payload
+        except Exception as exc:
+            detail = str(exc)
+            if "403" in detail or "permission" in detail.lower():
+                detail = (
+                    "The Marketing Decision Tool runtime cannot read the official workbook. "
+                    "Share it as Viewer with marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com."
+                )
+            return HTTPStatus.BAD_GATEWAY, {"detail": detail, "sourceUrl": OFFICIAL_WORKBOOK_URL}
 
     def _list_notes(self, view):
         query = f"""
@@ -1357,6 +1652,105 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
         query = build_marketing_geo_query(**values)
         return self._run_marketing_query(query, values, shape_marketing_geo_row, "Marketing geography")
+
+    def _marketing_trends(self, params):
+        period = str((params.get("period", ["30d"])[0]) or "30d").strip()
+        try:
+            bounds = marketing_trend_period_bounds(period)
+        except ValueError as exc:
+            return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+        values = {
+            "campaign": params.get("campaign", [None])[0] or None,
+            "rollup": params.get("rollup", [None])[0] or None,
+            "ahj": params.get("ahj", [None])[0] or None,
+            "region": params.get("region", [None])[0] or None,
+        }
+        if values["region"] and values["region"] not in OPERATING_REGION_FILTERS:
+            return HTTPStatus.BAD_REQUEST, {"detail": "region is not a supported operating-region filter."}
+        query_parameters = [
+            bigquery.ScalarQueryParameter("comparison_start", "DATE", bounds["comparison_start"]),
+            bigquery.ScalarQueryParameter("current_end", "DATE", bounds["current_end"]),
+        ]
+        for name in ("campaign", "rollup", "ahj", "region"):
+            if name == "region" and values[name] == "Operating footprint":
+                continue
+            if values[name]:
+                query_parameters.append(bigquery.ScalarQueryParameter(name, "STRING", values[name]))
+        job_config = bigquery.QueryJobConfig(query_parameters=query_parameters)
+        try:
+            result = self.client.query(
+                build_marketing_trends_query(**values), job_config=job_config
+            ).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing trends query failed: {exc}"}
+
+        by_date = {}
+        loaded_at = None
+        latest_event_dates = {"leads": None, "sets": None, "runs": None, "wins": None, "spend": None}
+        for row in result:
+            item = {
+                "date": row["date"].isoformat(),
+                "leads": row["leads"] or 0,
+                "sets": row["sets"] or 0,
+                "runs": row["runs"] or 0,
+                "wins": row["wins"] or 0,
+                "winValue": row["winValue"] or 0,
+                "spend": row["spend"] or 0,
+            }
+            by_date[row["date"]] = item
+            for metric in latest_event_dates:
+                if item[metric] and (
+                    latest_event_dates[metric] is None or row["date"] > latest_event_dates[metric]
+                ):
+                    latest_event_dates[metric] = row["date"]
+            if row["loadedAt"] and (loaded_at is None or row["loadedAt"] > loaded_at):
+                loaded_at = row["loadedAt"]
+
+        def period_rows(start, end):
+            rows = []
+            cursor = start
+            while cursor <= end:
+                rows.append(
+                    by_date.get(
+                        cursor,
+                        {
+                            "date": cursor.isoformat(),
+                            "leads": 0,
+                            "sets": 0,
+                            "runs": 0,
+                            "wins": 0,
+                            "winValue": 0,
+                            "spend": 0,
+                        },
+                    )
+                )
+                cursor += timedelta(days=1)
+            return rows
+
+        current_rows = period_rows(bounds["current_start"], bounds["current_end"])
+        comparison_rows = period_rows(bounds["comparison_start"], bounds["comparison_end"])
+        return HTTPStatus.OK, {
+            "period": bounds["period"],
+            "label": bounds["label"],
+            "currentLabel": bounds["current_label"],
+            "comparisonLabel": bounds["comparison_label"],
+            "current": current_rows,
+            "comparison": comparison_rows,
+            "summary": summarize_marketing_activity(current_rows),
+            "comparisonSummary": summarize_marketing_activity(comparison_rows),
+            "loadedAt": loaded_at.isoformat() if loaded_at else None,
+            "latestEventDates": {
+                metric: value.isoformat() if value else None
+                for metric, value in latest_event_dates.items()
+            },
+            "definitions": {
+                "lead": "Campaign Member activity dated by Lead.Updated_Campaign_Member__c.",
+                "set": "Opportunity dated by CreatedDate.",
+                "run": "Opportunity with SV Status = Complete, dated by SV Start Date-Time.",
+                "win": "Opportunity in Pending Review, Change Order, Closed Won, or Contract Cancelled, dated by Close Date.",
+                "comparison": "Event-period activity; ratios do not follow one fixed cohort through the funnel.",
+            },
+        }
 
     def _marketing_filter_options(self, params):
         try:

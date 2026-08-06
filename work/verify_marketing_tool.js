@@ -44,6 +44,14 @@ const reconciliation = {
     spendParityStatus:"Review", spendCompleteLeadShare:1
   }]
 };
+const trendPayload = {
+  period:"30d",label:"Last 30 days",currentLabel:"Jul 8, 2026–Aug 6, 2026",comparisonLabel:"Jun 8, 2026–Jul 7, 2026",
+  current:[{date:"2026-08-05",leads:12,sets:5,runs:3,wins:1,winValue:40000,spend:1200}],
+  comparison:[{date:"2026-07-07",leads:10,sets:4,runs:2,wins:1,winValue:38000,spend:1000}],
+  summary:{leads:12,sets:5,runs:3,wins:1,winValue:40000,spend:1200,setsPerLead:5/12,runsPerSet:3/5,winsPerRun:1/3,costPerLead:100,costPerWin:1200},
+  comparisonSummary:{leads:10,sets:4,runs:2,wins:1,winValue:38000,spend:1000,setsPerLead:.4,runsPerSet:.5,winsPerRun:.5,costPerLead:100,costPerWin:1000},
+  loadedAt:"2026-08-06T12:00:00Z",definitions:{lead:"Campaign Member activity dated by Lead.Updated_Campaign_Member__c.",set:"Opportunity dated by CreatedDate.",run:"Completed SV dated by SV Start Date-Time.",win:"Qualifying stage dated by Close Date.",comparison:"Event-period activity is not fixed-cohort conversion."}
+};
 
 global.fetch = (url, options = {}) => {
   const path = String(url);
@@ -70,6 +78,7 @@ global.fetch = (url, options = {}) => {
   let payload = [];
   if (path.includes("marketing-funnel")) payload = apiFunnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
+  else if (path.includes("marketing-trends")) payload = trendPayload;
   else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
@@ -121,6 +130,15 @@ setImmediate(() => {
   assert(dashboardHtml.includes('<script src="/assets/echarts.min.js"></script>') && dashboardHtml.includes("renderEchartTrend"), "The local ECharts runtime or trend renderer is missing.");
   assert(dashboardHtml.includes('id="opportunityQuadrant"') && dashboardHtml.includes('id="funnelWaterfall"') && dashboardHtml.includes('id="campaignMultiples"'), "Decision quadrant, funnel waterfall, or campaign small multiples are missing.");
   assert(dashboardHtml.includes('id="resetFiltersButton"') && dashboardHtml.includes("refresh-spin") && dashboardHtml.includes('id="refreshStatus"'), "Reset control or animated refresh feedback is missing.");
+  assert(dashboardHtml.includes('data-view="workbook"') && dashboardHtml.includes('id="workbookRefresh"') && dashboardHtml.includes('/api/official-workbook'), "Official workbook navigation, refresh control, or API wiring is missing.");
+  assert(dashboardHtml.includes('data-view="trends"') && dashboardHtml.includes('id="trendPeriodFilter"') && dashboardHtml.includes('/api/marketing-trends'), "Independent calendar-trends navigation, period control, or API wiring is missing.");
+  app.state.trends.data=trendPayload;app.renderMarketingTrends();
+  assert(getElement("trendMetrics").innerHTML.includes("Leads") && getElement("trendMetrics").innerHTML.includes("12"), "Calendar activity metrics did not render.");
+  assert(getElement("trendBoundary").textContent.includes("not fixed-cohort"), "Calendar activity did not preserve its non-cohort boundary.");
+  app.state.workbook.data={months:["Jan","Feb"],summary:[{category:"Internal Marketing",state:"All",metric:"Net Revenue",months:[100,250]}],detail:[],forecast:[],refreshedAt:"2026-08-03T12:00:00Z",source:{title:"Marketing Report 2026_Official"}};
+  app.state.workbook.through="Feb";
+  assert(app.workbookSum("Net Revenue")===350, "Official workbook through-month aggregation is incorrect.");
+  app.state.workbook.data=null;
   assert(dashboardHtml.includes('id="waterfallAction"') && dashboardHtml.includes("Improve speed-to-lead") && dashboardHtml.includes("Protect appointments"), "Actionable funnel-gap guidance is missing.");
   assert(dashboardHtml.includes(".decision-canvas-grid>.chart-card.compact .chart-host{height:100%;min-height:360px"), "The CAC/conversion scatter plot does not fill its decision-canvas column.");
   assert(dashboardHtml.includes("new ResizeObserver(()=>chart.resize())") && dashboardHtml.includes("renderCampaignMultiples(rows);renderOpportunityQuadrant(rows)"), "The scatter plot does not respond after campaign panels expand its container.");

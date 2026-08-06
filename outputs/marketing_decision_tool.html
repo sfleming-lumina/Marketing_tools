@@ -128,10 +128,12 @@
     .matrix-cell.is-hovered{box-shadow:inset 0 0 0 2px currentColor}.matrix-cell.is-selected{box-shadow:inset 0 0 0 3px var(--forest),0 0 0 2px #fff}
     .primary{box-shadow:0 4px 12px rgba(57,181,74,.18)}.primary:hover{background:#44c154}.secondary{border-color:var(--line-strong);background:var(--surface)}
     .filters #monthsFilter{max-width:122px}.filters #campaignFilter{max-width:180px}.filters #rollupFilter{max-width:150px}.filters #ahjFilter{max-width:170px}.filters #stateFilter{max-width:185px}
+    .workbook-toolbar{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr)) auto;gap:10px;align-items:end}.workbook-control label{display:block;margin-bottom:6px;color:var(--muted);font-size:9px;font-weight:760;letter-spacing:.08em;text-transform:uppercase}.workbook-control select{width:100%;max-width:none}.workbook-refresh{height:40px;padding:0 14px;white-space:nowrap}.workbook-refresh.is-loading .refresh-icon{animation:refresh-spin .75s linear infinite}.workbook-source{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;color:var(--muted);font-size:10px}.workbook-source a{color:var(--green-dark);font-weight:700;text-decoration:none}.workbook-chart-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.workbook-chart{height:310px}.workbook-table td:first-child{font-weight:700}.workbook-table th:not(:first-child),.workbook-table td:not(:first-child){text-align:right}.workbook-table td small{display:block;color:var(--muted);font-weight:500}.workbook-notice{padding:12px 14px;border-radius:12px;background:var(--blue-soft);color:#285d88;font-size:11px}.workbook-error{padding:18px;border:1px solid #efb7ae;background:#fff2ef;color:#96392f;border-radius:14px}.workbook-empty{padding:28px;text-align:center;color:var(--muted)}
+    .trend-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.trend-control{min-width:190px}.trend-control label{display:block;margin-bottom:6px;color:var(--muted);font-size:9px;font-weight:760;letter-spacing:.08em;text-transform:uppercase}.trend-control select{width:100%;max-width:none}.trend-context{margin-left:auto;max-width:520px;text-align:right;color:var(--muted);font-size:10px;line-height:1.45}.trend-chart-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.trend-chart{height:330px}.trend-definition-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.trend-definition{padding:14px;border:1px solid var(--line);border-radius:13px;background:#fff}.trend-definition strong{display:block;font-size:11px}.trend-definition p{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.45}.trend-boundary{padding:13px 15px;border-radius:12px;background:var(--blue-soft);color:#285d88;font-size:11px;line-height:1.5}.trend-error{padding:15px;border:1px solid #efb7ae;border-radius:12px;background:#fff2ef;color:#96392f}
     @media(max-width:1360px) and (min-width:761px){.crumb{display:none}.filters{margin-left:0;width:100%;flex-wrap:nowrap}.filters .rollup-filter{display:none}}
-    @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:360px;min-height:360px}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:1180px){.decision-canvas-grid{grid-template-columns:1fr}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:360px;min-height:360px}.small-multiples{grid-template-columns:repeat(3,minmax(0,1fr))}.workbook-toolbar{grid-template-columns:repeat(2,minmax(160px,1fr))}.workbook-refresh{width:100%}.workbook-chart-grid,.trend-chart-grid{grid-template-columns:1fr}.trend-definition-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:900px){.command-momentum-card{grid-template-columns:1fr;gap:8px}.command-momentum-card .section-head p{max-width:none}.command-momentum-card .chart-host{height:290px}}
-    @media(max-width:760px){.chart-host{height:280px}.command-momentum-card{padding:18px}.command-momentum-card .chart-host{height:270px}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:310px;min-height:310px}.small-multiples{grid-template-columns:1fr 1fr}}
+    @media(max-width:760px){.chart-host{height:280px}.command-momentum-card{padding:18px}.command-momentum-card .chart-host{height:270px}.decision-canvas-grid>.chart-card.compact,.decision-canvas-grid>.chart-card.compact .chart-host{height:310px;min-height:310px}.small-multiples{grid-template-columns:1fr 1fr}.workbook-toolbar{grid-template-columns:1fr}.workbook-source{align-items:flex-start;flex-direction:column}.workbook-chart,.trend-chart{height:270px}.trend-context{margin-left:0;text-align:left}.trend-definition-grid{grid-template-columns:1fr}}
     @media(max-width:480px){.small-multiples{grid-template-columns:1fr}.chart-host{height:250px}}
   </style>
 </head>
@@ -142,10 +144,12 @@
     <div class="nav-label">Decision workspace</div>
     <nav class="nav" aria-label="Primary">
       <button class="active" data-view="command"><span class="nav-icon">01</span>Command center</button>
-      <button data-view="funnel"><span class="nav-icon">02</span>Funnel lab</button>
-      <button data-view="geo"><span class="nav-icon">03</span>Geo intelligence</button>
-      <button data-view="scenario"><span class="nav-icon">04</span>Scenario studio</button>
-      <button data-view="quality"><span class="nav-icon">05</span>Data quality</button>
+      <button data-view="trends"><span class="nav-icon">02</span>Calendar trends</button>
+      <button data-view="funnel"><span class="nav-icon">03</span>Funnel lab</button>
+      <button data-view="geo"><span class="nav-icon">04</span>Geo intelligence</button>
+      <button data-view="scenario"><span class="nav-icon">05</span>Scenario studio</button>
+      <button data-view="quality"><span class="nav-icon">06</span>Data quality</button>
+      <button data-view="workbook"><span class="nav-icon">07</span>Official workbook</button>
     </nav>
     <div class="side-foot">
       <div class="live"><span class="live-dot"></span><span id="freshnessLabel">Checking data...</span></div>
@@ -159,7 +163,7 @@
         <img class="mobile-brand" src="assets/lumina-horizontal-transparent.png" alt="Lumina Solar">
         <div class="crumb">Marketing Intelligence / <strong id="crumbTitle">Command center</strong></div>
         <div class="filters">
-          <div class="select-wrap"><select id="monthsFilter" aria-label="Trailing period"><option value="30d">Last 30 days</option><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
+          <div class="select-wrap" id="cohortPeriodFilter" title="Cohort window"><select id="monthsFilter" aria-label="Cohort window"><option value="30d">Last 30 days</option><option value="3">3 months</option><option value="6">6 months</option><option value="7" selected>7 months</option><option value="12">12 months</option></select></div>
           <div class="select-wrap campaign-filter"><select id="campaignFilter" aria-label="Campaign"><option value="">All active campaigns</option></select></div>
           <div class="select-wrap rollup-filter"><select id="rollupFilter" aria-label="Campaign rollup"><option value="">All rollups</option></select></div>
           <div class="select-wrap ahj-filter"><input class="filter-input" id="ahjFilter" list="ahjOptions" aria-label="County or operating market" placeholder="All counties / markets"><datalist id="ahjOptions"></datalist></div>
@@ -202,6 +206,25 @@
           </div>
         </div>
         <div class="card section"><div class="section-head"><div><div class="eyebrow">Portfolio scan</div><h2>Campaign × county performance matrix</h2><p>Lead attribution and downstream AHJs are recombined at county grain. Switch metrics, identify concentrated opportunities, and click any cell to investigate the underlying jurisdictions.</p></div><div class="opportunity-toolbar"><select id="matrixMetric" aria-label="Matrix metric"><option value="leadToWinRate">Lead → win</option><option value="setRate">Lead → set</option><option value="runRateFromSets">Set → run</option><option value="winRateFromRuns">Run → win</option><option value="costPerWin">CAC</option><option value="estimatedWinImpact">Potential wins</option></select></div></div><div class="matrix-legend"><span><i style="background:#dff3e2"></i>Opportunity / strong</span><span><i style="background:#fff1c8"></i>Watch / developing</span><span><i style="background:#fde3de"></i>Focus</span><span><i style="background:#edf2ee"></i>Low confidence</span></div><div class="matrix-wrap" style="margin-top:12px"><table class="matrix" id="opportunityMatrix"></table></div></div>
+      </section>
+
+      <section class="view" id="view-trends">
+        <div class="hero"><div><div class="eyebrow">Calendar-period activity</div><h1>See what happened in the selected reporting period.</h1><p>Daily Salesforce events and spend pacing are compared with a matched prior period. This layer is intentionally separate from the fixed lead cohorts used for conversion decisions.</p></div><div class="asof" id="trendAsOf">Open this tab to load calendar activity</div></div>
+        <div class="card">
+          <div class="trend-toolbar">
+            <div class="trend-control"><label for="trendPeriodFilter">Reporting period</label><select id="trendPeriodFilter"><option value="7d">Last 7 days</option><option value="30d" selected>Last 30 days</option><option value="60d">Last 60 days</option><option value="last_month">Last month</option><option value="mtd">Month to date</option><option value="last_quarter">Last quarter</option><option value="qtd">This quarter</option><option value="ytd">Year to date</option></select></div>
+            <div class="trend-control"><label for="trendMetricFilter">Comparison metric</label><select id="trendMetricFilter"><option value="leads">Leads</option><option value="sets">Sets</option><option value="runs">Runs</option><option value="wins">Wins</option><option value="spend">Spend</option></select></div>
+            <div class="trend-context" id="trendContext">Uses the active campaign, rollup, county/market, and operating-region filters.</div>
+          </div>
+        </div>
+        <div class="trend-error section" id="trendError" hidden></div>
+        <div class="grid grid-4 section" id="trendMetrics"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+        <div class="trend-chart-grid section">
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Daily activity</div><h2>When did demand and sales events occur?</h2><p>Each stage is placed on its own Salesforce event date; these lines are not a same-lead cohort funnel.</p></div></div><div class="trend-chart" id="trendActivityChart"></div></div>
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Matched comparison</div><h2 id="trendComparisonTitle">Leads vs prior period</h2><p id="trendComparisonCopy">Day-for-day comparison with the immediately preceding window.</p></div></div><div class="trend-chart" id="trendComparisonChart"></div></div>
+        </div>
+        <div class="grid grid-4 section" id="trendRateMetrics"></div>
+        <div class="card section"><div class="section-head"><div><div class="eyebrow">Salesforce definitions</div><h2>One event, one authoritative date</h2><p>Calendar activity answers what happened during a period. Use Funnel lab when the question is how one lead cohort matured.</p></div><span class="badge">EVENT PERIOD</span></div><div class="trend-definition-grid"><div class="trend-definition"><strong>Lead</strong><p id="trendLeadDefinition">Campaign Member activity dated by Updated Campaign Member.</p></div><div class="trend-definition"><strong>Set</strong><p id="trendSetDefinition">Opportunity dated by Created Date.</p></div><div class="trend-definition"><strong>Run</strong><p id="trendRunDefinition">Completed SV dated by SV Start Date-Time.</p></div><div class="trend-definition"><strong>Win</strong><p id="trendWinDefinition">Qualifying opportunity stage dated by Close Date.</p></div></div><div class="trend-boundary" id="trendBoundary" style="margin-top:12px">Period activity ratios divide events occurring in the same window; they do not claim that the sets, runs, or wins came from the leads created in that window.</div></div>
       </section>
 
       <section class="view" id="view-funnel">
@@ -250,6 +273,32 @@
           <div class="card"><h3>Spend integrity</h3><p class="sub">Recorded spend, derived PPI payouts, true zero-payout campaigns, partial coverage, and known-incomplete Co-op are explicitly separated.</p></div>
           <div class="card"><h3>Benchmark maturity</h3><p class="sub">Expected yield is used only when the lakehouse marks the campaign × jurisdiction benchmark reliable.</p></div>
         </div>
+      </section>
+
+      <section class="view" id="view-workbook">
+        <div class="hero"><div><div class="eyebrow">Official operating workbook</div><h1>Work with the report your leadership team already knows.</h1><p>Explore the governed 2026 workbook by geography, channel, resource, and month—without leaving the decision tool.</p></div><div class="asof" id="workbookAsOf">Open this tab to load the workbook</div></div>
+        <div class="card">
+          <div class="workbook-toolbar">
+            <div class="workbook-control"><label for="workbookGeography">Geography</label><select id="workbookGeography"><option value="All">All</option><option value="MD">MD</option><option value="PA">PA</option></select></div>
+            <div class="workbook-control"><label for="workbookCategory">Channel</label><select id="workbookCategory"><option value="All Channels">All channels</option><option value="3rd Party Vendors">3rd Party Vendors</option><option value="Internal Marketing">Internal Marketing</option><option value="Pay Per Install">Pay Per Install</option><option value="Co-op">Co-op</option></select></div>
+            <div class="workbook-control"><label for="workbookResource">Resource</label><select id="workbookResource"><option value="All Resources">All resources</option></select></div>
+            <div class="workbook-control"><label for="workbookMonth">Through month</label><select id="workbookMonth"></select></div>
+            <button class="control-btn workbook-refresh" id="workbookRefresh" type="button"><svg class="control-icon refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg><span>Refresh from Sheet</span></button>
+          </div>
+          <div class="workbook-source"><span id="workbookSourceStatus">Connected to Marketing Report 2026_Official</span><a id="workbookSourceLink" href="https://docs.google.com/spreadsheets/d/1WV9Kw2m3ebo7kgieUV7mi5kvaMDNS6q-T8Jx1KL9R-4/edit" target="_blank" rel="noopener">Open source spreadsheet ↗</a></div>
+        </div>
+        <div id="workbookError" class="workbook-error section" hidden></div>
+        <div class="grid grid-4 section" id="workbookMetrics"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+        <div class="workbook-chart-grid section">
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Revenue movement</div><h2>Gross actual vs forecast</h2><p>Forecast is workbook-wide; MD and PA selections retain the actual series only.</p></div></div><div class="workbook-chart" id="workbookRevenueChart"></div></div>
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Residential funnel</div><h2>Where volume converts</h2><p>Cumulative net outcomes through the selected month.</p></div></div><div class="workbook-chart" id="workbookFunnelChart"></div></div>
+        </div>
+        <div class="workbook-chart-grid section">
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Channel comparison</div><h2>Net revenue by channel</h2><p>Uses the selected geography and reporting horizon.</p></div></div><div class="workbook-chart" id="workbookChannelChart"></div></div>
+          <div class="card"><div class="section-head"><div><div class="eyebrow">Operating geography</div><h2>MD vs PA</h2><p>Net revenue for the selected channel and reporting horizon.</p></div></div><div class="workbook-chart" id="workbookStateChart"></div></div>
+        </div>
+        <div class="card section"><div class="section-head"><div><div class="eyebrow">Resource detail</div><h2>Lead-source performance</h2><p>Filter the resource selector to focus the charts and table on a specific program.</p></div><span class="badge" id="workbookResourceCount">0 resources</span></div><div class="table-wrap"><table class="workbook-table"><thead><tr><th>Resource</th><th>Channel</th><th>Leads</th><th>Net wins</th><th>Net revenue</th><th>Spend</th><th>CPL</th><th>Cost / win</th></tr></thead><tbody id="workbookResourceRows"><tr><td colspan="8" class="workbook-empty">Loading workbook resources…</td></tr></tbody></table></div></div>
+        <div class="workbook-notice section">Source edits normally appear after the next load. Use <strong>Refresh from Sheet</strong> to bypass the server’s short cache immediately after making workbook changes.</div>
       </section>
     </div>
   </main>
@@ -327,9 +376,11 @@
     loading:false, error:null, workflowStage:"discover", activeDecision:null, lastEvidenceNotice:null, decisions:[], decisionProgress:{},showArchivedDecisions:false,
     opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:"",
     scenario:{budget:0,cpl:0,setRate:0,runRate:0,winRate:0,revenuePerWin:0},
-    presentation:{scope:"current",sections:["overview","funnel","campaigns","geography","decisions","scenario"],slides:[],index:0,data:null}
+    presentation:{scope:"current",sections:["overview","funnel","campaigns","geography","decisions","scenario"],slides:[],index:0,data:null},
+    workbook:{data:null,loading:false,error:null,geography:"All",category:"All Channels",resource:"All Resources",through:"Aug"},
+    trends:{period:"30d",metric:"leads",data:null,loading:false,error:null}
   };
-  const viewTitles = {command:"Command center",funnel:"Funnel lab",geo:"Geo intelligence",scenario:"Scenario studio",quality:"Data quality"};
+  const viewTitles = {command:"Command center",trends:"Calendar trends",funnel:"Funnel lab",geo:"Geo intelligence",scenario:"Scenario studio",quality:"Data quality",workbook:"Official workbook"};
   const fmtNum = value => new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(Number(value)||0);
   const fmtMoney = value => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:Math.abs(value)>=1e6?"compact":"standard",maximumFractionDigits:Math.abs(value)>=1e6?1:0}).format(Number(value)||0);
   const fmtPct = value => value == null ? "—" : `${(Number(value)*100).toFixed(1)}%`;
@@ -412,6 +463,47 @@
     if(state.campaign)q.set("campaign",state.campaign); if(state.rollup)q.set("rollup",state.rollup); if(state.ahj)q.set("ahj",state.ahj); if(state.region)q.set("region",state.region);
     return q.toString();
   }
+  function trendQueryString(){
+    const q=new URLSearchParams({period:state.trends.period});
+    if(state.campaign)q.set("campaign",state.campaign);if(state.rollup)q.set("rollup",state.rollup);if(state.ahj)q.set("ahj",state.ahj);if(state.region)q.set("region",state.region);
+    return q.toString();
+  }
+  const trendMetricLabels={leads:"Leads",sets:"Sets",runs:"Runs",wins:"Wins",spend:"Spend"};
+  function trendComparisonDetail(current,prior,{money=false,inverse=false}={}){
+    const currentValue=Number(current)||0,priorValue=Number(prior)||0;
+    if(!priorValue)return {copy:"No prior-period baseline",tone:"neutral"};
+    const change=currentValue/priorValue-1,better=inverse?-change:change;
+    return {copy:`${change>=0?"+":""}${fmtPct(change)} vs matched prior`,tone:better>=.05?"positive":better<=-.05?"negative":"neutral"};
+  }
+  function renderMarketingTrends(){
+    const trends=state.trends,data=trends.data,error=$("trendError");error.hidden=!trends.error;error.textContent=trends.error||"";
+    if(!data){if(!trends.loading)$("trendMetrics").innerHTML='<div class="empty">Calendar activity is not loaded.</div>';return}
+    const current=data.summary||{},prior=data.comparisonSummary||{},loaded=data.loadedAt?new Date(data.loadedAt):null;
+    $("trendAsOf").textContent=`${data.label} · ${data.currentLabel}${loaded&&!Number.isNaN(loaded.getTime())?` · refreshed ${loaded.toLocaleString()}`:""}`;
+    $("trendContext").textContent=`${data.currentLabel} compared with ${data.comparisonLabel}. Active scope: ${state.campaign||state.rollup||"all campaigns"} · ${state.ahj||state.region||"all geographies"}.`;
+    const kpis=[
+      ["Leads",current.leads,prior.leads,fmtNum],
+      ["Sets",current.sets,prior.sets,fmtNum],
+      ["Runs",current.runs,prior.runs,fmtNum],
+      ["Wins",current.wins,prior.wins,fmtNum]
+    ];
+    $("trendMetrics").innerHTML=kpis.map(([label,value,baseline,format])=>{const delta=trendComparisonDetail(value,baseline);return metric(label,format(value),delta.copy,delta.tone)}).join("");
+    const activity=data.current||[],dates=activity.map(row=>new Date(`${row.date}T00:00:00`).toLocaleDateString("en-US",{month:"short",day:"numeric"}));
+    const activityChart=chartInstance($("trendActivityChart"));
+    if(activityChart)activityChart.setOption({...baseChartOption(),tooltip:{...baseChartOption().tooltip,trigger:"axis"},legend:{top:0,data:["Leads","Sets","Runs","Wins"]},grid:{left:52,right:20,top:42,bottom:42},xAxis:{type:"category",data:dates,axisLabel:{hideOverlap:true}},yAxis:{type:"value",min:0,splitLine:{lineStyle:{color:"#e4e9e3"}}},series:[{name:"Leads",type:"line",smooth:.2,showSymbol:false,data:activity.map(row=>row.leads),lineStyle:{width:3,color:"#3478b8"},itemStyle:{color:"#3478b8"}},{name:"Sets",type:"line",smooth:.2,showSymbol:false,data:activity.map(row=>row.sets),lineStyle:{width:2,color:"#e7a21a"},itemStyle:{color:"#e7a21a"}},{name:"Runs",type:"line",smooth:.2,showSymbol:false,data:activity.map(row=>row.runs),lineStyle:{width:2,color:"#8a67b1"},itemStyle:{color:"#8a67b1"}},{name:"Wins",type:"line",smooth:.2,showSymbol:false,data:activity.map(row=>row.wins),lineStyle:{width:2,color:"#21864a"},itemStyle:{color:"#21864a"}}]},true);
+    const metricKey=trends.metric,metricLabel=trendMetricLabels[metricKey],comparison=data.comparison||[],count=Math.max(activity.length,comparison.length),indexLabels=Array.from({length:count},(_,index)=>`Day ${index+1}`),money=metricKey==="spend";
+    $("trendComparisonTitle").textContent=`${metricLabel} vs matched prior period`;$("trendComparisonCopy").textContent=`${data.currentLabel} compared day-for-day with ${data.comparisonLabel}.`;
+    const comparisonChart=chartInstance($("trendComparisonChart"));
+    if(comparisonChart)comparisonChart.setOption({...baseChartOption(),tooltip:{...baseChartOption().tooltip,trigger:"axis",valueFormatter:value=>money?fmtMoney(value):fmtNum(value)},legend:{top:0,data:["Selected period","Matched prior"]},grid:{left:money?70:48,right:20,top:42,bottom:42},xAxis:{type:"category",data:indexLabels,axisLabel:{hideOverlap:true}},yAxis:{type:"value",min:0,axisLabel:{formatter:value=>money?new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:1}).format(value):fmtNum(value)},splitLine:{lineStyle:{color:"#e4e9e3"}}},series:[{name:"Selected period",type:"line",smooth:.2,showSymbol:false,data:activity.map(row=>row[metricKey]),lineStyle:{width:3,color:"#21864a"},itemStyle:{color:"#21864a"},areaStyle:{color:"rgba(57,181,74,.08)"}},{name:"Matched prior",type:"line",smooth:.2,showSymbol:false,data:comparison.map(row=>row[metricKey]),lineStyle:{width:2,type:"dashed",color:"#91a097"},itemStyle:{color:"#91a097"}}]},true);
+    const rateDefs=[["Sets per lead","setsPerLead"],["Runs per set","runsPerSet"],["Wins per run","winsPerRun"],["Cost per lead","costPerLead",true]];
+    $("trendRateMetrics").innerHTML=rateDefs.map(([label,key,moneyValue])=>{const delta=trendComparisonDetail(current[key],prior[key],{inverse:Boolean(moneyValue)});return metric(label,moneyValue?(current[key]==null?"—":fmtMoney(current[key])):fmtPct(current[key]),`${delta.copy} · event-period ratio`,delta.tone)}).join("");
+    const definitions=data.definitions||{},latest=data.latestEventDates||{},freshness=[latest.leads&&`leads through ${latest.leads}`,latest.sets&&`sets through ${latest.sets}`,latest.runs&&`runs through ${latest.runs}`,latest.wins&&`wins through ${latest.wins}`,latest.spend&&`spend through ${latest.spend}`].filter(Boolean).join(" · ");$("trendLeadDefinition").textContent=definitions.lead||"";$("trendSetDefinition").textContent=definitions.set||"";$("trendRunDefinition").textContent=definitions.run||"";$("trendWinDefinition").textContent=definitions.win||"";$("trendBoundary").textContent=`${definitions.comparison||""}${freshness?` Source freshness: ${freshness}.`:""}`;
+  }
+  async function loadMarketingTrends({force=false}={}){
+    if(state.trends.loading)return false;if(!force&&state.trends.data){renderMarketingTrends();return true}
+    state.trends.loading=true;state.trends.error=null;renderMarketingTrends();
+    try{state.trends.data=await fetchJson(`/api/marketing-trends?${trendQueryString()}`);renderMarketingTrends();return true}catch(error){state.trends.error=error.message;renderMarketingTrends();return false}finally{state.trends.loading=false}
+  }
   function catalogQueryString(){
     const q=new URLSearchParams({months:String(state.months)});
     if(state.window)q.set("window",state.window);
@@ -427,6 +519,7 @@
   async function loadData({force=false}={}){
     if(state.loading)return false;
     if(force){state.reconciliation=null;state.filterCatalog={campaigns:[],rollups:[],ahjs:[]}}
+    state.trends.data=null;
     state.loading=true;state.error=null;setLoadingControls(true);renderError();
     try{
       const needsCatalog=!state.filterCatalog.campaigns.length&&!state.filterCatalog.ahjs.length;
@@ -441,6 +534,7 @@
       state.funnelRows=funnel.filter(row=>!isExcludedMarketingRow(row));state.geoRows=geo.filter(row=>!isExcludedMarketingRow(row));state.projections=projection.filter(row=>!isExcludedMarketingRow(row));state.reconciliation=reconciliation;
       if(catalog)state.filterCatalog={...state.filterCatalog,campaigns:(catalog.campaigns||[]).filter(value=>!isExcludedIdentity(value)),rollups:(catalog.rollups||[]).filter(value=>!isExcludedIdentity(value)),ahjs:(catalog.ahjs||[]).filter(value=>value&&value!=="Unknown"&&!/^\(?[A-Z]{2}\)?$/.test(value.trim()))};
       populateFilters(); renderAll();
+      if(state.view==="trends")await loadMarketingTrends({force:true});
       if(freshness){$("freshnessLabel").textContent=`${freshness.objects_found}/${freshness.objects_checked} sources online`}
       return true;
     }catch(error){state.error=error.message;renderError();renderAll();return false}
@@ -451,7 +545,9 @@
     if(state.loading)return false;
     Object.assign(state,{months:7,window:"",campaign:"",rollup:"",ahj:"",region:"Operating footprint",lens:"auto",opportunityType:"All",matrixMetric:"leadToWinRate",selectedOpportunityKey:"",hoverOpportunityKey:""});
     state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};
+    Object.assign(state.trends,{period:"30d",metric:"leads",data:null,error:null});
     $("monthsFilter").value="7";$("campaignFilter").value="";$("rollupFilter").value="";$("ahjFilter").value="";$("stateFilter").value="Operating footprint";$("opportunityTypeFilter").value="All";$("matrixMetric").value="leadToWinRate";
+    $("trendPeriodFilter").value="30d";$("trendMetricFilter").value="leads";
     $("lensToggle").querySelectorAll("button").forEach(button=>button.classList.toggle("active",button.dataset.lens==="auto"));
     return loadData({force:true});
   }
@@ -1054,10 +1150,67 @@
       const tip=canvas.parentElement?.querySelector(".chart-tooltip");if(tip){tip.style.display="none";tip.setAttribute("aria-hidden","true")}
     });
   }
-  function renderAll(){renderCommand();renderFunnel();renderGeo();renderScenario();renderQuality();renderDecisionWorkspace()}
+  function workbookRecordValue(record,through=state.workbook.through,exact=false){
+    const months=state.workbook.data?.months||[],index=Math.max(0,months.indexOf(through)),values=record.months||[];
+    return exact?(Number(values[index])||0):values.slice(0,index+1).reduce((total,value)=>total+(Number(value)||0),0);
+  }
+  function workbookFilteredRecords(metric,{geography=state.workbook.geography,category=state.workbook.category,resource=state.workbook.resource}={}){
+    const data=state.workbook.data;if(!data)return [];
+    const useDetail=resource!=="All Resources",records=useDetail?data.detail:data.summary;
+    return records.filter(record=>record.metric===metric&&record.state===geography&&(category==="All Channels"||record.category===category)&&(!useDetail||record.resource===resource));
+  }
+  function workbookSum(metric,filters={},through=state.workbook.through,exact=false){return workbookFilteredRecords(metric,filters).reduce((total,record)=>total+workbookRecordValue(record,through,exact),0)}
+  function workbookForecast(month,category=state.workbook.category){
+    if(state.workbook.geography!=="All"||state.workbook.resource!=="All Resources")return null;
+    const data=state.workbook.data,index=data?.months?.indexOf(month)??-1;if(index<0)return null;
+    return (data.forecast||[]).filter(record=>record.metric==="Revenue"&&(category==="All Channels"||record.category===category)).reduce((total,record)=>total+(Number(record.months?.[index])||0),0);
+  }
+  function populateWorkbookResources(){
+    const data=state.workbook.data;if(!data)return;
+    const resources=[...new Set(data.detail.filter(record=>state.workbook.category==="All Channels"||record.category===state.workbook.category).map(record=>record.resource).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    if(state.workbook.resource!=="All Resources"&&!resources.includes(state.workbook.resource))state.workbook.resource="All Resources";
+    $("workbookResource").innerHTML='<option value="All Resources">All resources</option>'+resources.map(value=>`<option value="${esc(value)}"${value===state.workbook.resource?" selected":""}>${esc(value)}</option>`).join("");
+  }
+  function renderWorkbookChart(element,option,emptyCopy){
+    const chart=chartInstance(element);if(!chart){element.innerHTML=`<div class="workbook-empty">${esc(emptyCopy)}</div>`;return}
+    chart.resize();chart.setOption({...baseChartOption(),...option},true);
+  }
+  function renderOfficialWorkbook(){
+    const wb=state.workbook,error=$("workbookError");
+    error.hidden=!wb.error;error.textContent=wb.error||"";
+    if(!wb.data){if(!wb.loading)$("workbookMetrics").innerHTML='<div class="workbook-empty">Workbook data is not loaded.</div>';return}
+    const gross=workbookSum("Gross Revenue"),net=workbookSum("Net Revenue"),wins=workbookSum("Net Wins"),leads=workbookSum("Leads"),spend=workbookSum("Spend"),cpl=leads?spend/leads:null;
+    $("workbookMetrics").innerHTML=[metric("Gross revenue",fmtMoney(gross),`Through ${wb.through}`),metric("Net revenue",fmtMoney(net),`${gross?fmtPct(net/gross):"—"} retained after cancels`,net>=gross*.9?"positive":"neutral"),metric("Net wins",fmtNum(wins),`${fmtNum(leads)} workbook leads`),metric("Spend",fmtMoney(spend),cpl?`${fmtMoney(cpl)} cost per lead`:"CPL unavailable")].join("");
+    const loaded=new Date(wb.data.refreshedAt);$("workbookAsOf").textContent=`Sheet read ${Number.isNaN(loaded.getTime())?wb.data.refreshedAt:loaded.toLocaleString()}`;$("workbookSourceStatus").textContent=`Connected to ${wb.data.source?.title||"official workbook"} · ${wb.data.cache==="hit"?"cached read":"fresh read"}`;
+    const months=wb.data.months||[],actual=months.map(month=>workbookSum("Gross Revenue",{},month,true)),forecast=months.map(month=>workbookForecast(month));
+    renderWorkbookChart($("workbookRevenueChart"),{tooltip:{...baseChartOption().tooltip,trigger:"axis",valueFormatter:value=>fmtMoney(value)},legend:{top:0,data:["Actual gross","Forecast"]},grid:{left:72,right:24,top:42,bottom:45},xAxis:{type:"category",data:months},yAxis:{type:"value",axisLabel:{formatter:value=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:"compact",maximumFractionDigits:1}).format(value)},splitLine:{lineStyle:{color:"#e4e9e3"}}},series:[{name:"Actual gross",type:"line",smooth:.25,data:actual,itemStyle:{color:"#21864a"},lineStyle:{width:3,color:"#21864a"}},{name:"Forecast",type:"line",smooth:.2,data:forecast,itemStyle:{color:"#3478b8"},lineStyle:{width:2,type:"dashed",color:"#3478b8"},connectNulls:false}]},"Revenue chart unavailable");
+    const stages=[{label:"Leads",metric:"Leads"},{label:"Net sets",metric:"Net Sets"},{label:"Net runs",metric:"Net Runs"},{label:"Net wins",metric:"Net Wins"}],stageValues=stages.map(item=>workbookSum(item.metric));
+    renderWorkbookChart($("workbookFunnelChart"),{tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"}},grid:{left:82,right:25,top:20,bottom:35},xAxis:{type:"value",splitLine:{lineStyle:{color:"#e4e9e3"}}},yAxis:{type:"category",data:stages.map(item=>item.label),inverse:true},series:[{type:"bar",data:stageValues,itemStyle:{color:"#39b54a",borderRadius:[0,6,6,0]},label:{show:true,position:"right",formatter:param=>fmtNum(param.value)}}]},"Funnel chart unavailable");
+    const categories=["3rd Party Vendors","Internal Marketing","Pay Per Install","Co-op"],channelValues=categories.map(category=>workbookSum("Net Revenue",{category,resource:"All Resources"}));
+    renderWorkbookChart($("workbookChannelChart"),{tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"},valueFormatter:value=>fmtMoney(value)},grid:{left:70,right:18,top:20,bottom:70},xAxis:{type:"category",data:categories,axisLabel:{interval:0,rotate:18}},yAxis:{type:"value",axisLabel:{formatter:value=>new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:1}).format(value)},splitLine:{lineStyle:{color:"#e4e9e3"}}},series:[{type:"bar",data:channelValues,itemStyle:{color:"#173427",borderRadius:[6,6,0,0]}}]},"Channel chart unavailable");
+    const stateValues=["MD","PA"].map(geography=>workbookSum("Net Revenue",{geography,resource:"All Resources"}));
+    renderWorkbookChart($("workbookStateChart"),{tooltip:{...baseChartOption().tooltip,trigger:"axis",axisPointer:{type:"shadow"},valueFormatter:value=>fmtMoney(value)},grid:{left:70,right:18,top:20,bottom:40},xAxis:{type:"category",data:["MD","PA"]},yAxis:{type:"value",axisLabel:{formatter:value=>new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:1}).format(value)},splitLine:{lineStyle:{color:"#e4e9e3"}}},series:[{type:"bar",barMaxWidth:72,data:stateValues,itemStyle:{color:params=>params.dataIndex===0?"#3478b8":"#e7a21a",borderRadius:[6,6,0,0]},label:{show:true,position:"top",formatter:param=>fmtMoney(param.value)}}]},"State chart unavailable");
+    const resources=[...new Map(wb.data.detail.filter(record=>(wb.category==="All Channels"||record.category===wb.category)&&(wb.resource==="All Resources"||record.resource===wb.resource)).map(record=>[`${record.category}|||${record.resource}`,{category:record.category,resource:record.resource}])).values()].map(item=>{const filters={geography:wb.geography,category:item.category,resource:item.resource};const itemLeads=workbookSum("Leads",filters),itemWins=workbookSum("Net Wins",filters),itemRevenue=workbookSum("Net Revenue",filters),itemSpend=workbookSum("Spend",filters);return {...item,leads:itemLeads,wins:itemWins,revenue:itemRevenue,spend:itemSpend,cpl:itemLeads?itemSpend/itemLeads:null,cpw:itemWins?itemSpend/itemWins:null}}).filter(item=>item.leads||item.wins||item.revenue||item.spend).sort((a,b)=>b.revenue-a.revenue||b.leads-a.leads);
+    $("workbookResourceCount").textContent=`${resources.length} resource${resources.length===1?"":"s"}`;$("workbookResourceRows").innerHTML=resources.map(item=>`<tr><td>${esc(item.resource)}</td><td>${esc(item.category)}</td><td>${fmtNum(item.leads)}</td><td>${fmtNum(item.wins)}</td><td>${fmtMoney(item.revenue)}</td><td>${fmtMoney(item.spend)}</td><td>${item.cpl?fmtMoney(item.cpl):"—"}</td><td>${item.cpw?fmtMoney(item.cpw):"—"}</td></tr>`).join("")||'<tr><td colspan="8" class="workbook-empty">No resource activity matches this selection.</td></tr>';
+  }
+  async function loadOfficialWorkbook({force=false}={}){
+    if(state.workbook.loading)return false;state.workbook.loading=true;state.workbook.error=null;
+    const button=$("workbookRefresh");button.disabled=true;button.classList.add("is-loading");button.querySelector("span").textContent=force?"Refreshing Sheet…":"Loading Sheet…";
+    try{
+      const data=await fetchJson(`/api/official-workbook${force?"?refresh=1":""}`),firstLoad=!state.workbook.data;state.workbook.data=data;
+      $("workbookSourceLink").href=data.source?.url||$("workbookSourceLink").href;
+      if(firstLoad){const latest=[...(data.months||[])].reverse().find(month=>data.summary.some(record=>record.state==="All"&&record.metric==="Gross Revenue"&&workbookRecordValue(record,month,true)>0));state.workbook.through=latest||data.months?.[0]||"Jan"}
+      $("workbookMonth").innerHTML=(data.months||[]).map(month=>`<option value="${month}"${month===state.workbook.through?" selected":""}>${month}</option>`).join("");populateWorkbookResources();renderOfficialWorkbook();return true;
+    }catch(error){state.workbook.error=error.message;renderOfficialWorkbook();return false}
+    finally{state.workbook.loading=false;button.disabled=false;button.classList.remove("is-loading");button.querySelector("span").textContent="Refresh from Sheet"}
+  }
+  function renderAll(){renderCommand();if(state.trends.data)renderMarketingTrends();renderFunnel();renderGeo();renderScenario();renderQuality();if(state.workbook.data)renderOfficialWorkbook();renderDecisionWorkspace()}
   function setView(view){
     state.view=view;document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===`view-${view}`));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("crumbTitle").textContent=viewTitles[view];$("sidebar").classList.remove("open");window.scrollTo?.({top:0,behavior:"instant"});
-    requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="funnel")renderFunnel();if(view==="scenario")renderScenario();renderDecisionWorkspace()});
+    $("cohortPeriodFilter").hidden=view==="trends";
+    if(view==="trends"&&!state.trends.data&&!state.trends.loading)loadMarketingTrends();
+    if(view==="workbook"&&!state.workbook.data&&!state.workbook.loading)loadOfficialWorkbook();
+    requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="trends"&&state.trends.data)renderMarketingTrends();if(view==="funnel")renderFunnel();if(view==="scenario")renderScenario();if(view==="workbook"&&state.workbook.data)renderOfficialWorkbook();renderDecisionWorkspace()});
   }
   const presentationSectionDefs=[
     {id:"overview",label:"Executive overview",copy:"Headline metrics, benchmark context, and the decision implication."},
@@ -1452,6 +1605,8 @@
   $("printPresentation").addEventListener("click",printPresentation);
   $("fullscreenPresentation").addEventListener("click",()=>$("presentationShell").requestFullscreen?.());
   $("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
+  $("trendPeriodFilter").addEventListener("change",event=>{state.trends.period=event.target.value;state.trends.data=null;loadMarketingTrends({force:true})});
+  $("trendMetricFilter").addEventListener("change",event=>{state.trends.metric=event.target.value;renderMarketingTrends()});
   $("monthsFilter").addEventListener("change",e=>{state.window=e.target.value==="30d"?"30d":"";if(!state.window)state.months=Number(e.target.value);state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={...state.filterCatalog,campaigns:[],rollups:[],ahjs:[]};loadData()});
   $("campaignFilter").addEventListener("change",e=>{state.campaign=e.target.value;loadData()});
   $("rollupFilter").addEventListener("change",e=>{state.rollup=e.target.value;loadData()});
@@ -1465,13 +1620,18 @@
   $("ahjFilter").addEventListener("input",e=>{clearTimeout(ahjFilterTimer);ahjFilterTimer=setTimeout(()=>applyAhjFilter(e.target.value),300)});
   $("ahjFilter").addEventListener("change",e=>applyAhjFilter(e.target.value));
   $("stateFilter").addEventListener("change",e=>{state.region=e.target.value;state.campaign="";state.rollup="";state.ahj="";state.filterCatalog={campaigns:[],rollups:[],ahjs:[]};loadData()});
+  $("workbookGeography").addEventListener("change",event=>{state.workbook.geography=event.target.value;renderOfficialWorkbook()});
+  $("workbookCategory").addEventListener("change",event=>{state.workbook.category=event.target.value;state.workbook.resource="All Resources";populateWorkbookResources();renderOfficialWorkbook()});
+  $("workbookResource").addEventListener("change",event=>{state.workbook.resource=event.target.value;renderOfficialWorkbook()});
+  $("workbookMonth").addEventListener("change",event=>{state.workbook.through=event.target.value;renderOfficialWorkbook()});
+  $("workbookRefresh").addEventListener("click",()=>loadOfficialWorkbook({force:true}));
   $("refreshButton").addEventListener("click",refreshData);$("resetFiltersButton").addEventListener("click",resetFilters);$("retryButton").addEventListener("click",refreshData);
   $("lensToggle").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{state.lens=b.dataset.lens;$("lensToggle").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));renderFunnel()}));
   document.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>applyPreset(b.dataset.preset)));
   $("saveNote").addEventListener("click",saveNote);$("askAssistant").addEventListener("click",askAssistant);
-  window.addEventListener("resize",()=>{echartInstances.forEach?.(chart=>chart.resize());if(state.view==="command")renderCommand();if(state.view==="funnel")renderFunnel()});
+  window.addEventListener("resize",()=>{echartInstances.forEach?.(chart=>chart.resize());if(state.view==="command")renderCommand();if(state.view==="trends")renderMarketingTrends();if(state.view==="funnel")renderFunnel()});
   window.addEventListener("keydown",event=>{if(!$("presentationShell").classList.contains("open"))return;if(event.key==="ArrowRight")movePresentation(1);if(event.key==="ArrowLeft")movePresentation(-1);if(event.key==="Escape")closePresentation()});
-  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,funnelWaterfallModel,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderPresentationBuilder,presentationQuery,loadPresentationData,buildPresentationSlides,renderPresentationSlide,startPresentation,closePresentation,printPresentation,renderAll,loadData,refreshData,resetFilters};
+  window.MarketingOS={state,aggregate,coverageInfo,funnelHtml,scenarioValues,applyPreset,decisionInsights,opportunityBenchmarks,opportunityForRow,opportunityRows,beginOpportunity,setOpportunityHover,renderOpportunityVisuals,funnelWaterfallModel,renderFunnelWaterfall,beginInvestigation,addDecisionEvidence,startScenario,decisionBriefText,decisionTrackingPayload,markDecisionReady,loadDecisions,openDecisionBrief,renderPresentationBuilder,presentationQuery,loadPresentationData,buildPresentationSlides,renderPresentationSlide,startPresentation,closePresentation,printPresentation,trendQueryString,renderMarketingTrends,loadMarketingTrends,workbookRecordValue,workbookFilteredRecords,workbookSum,workbookForecast,populateWorkbookResources,renderOfficialWorkbook,loadOfficialWorkbook,renderAll,loadData,refreshData,resetFilters};
   renderScenario(); loadData();
 })();
 </script>

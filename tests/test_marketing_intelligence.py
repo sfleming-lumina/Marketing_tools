@@ -16,9 +16,15 @@ from dashboard_server import (
     build_marketing_geo_query,
     build_marketing_projection_query,
     build_marketing_reconciliation_query,
+    build_marketing_trends_query,
+    marketing_trend_period_bounds,
+    normalize_workbook_detail,
+    normalize_workbook_forecast,
+    normalize_workbook_summary,
     shape_marketing_funnel_row,
     shape_marketing_geo_row,
     shape_marketing_capacity_row,
+    summarize_marketing_activity,
 )
 
 
@@ -471,3 +477,65 @@ def test_reconciliation_contract_and_deltas(monkeypatch):
     assert all(item["deltas"]["leads"] == 0 for item in payload["comparisons"])
     assert "fixed lead cohort" in payload["definitions"]["funnelMetrics"]
     assert "2026-07-31" in build_marketing_reconciliation_query()
+
+
+def test_official_workbook_ranges_normalize_into_dashboard_records():
+    summary = normalize_workbook_summary([
+        ["Category", "State", "Metric", "Jan", "Feb", "Mar"],
+        [None, None, None, "1", "2", "3"],
+        ["Internal Marketing", "MD", "Net Revenue", 100, 250, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 650],
+    ])
+    detail = normalize_workbook_detail([
+        ["Category", "Resource", "State", "Metric", "Jan", "Feb"],
+        [None, None, None, None, "1", "2"],
+        ["Internal Marketing", "Google Ads LSR", "MD", "Leads", 10, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25],
+    ])
+    forecast = normalize_workbook_forecast([
+        [None, None, None, "Jan", "Feb"],
+        [None, None, "Total"],
+        [None, "Revenue", "3rd Party Vendors", 1000, 1100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2100],
+        [None, None, "Internal Marketing", 2000, 2200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4200],
+    ])
+    assert summary == [{"category": "Internal Marketing", "state": "MD", "metric": "Net Revenue", "months": [100, 250, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0], "total": 650}]
+    assert detail[0]["resource"] == "Google Ads LSR" and detail[0]["months"][:2] == [10, 15]
+    assert [record["metric"] for record in forecast] == ["Revenue", "Revenue"]
+    assert forecast[1]["category"] == "Internal Marketing" and forecast[1]["total"] == 4200
+
+
+def test_calendar_trend_periods_use_honest_equal_or_elapsed_comparisons():
+    today = date(2026, 8, 6)
+    rolling = marketing_trend_period_bounds("7d", today)
+    assert rolling["current_start"] == date(2026, 7, 31)
+    assert rolling["current_end"] == today
+    assert rolling["comparison_start"] == date(2026, 7, 24)
+    assert rolling["comparison_end"] == date(2026, 7, 30)
+
+    month_to_date = marketing_trend_period_bounds("mtd", today)
+    assert month_to_date["current_start"] == date(2026, 8, 1)
+    assert month_to_date["comparison_start"] == date(2026, 7, 1)
+    assert month_to_date["comparison_end"] == date(2026, 7, 6)
+
+    last_quarter = marketing_trend_period_bounds("last_quarter", today)
+    assert last_quarter["current_start"] == date(2026, 4, 1)
+    assert last_quarter["current_end"] == date(2026, 6, 30)
+    assert last_quarter["comparison_start"] == date(2026, 1, 1)
+    assert last_quarter["comparison_end"] == date(2026, 3, 31)
+
+
+def test_calendar_trend_query_and_summary_remain_event_period_metrics():
+    sql = build_marketing_trends_query(
+        campaign="Campaign A", rollup="Internal Marketing", region="Operating footprint"
+    )
+    assert "rpt_marketing_activity_daily_runtime" in sql
+    assert "campaign_name = @campaign" in sql
+    assert "campaign_reporting_rollup_name = @rollup" in sql
+    assert "operating_region_group IN ('Maryland', 'Pennsylvania')" in sql
+    summary = summarize_marketing_activity(
+        [
+            {"leads": 10, "sets": 4, "runs": 3, "wins": 2, "winValue": 1000, "spend": 200},
+            {"leads": 5, "sets": 2, "runs": 1, "wins": 1, "winValue": 500, "spend": 100},
+        ]
+    )
+    assert summary["leads"] == 15
+    assert summary["setsPerLead"] == 0.4
+    assert summary["costPerWin"] == 100

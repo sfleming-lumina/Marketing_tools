@@ -21,6 +21,7 @@ from dashboard_server import (
     normalize_workbook_detail,
     normalize_workbook_forecast,
     normalize_workbook_summary,
+    official_workbook_credentials,
     shape_marketing_funnel_row,
     shape_marketing_geo_row,
     shape_marketing_capacity_row,
@@ -477,6 +478,27 @@ def test_reconciliation_contract_and_deltas(monkeypatch):
     assert all(item["deltas"]["leads"] == 0 for item in payload["comparisons"])
     assert "fixed lead cohort" in payload["definitions"]["funnelMetrics"]
     assert "2026-07-31" in build_marketing_reconciliation_query()
+
+
+def test_official_workbook_credentials_use_scoped_short_lived_impersonation(monkeypatch):
+    source_credentials = object()
+    scoped_credentials = object()
+    monkeypatch.setattr(
+        "dashboard_server.OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT",
+        "marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com",
+    )
+    monkeypatch.setattr("dashboard_server.google.auth.default", lambda: (source_credentials, "lumina-lakehouse"))
+
+    with patch("dashboard_server.impersonated_credentials.Credentials", return_value=scoped_credentials) as factory:
+        credentials = official_workbook_credentials()
+
+    assert credentials is scoped_credentials
+    factory.assert_called_once_with(
+        source_credentials=source_credentials,
+        target_principal="marketing-tools-runtime@lumina-lakehouse.iam.gserviceaccount.com",
+        target_scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
+        lifetime=3600,
+    )
 
 
 def test_official_workbook_ranges_normalize_into_dashboard_records():

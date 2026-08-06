@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import google.auth
+from google.auth import impersonated_credentials
 from google.auth.transport.requests import AuthorizedSession
 from google.cloud import bigquery
 
@@ -37,6 +38,10 @@ OFFICIAL_WORKBOOK_ID = os.environ.get(
     "OFFICIAL_WORKBOOK_ID", "1WV9Kw2m3ebo7kgieUV7mi5kvaMDNS6q-T8Jx1KL9R-4"
 ).strip()
 OFFICIAL_WORKBOOK_URL = f"https://docs.google.com/spreadsheets/d/{OFFICIAL_WORKBOOK_ID}/edit"
+OFFICIAL_WORKBOOK_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
+OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT = os.environ.get(
+    "OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT", ""
+).strip()
 OFFICIAL_WORKBOOK_RANGES = (
     "Actuals Net State Summary!A1:P300",
     "Actuals Net State Detail!A1:Q1000",
@@ -44,6 +49,19 @@ OFFICIAL_WORKBOOK_RANGES = (
 )
 WORKBOOK_CACHE_SECONDS = int(os.environ.get("WORKBOOK_CACHE_SECONDS", "300"))
 WORKBOOK_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def official_workbook_credentials():
+    if OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT:
+        source_credentials, _ = google.auth.default()
+        return impersonated_credentials.Credentials(
+            source_credentials=source_credentials,
+            target_principal=OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT,
+            target_scopes=[OFFICIAL_WORKBOOK_SCOPE],
+            lifetime=3600,
+        )
+    credentials, _ = google.auth.default(scopes=[OFFICIAL_WORKBOOK_SCOPE])
+    return credentials
 
 SOURCE_OBJECTS = [
     "analytics_rpt.rpt_marketing_lead_cohort_performance",
@@ -1258,10 +1276,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             payload["cache"] = "hit"
             return HTTPStatus.OK, payload
         try:
-            credentials, _ = google.auth.default(
-                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
-            )
-            session = AuthorizedSession(credentials)
+            session = AuthorizedSession(official_workbook_credentials())
             query = urlencode(
                 [
                     *(('ranges', value) for value in OFFICIAL_WORKBOOK_RANGES),

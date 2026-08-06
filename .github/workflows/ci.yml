@@ -135,7 +135,7 @@ jobs:
             --source=. \
             --build-service-account="projects/${GCP_PROJECT_ID}/serviceAccounts/${BUILD_SERVICE_ACCOUNT}" \
             --service-account="${RUNTIME_SERVICE_ACCOUNT}" \
-            --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ANTHROPIC_MODEL=${ANTHROPIC_MODEL}" \
+            --set-env-vars="^|^BQ_PROJECT_ID=${GCP_PROJECT_ID}|BQ_DATASET=marketing_tool_ops|BQ_TABLE=dashboard_notes|ANTHROPIC_MODEL=${ANTHROPIC_MODEL}|OFFICIAL_WORKBOOK_ACCESS_SERVICE_ACCOUNT=${RUNTIME_SERVICE_ACCOUNT}" \
             --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest" \
             --no-allow-unauthenticated \
             --quiet

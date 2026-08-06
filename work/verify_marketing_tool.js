@@ -132,6 +132,8 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="resetFiltersButton"') && dashboardHtml.includes("refresh-spin") && dashboardHtml.includes('id="refreshStatus"'), "Reset control or animated refresh feedback is missing.");
   assert(dashboardHtml.includes('data-view="workbook"') && dashboardHtml.includes('id="workbookRefresh"') && dashboardHtml.includes('/api/official-workbook'), "Official workbook navigation, refresh control, or API wiring is missing.");
   assert(dashboardHtml.includes('data-view="trends"') && dashboardHtml.includes('id="trendPeriodFilter"') && dashboardHtml.includes('/api/marketing-trends'), "Independent calendar-trends navigation, period control, or API wiring is missing.");
+  assert(dashboardHtml.includes('<div class="nav-label">Reporting views</div>') && dashboardHtml.includes('aria-label="Decision workspace"') && dashboardHtml.includes('aria-label="Reporting views"'), "Calendar trends and Official workbook are not grouped separately from the decision workspace.");
+  assert(dashboardHtml.includes('$("cohortPeriodFilter").hidden=view==="trends"||view==="workbook"'), "Reporting views must not show the cohort-window control.");
   app.state.trends.data=trendPayload;app.renderMarketingTrends();
   assert(getElement("trendMetrics").innerHTML.includes("Leads") && getElement("trendMetrics").innerHTML.includes("12"), "Calendar activity metrics did not render.");
   assert(getElement("trendBoundary").textContent.includes("not fixed-cohort"), "Calendar activity did not preserve its non-cohort boundary.");

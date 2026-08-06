@@ -23,7 +23,7 @@
     .sidebar{position:sticky;top:0;height:100vh;padding:24px 18px;background:linear-gradient(180deg,var(--forest-2),var(--forest) 55%);color:#dbe6df;display:flex;flex-direction:column;z-index:20}
     .brand{height:36px;max-width:170px;object-fit:contain;object-position:left center;margin:0 8px 34px}
     .nav-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#81958a;margin:0 12px 10px}
-    .nav{display:grid;gap:6px}.nav button{border:0;background:transparent;color:#b9c8c0;padding:12px 14px;border-radius:12px;text-align:left;display:flex;align-items:center;gap:11px;font-weight:650}
+    .nav{display:grid;gap:6px}.nav+.nav-label{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)}.nav button{border:0;background:transparent;color:#b9c8c0;padding:12px 14px;border-radius:12px;text-align:left;display:flex;align-items:center;gap:11px;font-weight:650}
     .nav button:hover{background:rgba(255,255,255,.07);color:#fff}.nav button.active{background:#f3f7f2;color:var(--forest);box-shadow:inset 3px 0 0 var(--green)}
     .nav-icon{width:22px;height:22px;display:grid;place-items:center;border:1px solid currentColor;border-radius:7px;font-size:11px}
     .side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:18px 10px 0}
@@ -142,13 +142,16 @@
   <aside class="sidebar" id="sidebar">
     <img class="brand" src="assets/lumina-horizontal-transparent.png" alt="Lumina Solar">
     <div class="nav-label">Decision workspace</div>
-    <nav class="nav" aria-label="Primary">
+    <nav class="nav" aria-label="Decision workspace">
       <button class="active" data-view="command"><span class="nav-icon">01</span>Command center</button>
-      <button data-view="trends"><span class="nav-icon">02</span>Calendar trends</button>
-      <button data-view="funnel"><span class="nav-icon">03</span>Funnel lab</button>
-      <button data-view="geo"><span class="nav-icon">04</span>Geo intelligence</button>
-      <button data-view="scenario"><span class="nav-icon">05</span>Scenario studio</button>
-      <button data-view="quality"><span class="nav-icon">06</span>Data quality</button>
+      <button data-view="funnel"><span class="nav-icon">02</span>Funnel lab</button>
+      <button data-view="geo"><span class="nav-icon">03</span>Geo intelligence</button>
+      <button data-view="scenario"><span class="nav-icon">04</span>Scenario studio</button>
+      <button data-view="quality"><span class="nav-icon">05</span>Data quality</button>
+    </nav>
+    <div class="nav-label">Reporting views</div>
+    <nav class="nav" aria-label="Reporting views">
+      <button data-view="trends"><span class="nav-icon">06</span>Calendar trends</button>
       <button data-view="workbook"><span class="nav-icon">07</span>Official workbook</button>
     </nav>
     <div class="side-foot">
@@ -1207,7 +1210,7 @@
   function renderAll(){renderCommand();if(state.trends.data)renderMarketingTrends();renderFunnel();renderGeo();renderScenario();renderQuality();if(state.workbook.data)renderOfficialWorkbook();renderDecisionWorkspace()}
   function setView(view){
     state.view=view;document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===`view-${view}`));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));$("crumbTitle").textContent=viewTitles[view];$("sidebar").classList.remove("open");window.scrollTo?.({top:0,behavior:"instant"});
-    $("cohortPeriodFilter").hidden=view==="trends";
+    $("cohortPeriodFilter").hidden=view==="trends"||view==="workbook";
     if(view==="trends"&&!state.trends.data&&!state.trends.loading)loadMarketingTrends();
     if(view==="workbook"&&!state.workbook.data&&!state.workbook.loading)loadOfficialWorkbook();
     requestAnimationFrame(()=>{if(view==="command")renderCommand();if(view==="trends"&&state.trends.data)renderMarketingTrends();if(view==="funnel")renderFunnel();if(view==="scenario")renderScenario();if(view==="workbook"&&state.workbook.data)renderOfficialWorkbook();renderDecisionWorkspace()});

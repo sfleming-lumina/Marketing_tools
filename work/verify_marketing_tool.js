@@ -6,7 +6,7 @@ const dashboardHtml = fs.readFileSync("outputs/marketing_decision_tool.html", "u
 const { getElement } = installFakeDom();
 const funnelRows = [
   {
-    month:"2026-06-01", campaign:"Efficient Search", campaignRollup:"3rd Party Vendors LSR",
+    month:"2026-06-01", cohortAgeDays:70, cohortMaturityBucket:"Maturing: 60-89 days", campaign:"Efficient Search", campaignRollup:"3rd Party Vendors LSR",
     campaignSubrollup:"Paid Search", leads:100, sets:50, runs:40, wins:20, revenue:900000,
     effectiveSpend:40000, recordedSpend:40000, activePipeline:20, activePipelineRevenue:600000,
     expectedRemainingWins:5, expectedRemainingRevenue:200000, benchmarkLeadToWinRate:.15,
@@ -14,7 +14,7 @@ const funnelRows = [
     setNoRun30Plus:5, runNoWin60Plus:4, loadedAt:"2026-07-28T12:00:00Z"
   },
   {
-    month:"2026-07-01", campaign:"Co-op Maryland", campaignRollup:"Co-op",
+    month:"2026-07-01", cohortAgeDays:40, cohortMaturityBucket:"Maturing: 30-59 days", campaign:"Co-op Maryland", campaignRollup:"Co-op",
     campaignSubrollup:"Co-op", leads:50, sets:25, runs:20, wins:8, revenue:340000,
     effectiveSpend:0, recordedSpend:0, activePipeline:12, activePipelineRevenue:300000,
     expectedRemainingWins:3, expectedRemainingRevenue:125000, benchmarkLeadToWinRate:.14,
@@ -57,6 +57,10 @@ global.fetch = (url, options = {}) => {
   const path = String(url);
   global.requestedUrls = global.requestedUrls || [];
   global.requestedUrls.push(path);
+  if (path.includes("/api/notes") && options.method === "POST") {
+    global.lastNoteRequest = JSON.parse(options.body);
+    return Promise.resolve({ok:true,json:()=>Promise.resolve({note_id:"note-1",...global.lastNoteRequest})});
+  }
   if (path.includes("marketing-projection")) {
     return Promise.resolve({
       ok:false,
@@ -123,6 +127,12 @@ setImmediate(() => {
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
   assert(dashboardHtml.includes('id="guideDrawer"') && dashboardHtml.includes("How to use this workspace"), "Usage guide overlay is missing.");
+  assert(dashboardHtml.includes("Cohort methodology: current state vs decision evidence") && dashboardHtml.includes("Current-state reporting") && dashboardHtml.includes("Cohort reporting"), "Current-state versus cohort methodology guidance is missing.");
+  assert(dashboardHtml.includes('data-feedback-trigger') && dashboardHtml.includes("feedbackIconSvg") && dashboardHtml.includes('id="feedbackType"'), "Per-tile pen/notebook feedback controls are missing.");
+  app.setFeedbackTarget({view:"command",elementKey:"command-gross-revenue",elementLabel:"Gross revenue",targetType:"tile"});
+  getElement("feedbackType").value="data";getElement("noteText").value="Please validate this tile.";app.saveNote();
+  assert(global.lastNoteRequest.element_key==="command-gross-revenue" && global.lastNoteRequest.target_type==="tile" && global.lastNoteRequest.feedback_type==="data", "Tile feedback did not preserve its BigQuery note target contract.");
+  app.setFeedbackTarget(null);
   assert(dashboardHtml.includes('<option value="Maryland">Maryland</option>') && !dashboardHtml.includes('<option value="DMV">'), "Operating-region options do not follow the MD/PA operational contract.");
   assert(dashboardHtml.includes('yLabel:"Leads"') && dashboardHtml.includes('rightYLabel:"Residential wins"') && dashboardHtml.includes('yLabel:"Conversion rate"'), "Chart axis labels are missing.");
   assert(dashboardHtml.includes("chart-tooltip") && dashboardHtml.includes('addEventListener("mousemove"'), "Chart hover details are missing.");
@@ -150,6 +160,13 @@ setImmediate(() => {
   assert(dashboardHtml.includes("chart-fallback") && dashboardHtml.includes("paintTrend"), "Graceful canvas chart fallback is missing.");
   assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");
   assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
+  const maturityHealth = app.funnelHealthModel([
+    {month:"2026-02-01",cohortAgeDays:190,leads:40,sets:20,runs:10,wins:2},
+    {month:"2026-05-01",cohortAgeDays:101,leads:40,sets:20,runs:10,wins:2},
+    {month:"2026-08-01",cohortAgeDays:9,leads:50,sets:0,runs:0,wins:0}
+  ]);
+  assert(maturityHealth.find(item=>item.key==="leadToWin").current===.05, "Funnel health allowed an immature zero-win cohort to overwrite the mature lead-to-win signal.");
+  assert(maturityHealth.find(item=>item.key==="leadToWin").periodLabel.includes("90+ days"), "Funnel health did not disclose its win-stage maturity gate.");
   const opportunities = app.opportunityRows();
   assert(opportunities.length === 1 && opportunities[0].campaign === "Efficient Search" && opportunities[0].ahj === "Fairfax County", "Campaign/AHJ opportunity rows were not created.");
   assert(opportunities[0].decisionType === "Scale" && opportunities[0].confidence === "High" && opportunities[0].estimatedWinImpact > 0, "Opportunity decision type, confidence, or impact is incorrect.");

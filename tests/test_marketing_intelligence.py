@@ -61,6 +61,8 @@ def funnel_row(**overrides):
         "campaign": "Summer Search",
         "campaignRollup": "3rd Party Vendors LSR",
         "campaignSubrollup": "Paid Search",
+        "cohortAgeDays": 40,
+        "cohortMaturityBucket": "Maturing: 30-59 days",
         "leads": 100,
         "sets": 40,
         "runs": 30,
@@ -317,6 +319,8 @@ def test_funnel_shaper_uses_spend_when_complete():
     assert shaped["costPerWin"] == 2000
     assert shaped["leadToWinRate"] == 0.1
     assert shaped["benchmarkCoverage"] == 1
+    assert shaped["cohortAgeDays"] == 40
+    assert shaped["cohortMaturityBucket"] == "Maturing: 30-59 days"
     assert shaped["openNoSet30Plus"] == 5
     assert shaped["setNoRun30Plus"] == 4
     assert shaped["runNoWin60Plus"] == 3

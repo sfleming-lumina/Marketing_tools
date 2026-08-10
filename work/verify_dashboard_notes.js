@@ -14,7 +14,7 @@ assert(html.includes('id="noteText"'), "Note input is missing.");
 assert(html.includes('id="saveNote"'), "Save-note action is missing.");
 assert(html.includes('fetchJson("/api/notes"'), "Notes POST wiring is missing.");
 assert(html.includes('fetchJson(`/api/notes?view='), "View-scoped note loading is missing.");
-assert(html.includes('feedback_type:"decision"'), "Decision note metadata is missing.");
+assert(html.includes('feedback_type:$("feedbackType").value') && html.includes('target_type:target.targetType'), "Tile feedback metadata is missing.");
 assert(html.includes('context:assistantContext()'), "Notes do not include the current decision context.");
 assert(html.includes('id="assistantDrawer"') && html.includes('id="askAssistant"'), "Assistant drawer wiring is missing.");
 assert(html.includes('fetchJson("/api/ask-claude"'), "Assistant API wiring is missing.");

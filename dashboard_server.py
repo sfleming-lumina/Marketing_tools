@@ -447,6 +447,38 @@ def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=No
     """
 
 
+def build_marketing_decision_trends_query(campaign=None, rollup=None, ahj=None, region=None):
+    conditions = [
+        "event_date BETWEEN @monitor_start AND @monitor_end",
+        "NOT REGEXP_CONTAINS(LOWER(COALESCE(campaign_name, '')), r'jonathan\\s+bissell')",
+    ]
+    if campaign:
+        conditions.append("campaign_name = @campaign")
+    if rollup:
+        conditions.append("campaign_reporting_rollup_name = @rollup")
+    if ahj:
+        conditions.append("resolved_county = @ahj")
+    if region == "Operating footprint":
+        conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
+    elif region:
+        conditions.append("operating_region_group = @region")
+    return f"""
+        SELECT
+            DATE_TRUNC(event_date, WEEK(MONDAY)) AS week,
+            SUM(IF(event_type = 'Lead', event_count, 0)) AS leads,
+            SUM(IF(event_type = 'Set', event_count, 0)) AS sets,
+            SUM(IF(event_type = 'Run', event_count, 0)) AS runs,
+            SUM(IF(event_type = 'Win', event_count, 0)) AS wins,
+            SUM(IF(event_type = 'Win', event_value, 0)) AS winValue,
+            SUM(IF(event_type = 'Spend', event_value, 0)) AS spend,
+            MAX(loaded_at) AS loadedAt
+        FROM `{TREND_TABLE_REF}`
+        WHERE {' AND '.join(conditions)}
+        GROUP BY week
+        ORDER BY week
+    """
+
+
 def summarize_marketing_activity(rows):
     summary = {
         "leads": sum(row["leads"] for row in rows),
@@ -701,6 +733,63 @@ def build_marketing_geo_query(
         HAVING SUM(lead_count) > 0
         ORDER BY leads DESC, wins DESC
         LIMIT 2000
+    """
+
+
+def build_marketing_detail_query(
+    months=7,
+    window=None,
+    campaign=None,
+    source=None,
+    rollup=None,
+    state=None,
+    county=None,
+    ahj=None,
+    region=None,
+):
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
+    period_grain, period_predicate = _marketing_period_sql(window)
+    return f"""
+        WITH bounds AS (
+            SELECT MAX(cohort_period_start_date) AS latest_start
+            FROM `{FUNNEL_TABLE_REF}`
+            WHERE cohort_period_grain = '{period_grain}'
+        ), filtered AS (
+            SELECT
+                cohort_period_start_date AS cohortStart,
+                cohort_period_grain AS cohortGrain,
+                cohort_age_days AS cohortAgeDays,
+                cohort_maturity_bucket AS maturity,
+                campaign_name AS campaign,
+                campaign_reporting_rollup_name AS campaignRollup,
+                campaign_sub_rollup_name AS campaignSubrollup,
+                {_marketing_portfolio_geography_sql()} AS geography,
+                {_marketing_portfolio_state_sql()} AS state,
+                operating_region_group AS operatingRegion,
+                final_reporting_jurisdiction_label AS resolvedJurisdiction,
+                lead_count AS leads,
+                set_count AS sets,
+                run_count AS runs,
+                win_count AS wins,
+                lost_count AS losses,
+                win_revenue AS revenue,
+                effective_spend_amount AS effectiveSpend,
+                spend_coverage_status AS spendCoverage,
+                benchmark_lead_to_win_rate AS benchmarkLeadToWinRate,
+                benchmark_confidence AS benchmarkConfidence,
+                has_reliable_benchmark AS hasReliableBenchmark,
+                active_pipeline_candidate_count AS activePipeline,
+                expected_remaining_win_count AS expectedRemainingWins,
+                rpt_loaded_at AS loadedAt
+            FROM `{FUNNEL_TABLE_REF}`, bounds
+            WHERE cohort_period_grain = '{period_grain}'
+              AND {period_predicate}
+              AND {' AND '.join(conditions)}
+        )
+        SELECT *, COUNT(*) OVER() AS totalRows
+        FROM filtered
+        ORDER BY cohortStart DESC, leads DESC, campaign, geography
+        LIMIT @limit OFFSET @offset
     """
 
 
@@ -1024,6 +1113,36 @@ def shape_marketing_geo_row(row):
     }
 
 
+def shape_marketing_detail_row(row):
+    return {
+        "cohortStart": row["cohortStart"].isoformat(),
+        "cohortGrain": row["cohortGrain"],
+        "cohortAgeDays": row["cohortAgeDays"] or 0,
+        "maturity": row["maturity"] or "Unresolved",
+        "campaign": row["campaign"] or "Unresolved",
+        "campaignRollup": row["campaignRollup"] or "Unresolved",
+        "campaignSubrollup": row["campaignSubrollup"] or "",
+        "geography": row["geography"] or "Unresolved",
+        "state": row["state"] or "Unresolved",
+        "operatingRegion": row["operatingRegion"] or "Unresolved",
+        "resolvedJurisdiction": row["resolvedJurisdiction"] or "Unresolved",
+        "leads": row["leads"] or 0,
+        "sets": row["sets"] or 0,
+        "runs": row["runs"] or 0,
+        "wins": row["wins"] or 0,
+        "losses": row["losses"] or 0,
+        "revenue": row["revenue"] or 0,
+        "effectiveSpend": row["effectiveSpend"] or 0,
+        "spendCoverage": row["spendCoverage"] or "Unknown",
+        "benchmarkLeadToWinRate": row["benchmarkLeadToWinRate"],
+        "benchmarkConfidence": row["benchmarkConfidence"] or "Developing",
+        "hasReliableBenchmark": bool(row["hasReliableBenchmark"]),
+        "activePipeline": row["activePipeline"] or 0,
+        "expectedRemainingWins": row["expectedRemainingWins"] or 0,
+        "loadedAt": row["loadedAt"].isoformat() if row["loadedAt"] else None,
+    }
+
+
 def shape_marketing_projection_row(row):
     return {
         "month": row["month"].isoformat(),
@@ -1196,6 +1315,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             status, result = self._marketing_decision_progress(parse_qs(parsed.query))
             self._send_json(status, result)
             return
+        if parsed.path == "/api/marketing-decision-trends":
+            status, result = self._marketing_decision_trends(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
         if parsed.path == "/api/freshness":
             self._send_json(HTTPStatus.OK, self._source_freshness())
             return
@@ -1215,6 +1338,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/marketing-geo":
             status, result = self._marketing_geo(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
+        if parsed.path == "/api/marketing-detail":
+            status, result = self._marketing_detail(parse_qs(parsed.query))
             self._send_json(status, result)
             return
         if parsed.path == "/api/marketing-filter-options":
@@ -1564,6 +1691,54 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         current = aggregate_marketing_funnel_rows(rows)
         return HTTPStatus.OK, evaluate_marketing_decision_progress(decision, current)
 
+    def _marketing_decision_trends(self, params):
+        decision_id = str((params.get("id", [""])[0]) or "").strip()
+        if not decision_id:
+            return HTTPStatus.BAD_REQUEST, {"detail": "id is required."}
+        try:
+            decision = self._get_marketing_decision(decision_id)
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision lookup failed: {exc}"}
+        if not decision:
+            return HTTPStatus.NOT_FOUND, {"detail": "Decision not found."}
+        decision_date = datetime.fromisoformat(decision["created_at"].replace("Z", "+00:00")).date()
+        monitor_start = decision_date - timedelta(days=28)
+        monitor_end = datetime.now(ZoneInfo("America/New_York")).date()
+        values = {
+            "campaign": decision["campaign"] or None,
+            "rollup": decision["rollup"] or None,
+            "ahj": decision["ahj"] or None,
+            "region": decision["operating_region"] or None,
+        }
+        parameters = [
+            bigquery.ScalarQueryParameter("monitor_start", "DATE", monitor_start),
+            bigquery.ScalarQueryParameter("monitor_end", "DATE", monitor_end),
+        ]
+        for name, value in values.items():
+            if value and not (name == "region" and value == "Operating footprint"):
+                parameters.append(bigquery.ScalarQueryParameter(name, "STRING", value))
+        try:
+            rows = self.client.query(
+                build_marketing_decision_trends_query(**values),
+                job_config=bigquery.QueryJobConfig(query_parameters=parameters),
+            ).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Decision trend query failed: {exc}"}
+        weekly = [{
+            "week": row["week"].isoformat(), "leads": row["leads"] or 0,
+            "sets": row["sets"] or 0, "runs": row["runs"] or 0,
+            "wins": row["wins"] or 0, "winValue": row["winValue"] or 0,
+            "spend": row["spend"] or 0,
+        } for row in rows]
+        return HTTPStatus.OK, {
+            "decision": decision,
+            "decisionDate": decision_date.isoformat(),
+            "monitorStart": monitor_start.isoformat(),
+            "monitorEnd": monitor_end.isoformat(),
+            "weekly": weekly,
+            "definition": "Weekly event-date activity is an early operating signal. Mature fixed cohorts remain the outcome authority.",
+        }
+
     def _ahj_performance(self, params):
         # campaign/market filters are supported and tested here, but the current
         # frontend fetches this endpoint once per session with no query string
@@ -1671,6 +1846,33 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
         query = build_marketing_geo_query(**values)
         return self._run_marketing_query(query, values, shape_marketing_geo_row, "Marketing geography")
+
+    def _marketing_detail(self, params):
+        try:
+            values = self._marketing_params(params)
+            limit = min(200, max(1, int((params.get("limit", ["50"])[0]) or "50")))
+            offset = max(0, int((params.get("offset", ["0"])[0]) or "0"))
+        except ValueError as exc:
+            return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+        parameters = self._marketing_query_parameters(values)
+        parameters.extend([
+            bigquery.ScalarQueryParameter("limit", "INT64", limit),
+            bigquery.ScalarQueryParameter("offset", "INT64", offset),
+        ])
+        try:
+            rows = list(self.client.query(
+                build_marketing_detail_query(**values),
+                job_config=bigquery.QueryJobConfig(query_parameters=parameters),
+            ).result())
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing detail query failed: {exc}"}
+        return HTTPStatus.OK, {
+            "rows": [shape_marketing_detail_row(row) for row in rows],
+            "totalRows": rows[0]["totalRows"] if rows else 0,
+            "limit": limit,
+            "offset": offset,
+            "grain": "Governed cohort-source aggregate rows; no individual lead or contact fields are exposed.",
+        }
 
     def _marketing_trends(self, params):
         period = str((params.get("period", ["30d"])[0]) or "30d").strip()

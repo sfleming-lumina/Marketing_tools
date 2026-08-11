@@ -142,6 +142,11 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="resetFiltersButton"') && dashboardHtml.includes("refresh-spin") && dashboardHtml.includes('id="refreshStatus"'), "Reset control or animated refresh feedback is missing.");
   assert(dashboardHtml.includes('data-view="workbook"') && dashboardHtml.includes('id="workbookRefresh"') && dashboardHtml.includes('/api/official-workbook'), "Official workbook navigation, refresh control, or API wiring is missing.");
   assert(dashboardHtml.includes('data-view="trends"') && dashboardHtml.includes('id="trendPeriodFilter"') && dashboardHtml.includes('/api/marketing-trends'), "Independent calendar-trends navigation, period control, or API wiring is missing.");
+  assert(dashboardHtml.includes('data-view="monitoring"') && dashboardHtml.includes('/api/marketing-decision-trends') && dashboardHtml.includes('id="monitorDecisionFilter"') && dashboardHtml.includes('markLine:decisionWeekLabel'), "Decision-anchored weekly monitoring is missing.");
+  assert(dashboardHtml.includes('id="detailDrawer"') && dashboardHtml.includes('/api/marketing-detail') && dashboardHtml.includes('governed aggregate rows'), "Governed contributing-row access is missing.");
+  assert(dashboardHtml.includes('data-label="Cohort window"') && dashboardHtml.includes('data-label="Benchmark"') && dashboardHtml.includes('id="benchmarkFilter"'), "Discrete filter labels or benchmark-window control are missing.");
+  assert(dashboardHtml.includes('id="matrixCampaignLimit"') && dashboardHtml.includes('id="matrixGeographyLimit"') && dashboardHtml.includes('max-height:560px'), "Configurable, frame-scrolling opportunity matrix is missing.");
+  assert(dashboardHtml.includes('<strong>Observed</strong>') && dashboardHtml.includes('<strong>Why it matters</strong>') && dashboardHtml.includes('<strong>Do next</strong>'), "Findings do not translate observations into actions.");
   assert(dashboardHtml.includes('<div class="nav-label">Reporting views</div>') && dashboardHtml.includes('aria-label="Decision workspace"') && dashboardHtml.includes('aria-label="Reporting views"'), "Calendar trends and Official workbook are not grouped separately from the decision workspace.");
   assert(dashboardHtml.includes("Findings") && dashboardHtml.includes("Analysis") && dashboardHtml.includes("BigQuery-sourced event trends") && dashboardHtml.includes('id="sidebarToggle"'), "Direct-use navigation labels, BigQuery provenance, or the sidebar collapse control are missing.");
   assert(dashboardHtml.includes('globalThis.location?.protocol === "file:"') && dashboardHtml.includes("renderLocalFileNotice") && dashboardHtml.includes("http://localhost:8080/marketing_decision_tool.html"), "Local-file mode must avoid unsupported API fetches and direct users to the local server.");
@@ -149,7 +154,8 @@ setImmediate(() => {
   app.setSidebarCollapsed(true,false);
   assert(getElement("appShell").classList.contains("sidebar-collapsed") && dashboardHtml.includes('aria-expanded="true"'), "Desktop sidebar did not collapse accessibly.");
   app.setSidebarCollapsed(false,false);
-  assert(dashboardHtml.includes('$("cohortPeriodFilter").hidden=view==="trends"||view==="workbook"'), "Reporting views must not show the cohort-window control.");
+  app.state.benchmarkWindow="3";assert(app.benchmarkQueryString().includes("months=3") && !app.benchmarkQueryString().includes("window=30d"), "Benchmark window did not remain independent from the active slice.");app.state.benchmarkWindow="match";
+  assert(dashboardHtml.includes('view==="trends"||view==="monitoring"||view==="workbook"') && dashboardHtml.includes('$("benchmarkPeriodFilter").hidden=reportingOnly'), "Reporting views must not show cohort or benchmark-window controls.");
   app.state.trends.data=trendPayload;app.renderMarketingTrends();
   assert(getElement("trendMetrics").innerHTML.includes("Leads") && getElement("trendMetrics").innerHTML.includes("12"), "Calendar activity metrics did not render.");
   assert(getElement("trendBoundary").textContent.includes("not fixed-cohort"), "Calendar activity did not preserve its non-cohort boundary.");

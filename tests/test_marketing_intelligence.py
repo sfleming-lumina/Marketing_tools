@@ -11,6 +11,8 @@ from dashboard_server import (
     DashboardHandler,
     OFFICIAL_REPORT_BENCHMARKS,
     build_marketing_capacity_query,
+    build_marketing_decision_trends_query,
+    build_marketing_detail_query,
     build_marketing_funnel_query,
     build_marketing_filter_options_query,
     build_marketing_geo_query,
@@ -24,6 +26,7 @@ from dashboard_server import (
     official_workbook_credentials,
     shape_marketing_funnel_row,
     shape_marketing_geo_row,
+    shape_marketing_detail_row,
     shape_marketing_capacity_row,
     summarize_marketing_activity,
 )
@@ -110,6 +113,42 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
         for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region"):
             assert f"@{name}" in query
         assert "INTERVAL @months MONTH" in query
+
+
+def test_detail_query_is_bounded_and_exposes_governed_aggregate_rows_only():
+    query = build_marketing_detail_query(months=6, campaign="Summer Search", ahj="Fairfax County")
+    assert "COUNT(*) OVER() AS totalRows" in query
+    assert "LIMIT @limit OFFSET @offset" in query
+    assert "campaign_name = @campaign" in query
+    assert "@ahj" in query
+    assert "distinct_people" not in query
+    assert "email" not in query.lower()
+
+
+def test_decision_trend_query_uses_weekly_event_dates_and_saved_scope():
+    query = build_marketing_decision_trends_query(
+        campaign="Summer Search", rollup="Paid Search", ahj="Fairfax County", region="Maryland"
+    )
+    assert "DATE_TRUNC(event_date, WEEK(MONDAY))" in query
+    assert "event_date BETWEEN @monitor_start AND @monitor_end" in query
+    for name in ("campaign", "rollup", "ahj", "region"):
+        assert f"@{name}" in query
+
+
+def test_shape_marketing_detail_row_keeps_quality_and_maturity_context():
+    shaped = shape_marketing_detail_row({
+        "cohortStart": date(2026, 7, 1), "cohortGrain": "MONTH", "cohortAgeDays": 40,
+        "maturity": "Maturing", "campaign": "Summer Search", "campaignRollup": "Paid Search",
+        "campaignSubrollup": "Brand", "geography": "Fairfax County", "state": "VA",
+        "operatingRegion": "Maryland", "resolvedJurisdiction": "Fairfax County AHJ",
+        "leads": 20, "sets": 8, "runs": 5, "wins": 2, "losses": 3, "revenue": 100000,
+        "effectiveSpend": 10000, "spendCoverage": "Recorded", "benchmarkLeadToWinRate": .09,
+        "benchmarkConfidence": "High", "hasReliableBenchmark": True, "activePipeline": 4,
+        "expectedRemainingWins": 1.5, "loadedAt": datetime(2026, 8, 1, tzinfo=timezone.utc),
+    })
+    assert shaped["campaign"] == "Summer Search"
+    assert shaped["resolvedJurisdiction"] == "Fairfax County AHJ"
+    assert shaped["hasReliableBenchmark"] is True
 
 
 def test_physical_state_filter_uses_governed_portfolio_state_fallback():

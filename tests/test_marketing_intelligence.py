@@ -127,12 +127,36 @@ def test_detail_query_is_bounded_and_exposes_governed_aggregate_rows_only():
 
 def test_decision_trend_query_uses_weekly_event_dates_and_saved_scope():
     query = build_marketing_decision_trends_query(
-        campaign="Summer Search", rollup="Paid Search", ahj="Fairfax County", region="Maryland"
+        campaign="Summer Search", rollup="Paid Search", ahj="Fairfax County",
+        region="Maryland", decision_market="NORTHERN VIRGINIA",
     )
     assert "DATE_TRUNC(event_date, WEEK(MONDAY))" in query
     assert "event_date BETWEEN @monitor_start AND @monitor_end" in query
     for name in ("campaign", "rollup", "ahj", "region"):
         assert f"@{name}" in query
+    assert "dim_marketing_decision_market" in query
+    assert "market.state_code = CASE" in query
+    assert "decision_market_key = @decisionMarket" in query
+
+
+def test_decision_market_filter_is_state_aware_and_keeps_unmapped_rows_null():
+    for query in (
+        build_marketing_funnel_query(decision_market="NORTHERN VIRGINIA"),
+        build_marketing_geo_query(decision_market="NORTHERN VIRGINIA"),
+        build_marketing_detail_query(decision_market="NORTHERN VIRGINIA"),
+    ):
+        assert "LEFT JOIN `lumina-lakehouse.marketing_tool_ops.dim_marketing_decision_market`" in query
+        assert "market.state_code = UPPER(TRIM(source.portfolio_state))" in query
+        assert "market.county_match_name = TRIM(REGEXP_REPLACE" in query
+        assert "decision_market_key = @decisionMarket" in query
+        assert "COALESCE(market.decision_market_key" not in query
+
+
+def test_geo_query_and_shaper_expose_governed_decision_market_metadata():
+    query = build_marketing_geo_query()
+    assert "decision_market_key AS decisionMarketKey" in query
+    assert "decision_market_name AS decisionMarket" in query
+    assert "decision_market_mapping_version AS decisionMarketMappingVersion" in query
 
 
 def test_shape_marketing_detail_row_keeps_quality_and_maturity_context():
@@ -308,6 +332,9 @@ def test_geo_shaper_exposes_canonical_county_and_underlying_ahj_context():
         "county": "Fairfax County (VA)",
         "state": "VA",
         "market": "Fairfax County (VA)",
+        "decisionMarketKey": "NORTHERN VIRGINIA",
+        "decisionMarket": "Northern Virginia",
+        "decisionMarketMappingVersion": "seed_v1",
         "resolvedAhjCount": 2,
         "resolvedAhjExamples": ["Fairfax County (VA)", "Town of Vienna - Fairfax County (VA)"],
         "leads": 20,
@@ -329,6 +356,9 @@ def test_geo_shaper_exposes_canonical_county_and_underlying_ahj_context():
     assert shaped["ahj"] == "Fairfax County (VA)"
     assert shaped["resolvedAhjCount"] == 2
     assert shaped["resolvedAhjExamples"][1].startswith("Town of Vienna")
+    assert shaped["decisionMarketKey"] == "NORTHERN VIRGINIA"
+    assert shaped["decisionMarket"] == "Northern Virginia"
+    assert shaped["decisionMarketMappingVersion"] == "seed_v1"
     assert shaped["benchmarkCoverage"] == 0.75
     assert shaped["costPerWin"] == 3000
 
@@ -341,6 +371,21 @@ def test_lakehouse_regions_follow_operational_md_pa_contract():
     assert "THEN 'Maryland'" in sql
     assert "'PA/DE'" in sql
     assert "THEN 'DMV'" not in sql
+
+
+def test_decision_market_dimension_is_versioned_state_aware_and_region_bounded():
+    sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260813_marketing_decision_markets.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+    assert "state_code STRING NOT NULL" in sql
+    assert "effective_start_date DATE NOT NULL" in sql
+    assert "effective_end_date DATE" in sql
+    assert "mapping_version STRING NOT NULL" in sql
+    assert "COUNT(DISTINCT CONCAT(state_code, '|', county_match_name))" in sql
+    assert "MERGE `lumina-lakehouse.marketing_tool_ops.dim_marketing_decision_market`" in sql
+    assert "mapping_version != 'seed_v1'" in sql
+    assert "crosses governed Ops-region boundaries" in sql
+    assert "state_code IN ('MD', 'DC', 'VA')" in sql
+    assert "state_code IN ('PA', 'DE')" in sql
 
 
 def test_projection_query_uses_confidence_and_current_month():

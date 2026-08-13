@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `lumina-lakehouse.marketing_tool_ops.marketing_decisi
   campaign STRING,
   campaign_rollup STRING,
   ahj STRING,
+  decision_market STRING,
   operating_region STRING,
   months INT64 NOT NULL,
   temporal_window STRING,
@@ -24,3 +25,6 @@ CREATE TABLE IF NOT EXISTS `lumina-lakehouse.marketing_tool_ops.marketing_decisi
 )
 PARTITION BY DATE(created_at)
 CLUSTER BY status, operating_region, campaign, ahj;
+
+ALTER TABLE `lumina-lakehouse.marketing_tool_ops.marketing_decisions`
+ADD COLUMN IF NOT EXISTS decision_market STRING;

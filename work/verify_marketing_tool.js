@@ -193,6 +193,52 @@ setImmediate(() => {
   assert(!dashboardHtml.includes('<option value="Fix data">Fix data</option>') && dashboardHtml.includes('id="opportunityEvidenceFilter"'), "Data quality remains a primary action instead of an evidence filter.");
   assert(dashboardHtml.includes('<option value="24">24 months · history</option>') && dashboardHtml.includes('<option value="36">36 months · history</option>'), "The 24- and 36-month historical cohort lenses are missing.");
   app.state.months=24;app.renderAll();assert(getElement("historicalLensNotice").classList.contains("show") && dashboardHtml.includes("Older spend and CAC"), "Historical cohort guidance did not appear for a 24-month slice.");app.state.months=7;app.renderAll();
+  const originalGeoRows=app.state.geoRows,originalBenchmarkGeoRows=app.state.benchmarkGeoRows;
+  const adaptiveRows=[
+    {campaign:"Search A",campaignRollup:"Paid Search",ahj:"Baltimore",geography:"Baltimore",leads:30,sets:15,runs:10,wins:4,revenue:180000,effectiveSpend:9000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:60},
+    {campaign:"Search B",campaignRollup:"Paid Search",ahj:"Baltimore",geography:"Baltimore",leads:30,sets:14,runs:9,wins:4,revenue:170000,effectiveSpend:8500,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:58},
+    {campaign:"Referral",campaignRollup:"Referral",ahj:"York",geography:"York",leads:35,sets:17,runs:11,wins:4,revenue:175000,effectiveSpend:7000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:57},
+    {campaign:"Referral",campaignRollup:"Referral",ahj:"Dauphin",geography:"Dauphin",leads:35,sets:16,runs:10,wins:4,revenue:170000,effectiveSpend:7000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:56}
+  ];
+  app.state.geoRows=adaptiveRows;app.state.benchmarkGeoRows=adaptiveRows;app.state.opportunityGrain="adaptive";
+  const adaptive=app.adaptiveOpportunityRows();
+  assert(adaptive.some(row=>row.decisionGrain==="family-county"&&row.campaign==="Paid Search"&&row.childCount===2&&row.sampleSizeBucket==="Sufficient Sample"&&row.localConsistency===1), "Adaptive grain did not pool related campaigns within a county or disclose local consistency.");
+  assert(adaptive.some(row=>row.decisionGrain==="campaign-portfolio"&&row.campaign==="Referral"&&row.childCount===2&&row.sampleSizeBucket==="Sufficient Sample"), "Adaptive grain did not pool an exact campaign across selected markets.");
+  assert(adaptive.length===2 && new Set(adaptive.flatMap(row=>row.childKeys)).size===4, "Adaptive grain duplicated contributing campaign × county slices.");
+  const familyDecision=adaptive.find(row=>row.decisionGrain==="family-county");app.state.loading=true;app.beginOpportunity(familyDecision.key);app.state.loading=false;
+  assert(app.state.rollup==="Paid Search"&&app.state.ahj==="Baltimore"&&!app.state.campaign&&app.state.activeDecision.evidence.some(item=>item.includes("2 contributing")), "A pooled family decision did not drill into its representable rollup × county scope.");
+  app.state.geoRows=[{...adaptiveRows[0],wins:7,runs:12},{...adaptiveRows[1],wins:0,runs:6}];app.state.benchmarkGeoRows=app.state.geoRows;
+  const mixedLocal=app.adaptiveOpportunityRows()[0];
+  assert(mixedLocal.decisionType==="Test"&&mixedLocal.evidenceFlags.some(flag=>flag.key==="mixed-local-signal")&&mixedLocal.localConsistency===.5, "A contradictory pooled signal was allowed to become a broad Scale/Protect action.");
+  const marketRows=[
+    {campaign:"Search A",campaignRollup:"Paid Search",ahj:"Fairfax",geography:"Fairfax",decisionMarketKey:"NORTHERN VIRGINIA",decisionMarket:"Northern Virginia",decisionMarketMappingVersion:"seed_v1",leads:30,sets:15,runs:10,wins:4,revenue:180000,effectiveSpend:9000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:60},
+    {campaign:"Search A",campaignRollup:"Paid Search",ahj:"Loudoun",geography:"Loudoun",decisionMarketKey:"NORTHERN VIRGINIA",decisionMarket:"Northern Virginia",decisionMarketMappingVersion:"seed_v1",leads:30,sets:14,runs:9,wins:4,revenue:170000,effectiveSpend:8500,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:58},
+    {campaign:"Social A",campaignRollup:"Paid Social",ahj:"Baltimore",geography:"Baltimore",decisionMarketKey:"BALTIMORE METRO",decisionMarket:"Baltimore Metro",decisionMarketMappingVersion:"seed_v1",leads:30,sets:15,runs:10,wins:4,revenue:180000,effectiveSpend:9000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:57},
+    {campaign:"Social B",campaignRollup:"Paid Social",ahj:"Howard",geography:"Howard",decisionMarketKey:"BALTIMORE METRO",decisionMarket:"Baltimore Metro",decisionMarketMappingVersion:"seed_v1",leads:30,sets:14,runs:9,wins:4,revenue:170000,effectiveSpend:8500,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:56},
+    {campaign:"Unmapped",campaignRollup:"Referral",ahj:"Unknown One",geography:"Unknown One",decisionMarketKey:null,decisionMarket:null,leads:30,sets:15,runs:10,wins:4,revenue:180000,effectiveSpend:6000,benchmarkLeadToWinRate:.1,benchmarkCoverage:1,spendCompleteLeadShare:1,opportunityScore:55}
+  ];
+  app.state.campaign="";app.state.rollup="";app.state.ahj="";app.clearDecisionMarketScope({reload:false});
+  app.state.geoRows=marketRows;app.state.benchmarkGeoRows=marketRows;app.state.opportunityGrain="adaptive";
+  const marketAdaptive=app.adaptiveOpportunityRows();
+  const campaignMarket=marketAdaptive.find(row=>row.decisionGrain==="campaign-market");
+  const familyMarket=marketAdaptive.find(row=>row.decisionGrain==="family-market");
+  assert(campaignMarket?.campaign==="Search A"&&campaignMarket.childGeographyCount===2&&campaignMarket.scopeDecisionMarket==="NORTHERN VIRGINIA", "Adaptive grain did not pool an exact campaign across a governed decision market.");
+  assert(familyMarket?.campaign==="Paid Social"&&familyMarket.childGeographyCount===2&&familyMarket.scopeDecisionMarket==="BALTIMORE METRO", "Adaptive grain did not pool a campaign family across a governed decision market.");
+  assert(!app.opportunityRowsForGrain("campaign-market").some(row=>row.campaign==="Unmapped"), "An unmapped county was silently invented into decision-market pooling.");
+  app.state.loading=true;app.beginOpportunity(campaignMarket.key);app.state.loading=false;app.renderAll();
+  assert(app.state.campaign==="Search A"&&!app.state.ahj&&app.state.decisionMarket==="NORTHERN VIRGINIA"&&getElement("decisionMarketNotice").classList.contains("show"), "Opening a decision-market recommendation did not activate its clearly labeled temporary scope.");
+  assert(app.trendQueryString().includes("decisionMarket=NORTHERN+VIRGINIA")&&app.decisionTrackingPayload().filters.decisionMarket==="NORTHERN VIRGINIA", "Decision-market scope did not reach reporting or the frozen decision payload.");
+  app.clearDecisionMarketScope({reload:false});assert(!app.state.decisionMarket&&!getElement("decisionMarketNotice").classList.contains("show"), "Return to county filters did not clear the temporary decision-market scope.");
+  app.state.geoRows=[{...marketRows[0],wins:7,runs:12},{...marketRows[1],wins:0,runs:6}];app.state.benchmarkGeoRows=app.state.geoRows;
+  const mixedMarket=app.opportunityRowsForGrain("campaign-market")[0];
+  assert(mixedMarket.decisionType==="Test"&&mixedMarket.evidenceFlags.some(flag=>flag.key==="mixed-local-signal")&&mixedMarket.localConsistency===.5, "A mixed county signal was allowed to become a broad decision-market Scale/Protect action.");
+  app.state.geoRows=originalGeoRows;app.state.benchmarkGeoRows=originalBenchmarkGeoRows;app.state.campaign="";app.state.rollup="";app.state.ahj="";app.state.opportunityGrain="adaptive";app.renderAll();
+  assert(dashboardHtml.includes('id="countyQueueMode"') && dashboardHtml.includes('id="hierarchyQueueMode"') && dashboardHtml.includes('id="hierarchyGrainFilter"') && dashboardHtml.includes('aria-pressed="true"') && dashboardHtml.includes("Campaign across markets"), "County/marketing-hierarchy controls or their accessibility contract are missing.");
+  app.setOpportunityMode("county");
+  assert(app.state.opportunityGrain==="campaign-county"&&getElement("hierarchyGrainWrap").hidden, "County view did not switch the queue to exact campaign × county evidence.");
+  app.state.opportunityHierarchyGrain="campaign-market";app.setOpportunityMode("hierarchy");
+  assert(app.state.opportunityGrain==="campaign-market"&&!getElement("hierarchyGrainWrap").hidden&&getElement("hierarchyGrainFilter").value==="campaign-market", "Marketing hierarchy did not restore its selected hierarchy detail.");
+  app.state.opportunityHierarchyGrain="adaptive";app.setOpportunityMode("hierarchy");
   assert(getElement("insightList").innerHTML.includes("Efficient Search") && getElement("insightList").innerHTML.includes("Fairfax County"), "Multi-campaign/AHJ opportunity queue did not render.");
   assert(getElement("opportunityMatrix").innerHTML.includes("matrix-cell") && getElement("opportunityMatrix").innerHTML.includes("Fairfax County"), "Clickable Campaign/AHJ matrix did not render.");
   assert(dashboardHtml.includes('id="matrixMetric"') && dashboardHtml.includes('id="improvementTarget"'), "Metric switching or improvement-target modeling is missing.");

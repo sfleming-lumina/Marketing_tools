@@ -99,7 +99,7 @@ def test_create_decision_captures_identity_scope_and_frozen_snapshots(monkeypatc
         "sourceView": "funnel",
         "filters": {
             "campaign": "SolarReviews",
-            "ahj": "Montgomery County",
+            "decisionMarket": "DC NORTH WEST",
             "operatingRegion": "Maryland",
             "months": 7,
         },
@@ -118,7 +118,9 @@ def test_create_decision_captures_identity_scope_and_frozen_snapshots(monkeypatc
     assert inserted["created_by_email"] == "jane.doe@luminasolar.com"
     assert inserted["created_by_name"] == "Jane Doe"
     assert inserted["campaign"] == "SolarReviews"
-    assert inserted["ahj"] == "Montgomery County"
+    assert inserted["ahj"] == ""
+    assert inserted["decision_market"] == "DC NORTH WEST"
+    assert created["decision_market"] == "DC NORTH WEST"
     assert json.loads(inserted["baseline"])["setRate"] == 0.29
     assert date.fromisoformat(inserted["review_after"]) > date.today()
     assert created["evidence"] == ["Lead-to-set trails benchmark."]

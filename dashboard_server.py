@@ -31,6 +31,7 @@ PROJECTION_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_period_pr
 ACTIVE_LEAD_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime"
 ACTIVE_CAMPAIGN_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime"
 TREND_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_activity_daily_runtime"
+DECISION_MARKET_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.dim_marketing_decision_market"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -415,7 +416,31 @@ def marketing_trend_period_bounds(period, today=None):
     }
 
 
-def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=None):
+def _marketing_activity_market_cte():
+    return f"""
+        activity_enriched AS (
+            SELECT activity.*, market.decision_market_key
+            FROM `{TREND_TABLE_REF}` AS activity
+            LEFT JOIN `{DECISION_MARKET_TABLE_REF}` AS market
+              ON market.is_current
+             AND market.state_code = CASE
+                    WHEN UPPER(TRIM(activity.resolved_state)) IN ('MD', 'MARYLAND') THEN 'MD'
+                    WHEN UPPER(TRIM(activity.resolved_state)) IN ('VA', 'VIRGINIA') THEN 'VA'
+                    WHEN UPPER(TRIM(activity.resolved_state)) IN ('DC', 'D.C.', 'DISTRICT OF COLUMBIA') THEN 'DC'
+                    WHEN UPPER(TRIM(activity.resolved_state)) IN ('PA', 'PENNSYLVANIA') THEN 'PA'
+                    WHEN UPPER(TRIM(activity.resolved_state)) IN ('DE', 'DELAWARE') THEN 'DE'
+                    ELSE UPPER(TRIM(activity.resolved_state))
+                 END
+             AND market.county_match_name = TRIM(REGEXP_REPLACE(
+                    REGEXP_REPLACE(UPPER(TRIM(activity.resolved_county)), r'\\s*\\([A-Z]{{2}}\\)\\s*$', ''),
+                    r'[^A-Z0-9]+',
+                    ' '
+                 ))
+        )
+    """
+
+
+def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=None, decision_market=None):
     conditions = [
         "event_date BETWEEN @comparison_start AND @current_end",
         "NOT REGEXP_CONTAINS(LOWER(COALESCE(campaign_name, '')), r'jonathan\\s+bissell')",
@@ -430,7 +455,10 @@ def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=No
         conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
     elif region:
         conditions.append("operating_region_group = @region")
+    if decision_market:
+        conditions.append("decision_market_key = @decisionMarket")
     return f"""
+        WITH {_marketing_activity_market_cte()}
         SELECT
             event_date AS date,
             SUM(IF(event_type = 'Lead', event_count, 0)) AS leads,
@@ -440,14 +468,14 @@ def build_marketing_trends_query(campaign=None, rollup=None, ahj=None, region=No
             SUM(IF(event_type = 'Win', event_value, 0)) AS winValue,
             SUM(IF(event_type = 'Spend', event_value, 0)) AS spend,
             MAX(loaded_at) AS loadedAt
-        FROM `{TREND_TABLE_REF}`
+        FROM activity_enriched
         WHERE {' AND '.join(conditions)}
         GROUP BY date
         ORDER BY date
     """
 
 
-def build_marketing_decision_trends_query(campaign=None, rollup=None, ahj=None, region=None):
+def build_marketing_decision_trends_query(campaign=None, rollup=None, ahj=None, region=None, decision_market=None):
     conditions = [
         "event_date BETWEEN @monitor_start AND @monitor_end",
         "NOT REGEXP_CONTAINS(LOWER(COALESCE(campaign_name, '')), r'jonathan\\s+bissell')",
@@ -462,7 +490,10 @@ def build_marketing_decision_trends_query(campaign=None, rollup=None, ahj=None, 
         conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
     elif region:
         conditions.append("operating_region_group = @region")
+    if decision_market:
+        conditions.append("decision_market_key = @decisionMarket")
     return f"""
+        WITH {_marketing_activity_market_cte()}
         SELECT
             DATE_TRUNC(event_date, WEEK(MONDAY)) AS week,
             SUM(IF(event_type = 'Lead', event_count, 0)) AS leads,
@@ -472,7 +503,7 @@ def build_marketing_decision_trends_query(campaign=None, rollup=None, ahj=None, 
             SUM(IF(event_type = 'Win', event_value, 0)) AS winValue,
             SUM(IF(event_type = 'Spend', event_value, 0)) AS spend,
             MAX(loaded_at) AS loadedAt
-        FROM `{TREND_TABLE_REF}`
+        FROM activity_enriched
         WHERE {' AND '.join(conditions)}
         GROUP BY week
         ORDER BY week
@@ -523,6 +554,36 @@ def _marketing_portfolio_geography_sql():
     )
 
 
+def _marketing_decision_market_ctes():
+    state_sql = _marketing_portfolio_state_sql()
+    geography_sql = _marketing_portfolio_geography_sql()
+    return f"""
+        marketing_source AS (
+            SELECT
+                source.*,
+                {state_sql} AS portfolio_state,
+                {geography_sql} AS portfolio_geography
+            FROM `{FUNNEL_TABLE_REF}` AS source
+        ),
+        marketing_enriched AS (
+            SELECT
+                source.*,
+                market.decision_market_key,
+                market.decision_market_name,
+                market.mapping_version AS decision_market_mapping_version
+            FROM marketing_source AS source
+            LEFT JOIN `{DECISION_MARKET_TABLE_REF}` AS market
+              ON market.is_current
+             AND market.state_code = UPPER(TRIM(source.portfolio_state))
+             AND market.county_match_name = TRIM(REGEXP_REPLACE(
+                    REGEXP_REPLACE(UPPER(TRIM(source.portfolio_geography)), r'\\s*\\([A-Z]{{2}}\\)\\s*$', ''),
+                    r'[^A-Z0-9]+',
+                    ' '
+                 ))
+        )
+    """
+
+
 def _marketing_identity_exclusions(include_subrollup=True):
     fields = ["campaign_name", "campaign_reporting_rollup_name"]
     if include_subrollup:
@@ -541,6 +602,7 @@ def _marketing_filter_conditions(
     county=None,
     ahj=None,
     region=None,
+    decision_market=None,
 ):
     conditions = ["campaign_name IS NOT NULL", *_marketing_identity_exclusions()]
     portfolio_geography_sql = _marketing_portfolio_geography_sql()
@@ -564,6 +626,8 @@ def _marketing_filter_conditions(
         conditions.append("operating_region_group IN ('Maryland', 'Pennsylvania')")
     elif region:
         conditions.append("operating_region_group = @region")
+    if decision_market:
+        conditions.append("decision_market_key = @decisionMarket")
     return conditions
 
 
@@ -589,8 +653,9 @@ def build_marketing_funnel_query(
     county=None,
     ahj=None,
     region=None,
+    decision_market=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region, decision_market)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
@@ -598,7 +663,7 @@ def build_marketing_funnel_query(
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
             WHERE cohort_period_grain = '{period_grain}'
-        )
+        ), {_marketing_decision_market_ctes()}
         SELECT
             cohort_period_start_date AS month,
             campaign_sf_id AS campaignId,
@@ -639,7 +704,7 @@ def build_marketing_funnel_query(
             COUNT(*) AS cohortRows,
             MAX(spend_coverage_note) AS spendCoverageNote,
             MAX(rpt_loaded_at) AS loadedAt
-        FROM `{FUNNEL_TABLE_REF}`, bounds
+        FROM marketing_enriched, bounds
         WHERE cohort_period_grain = '{period_grain}'
             AND {period_predicate}
             AND {where_clause}
@@ -660,8 +725,9 @@ def build_marketing_geo_query(
     county=None,
     ahj=None,
     region=None,
+    decision_market=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region, decision_market)
     where_clause = " AND ".join(conditions)
     period_grain, period_predicate = _marketing_period_sql(window)
     portfolio_geography_sql = _marketing_portfolio_geography_sql()
@@ -671,7 +737,7 @@ def build_marketing_geo_query(
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
             WHERE cohort_period_grain = '{period_grain}'
-        )
+        ), {_marketing_decision_market_ctes()}
         SELECT
             campaign_sf_id AS campaignId,
             campaign_name AS campaign,
@@ -685,6 +751,9 @@ def build_marketing_geo_query(
             {portfolio_geography_sql} AS county,
             {portfolio_state_sql} AS state,
             {portfolio_geography_sql} AS market,
+            decision_market_key AS decisionMarketKey,
+            decision_market_name AS decisionMarket,
+            decision_market_mapping_version AS decisionMarketMappingVersion,
             COUNT(DISTINCT IF(
                 NULLIF(final_reporting_jurisdiction_label, 'Unknown') IS NOT NULL
                     AND NOT STARTS_WITH(final_reporting_jurisdiction_label, 'CO - '),
@@ -725,11 +794,11 @@ def build_marketing_geo_query(
             COUNTIF(has_reliable_benchmark) AS benchmarkRows,
             COUNT(*) AS cohortRows,
             MAX(rpt_loaded_at) AS loadedAt
-        FROM `{FUNNEL_TABLE_REF}`, bounds
+        FROM marketing_enriched, bounds
         WHERE cohort_period_grain = '{period_grain}'
             AND {period_predicate}
             AND {where_clause}
-        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, ahj, geography, geographyType, county, state, market
+        GROUP BY campaignId, campaign, campaignRollup, operatingRegion, normalizedOpsRegion, normalizedState, ahj, geography, geographyType, county, state, market, decisionMarketKey, decisionMarket, decisionMarketMappingVersion
         HAVING SUM(lead_count) > 0
         ORDER BY leads DESC, wins DESC
         LIMIT 2000
@@ -746,15 +815,16 @@ def build_marketing_detail_query(
     county=None,
     ahj=None,
     region=None,
+    decision_market=None,
 ):
-    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region)
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region, decision_market)
     period_grain, period_predicate = _marketing_period_sql(window)
     return f"""
         WITH bounds AS (
             SELECT MAX(cohort_period_start_date) AS latest_start
             FROM `{FUNNEL_TABLE_REF}`
             WHERE cohort_period_grain = '{period_grain}'
-        ), filtered AS (
+        ), {_marketing_decision_market_ctes()}, filtered AS (
             SELECT
                 cohort_period_start_date AS cohortStart,
                 cohort_period_grain AS cohortGrain,
@@ -781,7 +851,7 @@ def build_marketing_detail_query(
                 active_pipeline_candidate_count AS activePipeline,
                 expected_remaining_win_count AS expectedRemainingWins,
                 rpt_loaded_at AS loadedAt
-            FROM `{FUNNEL_TABLE_REF}`, bounds
+            FROM marketing_enriched, bounds
             WHERE cohort_period_grain = '{period_grain}'
               AND {period_predicate}
               AND {' AND '.join(conditions)}
@@ -1083,6 +1153,9 @@ def shape_marketing_geo_row(row):
         "county": row["county"],
         "state": row["state"],
         "market": row["market"],
+        "decisionMarketKey": row.get("decisionMarketKey"),
+        "decisionMarket": row.get("decisionMarket"),
+        "decisionMarketMappingVersion": row.get("decisionMarketMappingVersion"),
         "resolvedAhjCount": row.get("resolvedAhjCount", 0) or 0,
         "resolvedAhjExamples": list(row.get("resolvedAhjExamples", []) or []),
         "leads": leads,
@@ -1533,6 +1606,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "campaign": row["campaign"] or "",
             "rollup": row["campaign_rollup"] or "",
             "ahj": row["ahj"] or "",
+            "decision_market": row.get("decision_market") or "",
             "operating_region": row["operating_region"] or "",
             "months": row["months"] or 7,
             "window": row["temporal_window"] or "",
@@ -1628,6 +1702,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "campaign": str(filters.get("campaign") or "")[:500],
             "campaign_rollup": str(filters.get("rollup") or "")[:500],
             "ahj": str(filters.get("ahj") or "")[:500],
+            "decision_market": str(filters.get("decisionMarket") or "")[:200],
             "operating_region": str(filters.get("operatingRegion") or "")[:100],
             "months": months,
             "temporal_window": str(filters.get("window") or "")[:20],
@@ -1681,6 +1756,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             ("campaign", decision["campaign"]),
             ("rollup", decision["rollup"]),
             ("ahj", decision["ahj"]),
+            ("decisionMarket", decision["decision_market"]),
             ("region", decision["operating_region"]),
         ):
             if value:
@@ -1709,6 +1785,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "rollup": decision["rollup"] or None,
             "ahj": decision["ahj"] or None,
             "region": decision["operating_region"] or None,
+            "decision_market": decision["decision_market"] or None,
         }
         parameters = [
             bigquery.ScalarQueryParameter("monitor_start", "DATE", monitor_start),
@@ -1716,7 +1793,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         ]
         for name, value in values.items():
             if value and not (name == "region" and value == "Operating footprint"):
-                parameters.append(bigquery.ScalarQueryParameter(name, "STRING", value))
+                parameter_name = "decisionMarket" if name == "decision_market" else name
+                parameters.append(bigquery.ScalarQueryParameter(parameter_name, "STRING", value))
         try:
             rows = self.client.query(
                 build_marketing_decision_trends_query(**values),
@@ -1804,6 +1882,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "county": params.get("county", [None])[0] or None,
                 "ahj": params.get("ahj", [None])[0] or None,
                 "region": params.get("region", [None])[0] or None,
+                "decision_market": params.get("decisionMarket", [None])[0] or None,
             })
         if values.get("region") and values["region"] not in OPERATING_REGION_FILTERS:
             raise ValueError("region is not a supported operating-region filter.")
@@ -1814,11 +1893,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         parameters = []
         if include_months and values.get("window") != "30d":
             parameters.append(bigquery.ScalarQueryParameter("months", "INT64", values["months"]))
-        for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region"):
+        for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region", "decision_market"):
             if name == "region" and values.get(name) == "Operating footprint":
                 continue
             if values.get(name):
-                parameters.append(bigquery.ScalarQueryParameter(name, "STRING", values[name]))
+                parameter_name = "decisionMarket" if name == "decision_market" else name
+                parameters.append(bigquery.ScalarQueryParameter(parameter_name, "STRING", values[name]))
         return parameters
 
     def _run_marketing_query(self, query, values, shaper, label, include_months=True):
@@ -1885,6 +1965,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "rollup": params.get("rollup", [None])[0] or None,
             "ahj": params.get("ahj", [None])[0] or None,
             "region": params.get("region", [None])[0] or None,
+            "decision_market": params.get("decisionMarket", [None])[0] or None,
         }
         if values["region"] and values["region"] not in OPERATING_REGION_FILTERS:
             return HTTPStatus.BAD_REQUEST, {"detail": "region is not a supported operating-region filter."}
@@ -1892,11 +1973,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             bigquery.ScalarQueryParameter("comparison_start", "DATE", bounds["comparison_start"]),
             bigquery.ScalarQueryParameter("current_end", "DATE", bounds["current_end"]),
         ]
-        for name in ("campaign", "rollup", "ahj", "region"):
+        for name in ("campaign", "rollup", "ahj", "region", "decision_market"):
             if name == "region" and values[name] == "Operating footprint":
                 continue
             if values[name]:
-                query_parameters.append(bigquery.ScalarQueryParameter(name, "STRING", values[name]))
+                parameter_name = "decisionMarket" if name == "decision_market" else name
+                query_parameters.append(bigquery.ScalarQueryParameter(parameter_name, "STRING", values[name]))
         job_config = bigquery.QueryJobConfig(query_parameters=query_parameters)
         try:
             result = self.client.query(
@@ -2157,7 +2239,8 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         params = {}
         for source, target in (
             ("months", "months"), ("window", "window"), ("campaign", "campaign"),
-            ("rollup", "rollup"), ("ahj", "ahj"), ("region", "region"),
+            ("rollup", "rollup"), ("ahj", "ahj"),
+            ("decisionMarket", "decisionMarket"), ("region", "region"),
         ):
             value = query_filters.get(source)
             if value not in (None, ""):

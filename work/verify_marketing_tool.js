@@ -234,6 +234,7 @@ setImmediate(() => {
   assert(mixedMarket.decisionType==="Test"&&mixedMarket.evidenceFlags.some(flag=>flag.key==="mixed-local-signal")&&mixedMarket.localConsistency===.5, "A mixed county signal was allowed to become a broad decision-market Scale/Protect action.");
   app.state.geoRows=originalGeoRows;app.state.benchmarkGeoRows=originalBenchmarkGeoRows;app.state.campaign="";app.state.rollup="";app.state.ahj="";app.state.opportunityGrain="adaptive";app.renderAll();
   assert(dashboardHtml.includes('id="countyQueueMode"') && dashboardHtml.includes('id="hierarchyQueueMode"') && dashboardHtml.includes('id="hierarchyGrainFilter"') && dashboardHtml.includes('aria-pressed="true"') && dashboardHtml.includes("Campaign across markets"), "County/marketing-hierarchy controls or their accessibility contract are missing.");
+  assert(dashboardHtml.includes('.command-opportunity-card .section-head{display:grid') && dashboardHtml.includes('grid-template-columns:max-content minmax(168px,1.35fr)') && dashboardHtml.includes('@media(max-width:920px)') && dashboardHtml.includes('.opportunity-toolbar{grid-template-columns:minmax(0,1fr)}'), "Decision queue controls do not preserve a stable desktop row and intentional responsive wrapping.");
   app.setOpportunityMode("county");
   assert(app.state.opportunityGrain==="campaign-county"&&getElement("hierarchyGrainWrap").hidden, "County view did not switch the queue to exact campaign × county evidence.");
   app.state.opportunityHierarchyGrain="campaign-market";app.setOpportunityMode("hierarchy");

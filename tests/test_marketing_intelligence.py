@@ -157,6 +157,16 @@ def test_buyer_journey_shape_exposes_stage_samples_percentiles_and_coverage():
     assert [stage["count"] for stage in shaped["stages"]] == [80, 50, 18]
 
 
+def test_buyer_journey_runtime_is_materialized_for_least_privilege_access():
+    sql_path = Path(__file__).resolve().parents[1] / "lakehouse" / "20260814_marketing_buyer_journey.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+
+    assert "CREATE OR REPLACE TABLE" in sql
+    assert "existing_object_type = 'VIEW'" in sql
+    assert "DROP VIEW `lumina-lakehouse.marketing_tool_ops.rpt_marketing_buyer_journey_runtime`" in sql
+    assert "analytics_dim.dim_campaign_reporting_hierarchy" in sql
+
+
 def test_detail_query_is_bounded_and_exposes_governed_aggregate_rows_only():
     query = build_marketing_detail_query(months=6, campaign="Summer Search", ahj="Fairfax County")
     assert "COUNT(*) OVER() AS totalRows" in query

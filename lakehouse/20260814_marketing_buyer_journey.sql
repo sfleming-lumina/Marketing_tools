@@ -1,7 +1,19 @@
-CREATE OR REPLACE VIEW
+BEGIN
+  DECLARE existing_object_type STRING DEFAULT (
+    SELECT table_type
+    FROM `lumina-lakehouse.marketing_tool_ops.INFORMATION_SCHEMA.TABLES`
+    WHERE table_name = 'rpt_marketing_buyer_journey_runtime'
+  );
+
+  IF existing_object_type = 'VIEW' THEN
+    DROP VIEW `lumina-lakehouse.marketing_tool_ops.rpt_marketing_buyer_journey_runtime`;
+  END IF;
+END;
+
+CREATE OR REPLACE TABLE
   `lumina-lakehouse.marketing_tool_ops.rpt_marketing_buyer_journey_runtime`
 OPTIONS (
-  description = 'PII-free marketing buyer-journey event durations for governed dashboard percentile analysis.'
+  description = 'PII-free materialized marketing buyer-journey event durations for governed dashboard percentile analysis. Materialized so the runtime service account does not require analytics_dim access.'
 )
 AS
 

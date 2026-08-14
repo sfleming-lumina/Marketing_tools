@@ -5,7 +5,7 @@ from typing import Optional
 
 from google.cloud import bigquery
 
-from models import Note, NoteIn
+from models import Note, NoteActionIn, NoteIn
 from storage import NotesStore
 
 
@@ -26,7 +26,11 @@ class BigQueryNotesStore(NotesStore):
                 COALESCE(target_type, 'tile') AS target_type,
                 COALESCE(feedback_type, 'tweak') AS feedback_type,
                 note_text,
-                context
+                context,
+                COALESCE(action_status, 'Open') AS action_status,
+                action_taken,
+                actioned_at,
+                actioned_by
             FROM `{self._table_ref}`
             {"WHERE view = @view" if view else ""}
             ORDER BY created_at DESC
@@ -47,6 +51,10 @@ class BigQueryNotesStore(NotesStore):
                 feedback_type=row["feedback_type"],
                 note_text=row["note_text"],
                 context=json.loads(row["context"]) if row["context"] else {},
+                action_status=row["action_status"],
+                action_taken=row["action_taken"],
+                actioned_at=row["actioned_at"].isoformat() if row["actioned_at"] else None,
+                actioned_by=row["actioned_by"],
             )
             for row in rows
         ]
@@ -64,6 +72,27 @@ class BigQueryNotesStore(NotesStore):
         if errors:
             raise RuntimeError(f"BigQuery insert failed: {errors}")
         return created
+
+    def update_note_action(self, note_id: str, action: NoteActionIn, author_name: str) -> Note:
+        query = f"""
+            UPDATE `{self._table_ref}`
+            SET
+                action_status = @action_status,
+                action_taken = @action_taken,
+                actioned_at = CURRENT_TIMESTAMP(),
+                actioned_by = @actioned_by
+            WHERE note_id = @note_id
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("action_status", "STRING", action.action_status),
+            bigquery.ScalarQueryParameter("action_taken", "STRING", action.action_taken),
+            bigquery.ScalarQueryParameter("actioned_by", "STRING", author_name),
+            bigquery.ScalarQueryParameter("note_id", "STRING", note_id),
+        ])
+        result = self._client.query(query, job_config=job_config).result()
+        if result.num_dml_affected_rows != 1:
+            raise KeyError(note_id)
+        return next(note for note in self.list_notes() if note.note_id == note_id)
 
     def source_freshness(self, object_ids: list[str]) -> dict:
         checked_at = datetime.now(timezone.utc).isoformat()

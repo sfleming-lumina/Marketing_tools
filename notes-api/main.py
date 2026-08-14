@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import VerifiedUser, require_google_user
 from bigquery_store import BigQueryNotesStore
-from models import Note, NoteIn
+from models import Note, NoteActionIn, NoteIn
 from storage import NotesStore
 
 ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "*").split(",")]
@@ -79,5 +79,15 @@ def list_notes(view: Optional[str] = None, _user: VerifiedUser = Depends(require
 def create_note(note: NoteIn, user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> Note:
     try:
         return store.create_note(note, author_name=user.name)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/notes/{note_id}/action", response_model=Note)
+def update_note_action(note_id: str, action: NoteActionIn, user: VerifiedUser = Depends(require_google_user), store: NotesStore = Depends(get_store)) -> Note:
+    try:
+        return store.update_note_action(note_id, action, author_name=user.name)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Feedback note not found.") from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

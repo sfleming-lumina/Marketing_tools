@@ -26,5 +26,9 @@ assert(html.includes('id="geoEvidenceChoice"') && html.includes('activeDecisionE
 assert(html.includes('id="presentationSectionList"') && html.includes('data-presentation-section="${section.id}"'), "Selectable presentation elements are missing.");
 assert(html.includes("presentationLineChart") && html.includes("presentationTalkTrack") && html.includes("presentationRateBars"), "Presentation storytelling charts are missing.");
 assert(html.includes('value:"region:Maryland"') && html.includes('value:"region:Pennsylvania"') && html.includes('value:`state:${code}`'), "Presentation scope does not cover MD Ops, PA Ops, and physical states.");
+assert(html.includes('id="feedbackQueueTab"') && html.includes('id="feedbackQueuePanel"'), "Feedback queue is not available from the decision tracker.");
+assert(html.includes('id="feedbackStatusFilter"') && html.includes('id="feedbackViewFilter"'), "Feedback queue status or workspace filters are missing.");
+assert(html.includes('fetchJson("/api/notes/action"') && html.includes('action_taken:action'), "Feedback action detail is not written back to the notes API.");
+assert(html.includes("actioned_by") && html.includes("actioned_at") && html.includes("BigQuery sourced"), "Feedback action provenance is missing.");
 
 console.log("Notes and decision-assistant wiring verified OK.");

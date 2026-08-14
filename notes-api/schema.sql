@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS `lumina-lakehouse.marketing_tool_ops.dashboard_notes`
   target_type STRING NOT NULL,
   feedback_type STRING NOT NULL,
   note_text STRING NOT NULL,
-  context STRING
+  context STRING,
+  action_status STRING,
+  action_taken STRING,
+  actioned_at TIMESTAMP,
+  actioned_by STRING
 )
 PARTITION BY DATE(created_at);

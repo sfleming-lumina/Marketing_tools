@@ -1,10 +1,14 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-DashboardView = Literal["overview", "cohorts", "campaigns", "scenario", "objects"]
-FeedbackType = Literal["helpful", "tweak", "not_helpful"]
-TargetType = Literal["section", "tile", "chart", "table", "metric", "recommendation", "object", "control"]
+DashboardView = Literal[
+    "overview", "cohorts", "campaigns", "objects",
+    "command", "trends", "monitoring", "funnel", "geo", "scenario", "quality", "workbook",
+]
+FeedbackType = Literal["helpful", "tweak", "not_helpful", "question", "data", "idea", "decision"]
+TargetType = Literal["section", "tile", "chart", "table", "metric", "recommendation", "object", "control", "view"]
+ActionStatus = Literal["Open", "Actioned"]
 
 
 class NoteIn(BaseModel):
@@ -21,3 +25,12 @@ class Note(NoteIn):
     note_id: str
     created_at: str
     author_name: str
+    action_status: ActionStatus = "Open"
+    action_taken: Optional[str] = None
+    actioned_at: Optional[str] = None
+    actioned_by: Optional[str] = None
+
+
+class NoteActionIn(BaseModel):
+    action_status: ActionStatus
+    action_taken: str = Field(min_length=1, max_length=4000)

@@ -116,6 +116,12 @@ jobs:
       - name: Apply notes schema migration
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260715_note_target_metadata.sql
 
+      - name: Apply feedback action ledger
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260814_feedback_actions.sql
+
+      - name: Apply marketing buyer journey view
+        run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < lakehouse/20260814_marketing_buyer_journey.sql
+
       - name: Apply marketing decision ledger
         run: bq --project_id="${GCP_PROJECT_ID}" query --use_legacy_sql=false < notes-api/migrations/20260729_marketing_decisions.sql
 

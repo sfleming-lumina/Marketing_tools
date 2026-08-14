@@ -32,6 +32,7 @@ def test_create_note_returns_generated_id_and_timestamp():
     assert body["target_type"] == "metric"
     assert body["feedback_type"] == "tweak"
     assert body["author_name"] == "Jane Doe"
+    assert body["action_status"] == "Open"
     app.dependency_overrides.clear()
 
 
@@ -85,6 +86,32 @@ def test_create_note_rejects_invalid_feedback_type():
         "view": "overview", "element_key": "metric:a", "element_label": "A",
         "feedback_type": "maybe", "note_text": "hello", "context": {},
     })
+    assert response.status_code == 422
+    app.dependency_overrides.clear()
+
+
+def test_action_note_records_resolution_and_authenticated_owner():
+    client, _ = make_client()
+    created = client.post("/notes", json={
+        "view": "funnel", "element_key": "focus-scan", "element_label": "Focus scan",
+        "feedback_type": "data", "note_text": "Explain the maturity rule.", "context": {},
+    }).json()
+    response = client.post(f"/notes/{created['note_id']}/action", json={
+        "action_status": "Actioned",
+        "action_taken": "Observed rates now remain visible with a mature reference.",
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert body["action_status"] == "Actioned"
+    assert body["action_taken"].startswith("Observed rates")
+    assert body["actioned_by"] == "Jane Doe"
+    assert body["actioned_at"]
+    app.dependency_overrides.clear()
+
+
+def test_action_note_requires_action_detail():
+    client, _ = make_client()
+    response = client.post("/notes/missing/action", json={"action_status": "Actioned", "action_taken": ""})
     assert response.status_code == 422
     app.dependency_overrides.clear()
 

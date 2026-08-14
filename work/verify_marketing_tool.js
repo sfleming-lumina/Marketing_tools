@@ -52,6 +52,16 @@ const trendPayload = {
   comparisonSummary:{leads:10,sets:4,runs:2,wins:1,winValue:38000,spend:1000,setsPerLead:.4,runsPerSet:.5,winsPerRun:.5,costPerLead:100,costPerWin:1000},
   loadedAt:"2026-08-06T12:00:00Z",definitions:{lead:"Campaign Member activity dated by Lead.Updated_Campaign_Member__c.",set:"Opportunity dated by CreatedDate.",run:"Completed SV dated by SV Start Date-Time.",win:"Qualifying stage dated by Close Date.",comparison:"Event-period activity is not fixed-cohort conversion."}
 };
+const journeyPayload = {
+  totalRows:20630,invalidSequenceRows:69,completedWins:1325,journeyCoverage:.937,
+  cohortStart:"2026-01-01",cohortEnd:"2026-07-01",
+  stages:[
+    {key:"leadToSet",label:"Lead to set",count:9200,medianDays:1,p75Days:8},
+    {key:"setToRun",label:"Set to run",count:4100,medianDays:4,p75Days:14},
+    {key:"runToWin",label:"Run to win",count:1241,medianDays:27,p75Days:92}
+  ],
+  leadToWin:{count:1241,medianDays:50,p75Days:186}
+};
 
 global.fetch = (url, options = {}) => {
   const path = String(url);
@@ -82,6 +92,7 @@ global.fetch = (url, options = {}) => {
   let payload = [];
   if (path.includes("marketing-funnel")) payload = apiFunnelRows;
   else if (path.includes("marketing-geo")) payload = geoRows;
+  else if (path.includes("marketing-journey")) payload = journeyPayload;
   else if (path.includes("marketing-trends")) payload = trendPayload;
   else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
@@ -172,6 +183,14 @@ setImmediate(() => {
   assert(dashboardHtml.includes("chart-fallback") && dashboardHtml.includes("paintTrend"), "Graceful canvas chart fallback is missing.");
   assert(dashboardHtml.includes('<option value="30d">Last 30 days</option>') && dashboardHtml.includes('L → S') && dashboardHtml.includes('S → R') && dashboardHtml.includes('R → W'), "30-day or stage-conversion controls are missing.");
   assert(getElement("funnelHealth").innerHTML.includes("Lead → set") && getElement("funnelFocus").innerHTML.includes("focus-callout"), "Purpose-colored funnel health did not render.");
+  app.state.journey.data=journeyPayload;app.renderJourney();
+  assert(getElement("journeyTimeline").innerHTML.includes("50 days lead to win") && getElement("journeyTimeline").innerHTML.includes("93.7% win-date coverage"), "Buyer journey timing or coverage did not render.");
+  app.state.journey.percentile="p75Days";app.renderJourney();
+  assert(getElement("journeyTimeline").innerHTML.includes("186 days lead to win"), "Buyer journey percentile control did not change the rendered timing.");
+  const yieldHtml=app.expectedYieldMetric({...aggregate,benchmarkCoverage:.8});
+  assert(yieldHtml.includes("Expected total wins") && yieldHtml.includes("not the current pipeline count") && yieldHtml.includes("80.0%"), "Expected-yield meaning or benchmark coverage is not disclosed.");
+  assert(dashboardHtml.includes("selected slice’s observed rate") && dashboardHtml.includes("older mature reference"), "Focus-scan provisional-versus-mature guidance is missing.");
+  assert(dashboardHtml.includes('id="feedbackQueueTab"') && dashboardHtml.includes('id="feedbackQueuePanel"'), "Feedback queue is not reachable from the decision tracker.");
   const maturityHealth = app.funnelHealthModel([
     {month:"2026-02-01",cohortAgeDays:190,leads:40,sets:20,runs:10,wins:2},
     {month:"2026-05-01",cohortAgeDays:101,leads:40,sets:20,runs:10,wins:2},

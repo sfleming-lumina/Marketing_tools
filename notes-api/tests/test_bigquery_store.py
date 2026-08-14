@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 from bigquery_store import BigQueryNotesStore
-from models import NoteIn
+from models import NoteActionIn, NoteIn
 
 
 @patch("bigquery_store.bigquery.Client")
@@ -31,6 +31,7 @@ def test_create_note_inserts_json_row_with_serialized_context(mock_client_cls):
     assert rows_arg[0]["note_id"] == created.note_id
     assert rows_arg[0]["target_type"] == "metric"
     assert rows_arg[0]["feedback_type"] == "helpful"
+    assert rows_arg[0]["action_status"] == "Open"
     assert json.loads(rows_arg[0]["context"]) == {"region": "All markets"}
 
 
@@ -70,3 +71,46 @@ def test_source_freshness_reads_table_metadata(mock_client_cls):
     assert result["latest_modified_at"] == "2026-07-15T12:00:00+00:00"
     assert result["missing_objects"] == ["analytics_rpt.missing"]
     mock_client.get_table.assert_any_call("proj.analytics_rpt.one")
+
+
+@patch("bigquery_store.bigquery.Client")
+def test_update_note_action_runs_parameterized_update(mock_client_cls):
+    mock_client = MagicMock()
+    update_result = MagicMock()
+    update_result.num_dml_affected_rows = 1
+    updated_note = {
+        "note_id": "note-1",
+        "created_at": MagicMock(),
+        "author_name": "Jane",
+        "view": "overview",
+        "element_key": "metric:a",
+        "element_label": "A",
+        "target_type": "metric",
+        "feedback_type": "tweak",
+        "note_text": "Please explain this.",
+        "context": "{}",
+        "action_status": "Actioned",
+        "action_taken": "Added methodology copy.",
+        "actioned_at": MagicMock(),
+        "actioned_by": "Jane",
+    }
+    updated_note["created_at"].isoformat.return_value = "2026-08-14T12:00:00+00:00"
+    updated_note["actioned_at"].isoformat.return_value = "2026-08-14T12:05:00+00:00"
+    mock_client.query.return_value.result.side_effect = [update_result, [updated_note]]
+    mock_client_cls.return_value = mock_client
+    store = BigQueryNotesStore(project_id="proj", dataset="ds", table="tbl")
+
+    result = store.update_note_action(
+        "note-1",
+        NoteActionIn(action_status="Actioned", action_taken="Added methodology copy."),
+        author_name="Jane",
+    )
+
+    query, = mock_client.query.call_args_list[0].args
+    assert "UPDATE `proj.ds.tbl`" in query
+    parameters = {item.name: item.value for item in mock_client.query.call_args_list[0].kwargs["job_config"].query_parameters}
+    assert parameters["note_id"] == "note-1"
+    assert parameters["action_status"] == "Actioned"
+    assert parameters["actioned_by"] == "Jane"
+    assert result.action_status == "Actioned"
+    assert result.action_taken == "Added methodology copy."

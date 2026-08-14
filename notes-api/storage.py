@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from models import Note, NoteIn
+from models import Note, NoteActionIn, NoteIn
 
 
 class NotesStore(abc.ABC):
@@ -15,6 +15,10 @@ class NotesStore(abc.ABC):
 
     @abc.abstractmethod
     def create_note(self, note: NoteIn, author_name: str) -> Note:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def update_note_action(self, note_id: str, action: NoteActionIn, author_name: str) -> Note:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -39,6 +43,20 @@ class InMemoryNotesStore(NotesStore):
         )
         self._notes.append(created)
         return created
+
+    def update_note_action(self, note_id: str, action: NoteActionIn, author_name: str) -> Note:
+        for index, note in enumerate(self._notes):
+            if note.note_id != note_id:
+                continue
+            updated = note.model_copy(update={
+                "action_status": action.action_status,
+                "action_taken": action.action_taken,
+                "actioned_at": datetime.now(timezone.utc).isoformat(),
+                "actioned_by": author_name,
+            })
+            self._notes[index] = updated
+            return updated
+        raise KeyError(note_id)
 
     def source_freshness(self, object_ids: list[str]) -> dict:
         checked_at = datetime.now(timezone.utc).isoformat()

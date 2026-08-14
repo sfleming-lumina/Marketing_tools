@@ -16,6 +16,7 @@ from dashboard_server import (
     build_marketing_funnel_query,
     build_marketing_filter_options_query,
     build_marketing_geo_query,
+    build_marketing_journey_query,
     build_marketing_projection_query,
     build_marketing_reconciliation_query,
     build_marketing_trends_query,
@@ -26,6 +27,7 @@ from dashboard_server import (
     official_workbook_credentials,
     shape_marketing_funnel_row,
     shape_marketing_geo_row,
+    shape_marketing_journey_row,
     shape_marketing_detail_row,
     shape_marketing_capacity_row,
     summarize_marketing_activity,
@@ -113,6 +115,46 @@ def test_funnel_and_geo_queries_bind_all_optional_filters():
         for name in ("campaign", "source", "rollup", "state", "county", "ahj", "region"):
             assert f"@{name}" in query
         assert "INTERVAL @months MONTH" in query
+
+
+def test_buyer_journey_query_uses_clean_governed_durations_and_active_filters():
+    query = build_marketing_journey_query(
+        months=3,
+        campaign="Summer Search",
+        rollup="3rd Party Vendors LSR",
+        ahj="Fairfax County",
+        region="Maryland",
+    )
+    assert "rpt_marketing_buyer_journey_runtime" in query
+    assert "APPROX_QUANTILES(lead_to_win_days" in query
+    assert "COUNTIF(has_invalid_funnel_date_sequence)" in query
+    for name in ("campaign", "rollup", "ahj", "region", "months"):
+        assert f"@{name}" in query
+
+
+def test_buyer_journey_shape_exposes_stage_samples_percentiles_and_coverage():
+    shaped = shape_marketing_journey_row({
+        "totalRows": 100,
+        "invalidSequenceRows": 2,
+        "completedWins": 20,
+        "leadToSetCount": 80,
+        "setToRunCount": 50,
+        "runToWinCount": 18,
+        "leadToWinCount": 19,
+        "leadToSetMedian": 1,
+        "leadToSetP75": 3,
+        "setToRunMedian": 4,
+        "setToRunP75": 9,
+        "runToWinMedian": 27,
+        "runToWinP75": 70,
+        "leadToWinMedian": 50,
+        "leadToWinP75": 186,
+        "cohortStart": date(2025, 9, 1),
+        "cohortEnd": date(2026, 8, 1),
+    })
+    assert shaped["journeyCoverage"] == 0.95
+    assert shaped["leadToWin"]["medianDays"] == 50
+    assert [stage["count"] for stage in shaped["stages"]] == [80, 50, 18]
 
 
 def test_detail_query_is_bounded_and_exposes_governed_aggregate_rows_only():

@@ -32,6 +32,7 @@ ACTIVE_LEAD_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_l
 ACTIVE_CAMPAIGN_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime"
 TREND_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_activity_daily_runtime"
 DECISION_MARKET_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.dim_marketing_decision_market"
+JOURNEY_TABLE_REF = f"{PROJECT_ID}.marketing_tool_ops.rpt_marketing_buyer_journey_runtime"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5").strip()
 ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
@@ -73,6 +74,7 @@ SOURCE_OBJECTS = [
     "marketing_tool_ops.rpt_marketing_active_lead_inventory_runtime",
     "marketing_tool_ops.rpt_marketing_active_campaign_catalog_runtime",
     "marketing_tool_ops.rpt_marketing_activity_daily_runtime",
+    "marketing_tool_ops.rpt_marketing_buyer_journey_runtime",
     "analytics_rpt.rpt_marketing_campaign_ahj_performance",
     "analytics_rpt.rpt_campaign_ahj_performance",
     "analytics_rpt.rpt_pipeline_funnel",
@@ -643,6 +645,81 @@ def _marketing_period_sql(window=None):
     )
 
 
+def build_marketing_journey_query(
+    months=7,
+    window=None,
+    campaign=None,
+    source=None,
+    rollup=None,
+    state=None,
+    county=None,
+    ahj=None,
+    region=None,
+    decision_market=None,
+):
+    conditions = _marketing_filter_conditions(campaign, source, rollup, state, county, ahj, region, decision_market)
+    where_clause = " AND ".join(conditions)
+    period_grain, period_predicate = _marketing_period_sql(window)
+    cohort_column = (
+        "campaign_member_created_week_start_date"
+        if period_grain == "WEEK"
+        else "campaign_member_created_month_start_date"
+    )
+    state_sql = _marketing_portfolio_state_sql()
+    geography_sql = _marketing_portfolio_geography_sql()
+    return f"""
+        WITH journey_source AS (
+            SELECT
+                source.*,
+                {cohort_column} AS cohort_period_start_date,
+                {state_sql} AS portfolio_state,
+                {geography_sql} AS portfolio_geography
+            FROM `{JOURNEY_TABLE_REF}` AS source
+        ),
+        bounds AS (
+            SELECT MAX(cohort_period_start_date) AS latest_start
+            FROM journey_source
+        ),
+        marketing_enriched AS (
+            SELECT
+                source.*,
+                market.decision_market_key,
+                market.decision_market_name,
+                market.mapping_version AS decision_market_mapping_version
+            FROM journey_source AS source
+            LEFT JOIN `{DECISION_MARKET_TABLE_REF}` AS market
+              ON market.is_current
+             AND market.state_code = UPPER(TRIM(source.portfolio_state))
+             AND market.county_match_name = TRIM(REGEXP_REPLACE(
+                    REGEXP_REPLACE(UPPER(TRIM(source.portfolio_geography)), r'\\s*\\([A-Z]{{2}}\\)\\s*$', ''),
+                    r'[^A-Z0-9]+',
+                    ' '
+                 ))
+        )
+        SELECT
+            COUNT(*) AS totalRows,
+            COUNTIF(has_invalid_funnel_date_sequence) AS invalidSequenceRows,
+            SUM(win_count) AS completedWins,
+            COUNTIF(lead_to_set_days IS NOT NULL) AS leadToSetCount,
+            COUNTIF(set_to_run_days IS NOT NULL) AS setToRunCount,
+            COUNTIF(run_to_win_days IS NOT NULL) AS runToWinCount,
+            COUNTIF(lead_to_win_days IS NOT NULL) AS leadToWinCount,
+            APPROX_QUANTILES(lead_to_set_days, 100)[OFFSET(50)] AS leadToSetMedian,
+            APPROX_QUANTILES(lead_to_set_days, 100)[OFFSET(75)] AS leadToSetP75,
+            APPROX_QUANTILES(set_to_run_days, 100)[OFFSET(50)] AS setToRunMedian,
+            APPROX_QUANTILES(set_to_run_days, 100)[OFFSET(75)] AS setToRunP75,
+            APPROX_QUANTILES(run_to_win_days, 100)[OFFSET(50)] AS runToWinMedian,
+            APPROX_QUANTILES(run_to_win_days, 100)[OFFSET(75)] AS runToWinP75,
+            APPROX_QUANTILES(lead_to_win_days, 100)[OFFSET(50)] AS leadToWinMedian,
+            APPROX_QUANTILES(lead_to_win_days, 100)[OFFSET(75)] AS leadToWinP75,
+            MIN(cohort_period_start_date) AS cohortStart,
+            MAX(cohort_period_start_date) AS cohortEnd
+        FROM marketing_enriched, bounds
+        WHERE {period_predicate}
+          AND {where_clause}
+    """
+
+
 def build_marketing_funnel_query(
     months=7,
     window=None,
@@ -1066,6 +1143,47 @@ def build_marketing_reconciliation_query():
     """
 
 
+def shape_marketing_journey_row(row):
+    completed_wins = row["completedWins"] or 0
+    lead_to_win_count = row["leadToWinCount"] or 0
+    return {
+        "totalRows": row["totalRows"] or 0,
+        "invalidSequenceRows": row["invalidSequenceRows"] or 0,
+        "completedWins": completed_wins,
+        "journeyCoverage": lead_to_win_count / completed_wins if completed_wins else None,
+        "cohortStart": row["cohortStart"].isoformat() if row["cohortStart"] else None,
+        "cohortEnd": row["cohortEnd"].isoformat() if row["cohortEnd"] else None,
+        "stages": [
+            {
+                "key": "leadToSet",
+                "label": "Lead to set",
+                "count": row["leadToSetCount"] or 0,
+                "medianDays": row["leadToSetMedian"],
+                "p75Days": row["leadToSetP75"],
+            },
+            {
+                "key": "setToRun",
+                "label": "Set to run",
+                "count": row["setToRunCount"] or 0,
+                "medianDays": row["setToRunMedian"],
+                "p75Days": row["setToRunP75"],
+            },
+            {
+                "key": "runToWin",
+                "label": "Run to win",
+                "count": row["runToWinCount"] or 0,
+                "medianDays": row["runToWinMedian"],
+                "p75Days": row["runToWinP75"],
+            },
+        ],
+        "leadToWin": {
+            "count": lead_to_win_count,
+            "medianDays": row["leadToWinMedian"],
+            "p75Days": row["leadToWinP75"],
+        },
+    }
+
+
 def shape_marketing_funnel_row(row):
     leads = row["leads"] or 0
     sets = row["sets"] or 0
@@ -1409,6 +1527,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             status, result = self._marketing_funnel(parse_qs(parsed.query))
             self._send_json(status, result)
             return
+        if parsed.path == "/api/marketing-journey":
+            status, result = self._marketing_journey(parse_qs(parsed.query))
+            self._send_json(status, result)
+            return
         if parsed.path == "/api/marketing-geo":
             status, result = self._marketing_geo(parse_qs(parsed.query))
             self._send_json(status, result)
@@ -1449,6 +1571,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/notes":
             payload = self._read_json_body()
             self._send_json(HTTPStatus.CREATED, self._create_note(payload))
+            return
+        if parsed.path == "/api/notes/action":
+            status, result = self._update_note_action(self._read_json_body())
+            self._send_json(status, result)
             return
         if parsed.path == "/api/marketing-decisions":
             status, result = self._create_marketing_decision(self._read_json_body())
@@ -1539,7 +1665,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 COALESCE(target_type, 'tile') AS target_type,
                 COALESCE(feedback_type, 'tweak') AS feedback_type,
                 note_text,
-                context
+                context,
+                COALESCE(action_status, 'Open') AS action_status,
+                action_taken,
+                actioned_at,
+                actioned_by
             FROM `{TABLE_REF}`
             {"WHERE view = @view" if view else ""}
             ORDER BY created_at DESC
@@ -1560,6 +1690,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 "feedback_type": row["feedback_type"],
                 "note_text": row["note_text"],
                 "context": json.loads(row["context"]) if row["context"] else {},
+                "action_status": row["action_status"],
+                "action_taken": row["action_taken"],
+                "actioned_at": row["actioned_at"].isoformat() if row["actioned_at"] else None,
+                "actioned_by": row["actioned_by"],
             }
             for row in rows
         ]
@@ -1576,6 +1710,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             "feedback_type": payload.get("feedback_type", "tweak"),
             "note_text": payload["note_text"],
             "context": payload.get("context", {}),
+            "action_status": "Open",
+            "action_taken": None,
+            "actioned_at": None,
+            "actioned_by": None,
         }
         row = dict(created)
         row["context"] = json.dumps(row["context"])
@@ -1584,6 +1722,47 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(HTTPStatus.BAD_GATEWAY, {"detail": f"BigQuery insert failed: {errors}"})
             return
         return created
+
+    def _update_note_action(self, payload):
+        note_id = str(payload.get("note_id") or "").strip()
+        action_status = str(payload.get("action_status") or "").strip()
+        action_taken = str(payload.get("action_taken") or "").strip()
+        if not note_id:
+            return HTTPStatus.BAD_REQUEST, {"detail": "note_id is required."}
+        if action_status not in {"Open", "Actioned"}:
+            return HTTPStatus.BAD_REQUEST, {"detail": "action_status must be Open or Actioned."}
+        if not action_taken:
+            return HTTPStatus.BAD_REQUEST, {"detail": "Describe the action taken or planned."}
+        if len(action_taken) > 4000:
+            return HTTPStatus.BAD_REQUEST, {"detail": "Action detail must be 4,000 characters or fewer."}
+        query = f"""
+            UPDATE `{TABLE_REF}`
+            SET
+                action_status = @action_status,
+                action_taken = @action_taken,
+                actioned_at = CURRENT_TIMESTAMP(),
+                actioned_by = @actioned_by
+            WHERE note_id = @note_id
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("action_status", "STRING", action_status),
+            bigquery.ScalarQueryParameter("action_taken", "STRING", action_taken),
+            bigquery.ScalarQueryParameter("actioned_by", "STRING", self._author_name()),
+            bigquery.ScalarQueryParameter("note_id", "STRING", note_id),
+        ])
+        try:
+            result = self.client.query(query, job_config=job_config).result()
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Feedback action update failed: {exc}"}
+        if result.num_dml_affected_rows != 1:
+            return HTTPStatus.NOT_FOUND, {"detail": "Feedback note not found."}
+        return HTTPStatus.OK, {
+            "note_id": note_id,
+            "action_status": action_status,
+            "action_taken": action_taken,
+            "actioned_at": datetime.now(timezone.utc).isoformat(),
+            "actioned_by": self._author_name(),
+        }
 
     @staticmethod
     def _shape_marketing_decision(row):
@@ -1918,6 +2097,29 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
         query = build_marketing_funnel_query(**values)
         return self._run_marketing_query(query, values, shape_marketing_funnel_row, "Marketing funnel")
+
+    def _marketing_journey(self, params):
+        try:
+            values = self._marketing_params(params)
+        except ValueError as exc:
+            return HTTPStatus.BAD_REQUEST, {"detail": str(exc)}
+        query = build_marketing_journey_query(**values)
+        job_config = bigquery.QueryJobConfig(query_parameters=self._marketing_query_parameters(values))
+        try:
+            row = next(iter(self.client.query(query, job_config=job_config).result()), None)
+        except Exception as exc:
+            return HTTPStatus.BAD_GATEWAY, {"detail": f"Marketing buyer journey query failed: {exc}"}
+        if row is None:
+            return HTTPStatus.OK, shape_marketing_journey_row({
+                "totalRows": 0, "invalidSequenceRows": 0, "completedWins": 0,
+                "leadToSetCount": 0, "setToRunCount": 0, "runToWinCount": 0, "leadToWinCount": 0,
+                "leadToSetMedian": None, "leadToSetP75": None,
+                "setToRunMedian": None, "setToRunP75": None,
+                "runToWinMedian": None, "runToWinP75": None,
+                "leadToWinMedian": None, "leadToWinP75": None,
+                "cohortStart": None, "cohortEnd": None,
+            })
+        return HTTPStatus.OK, shape_marketing_journey_row(row)
 
     def _marketing_geo(self, params):
         try:

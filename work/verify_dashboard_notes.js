@@ -30,5 +30,6 @@ assert(html.includes('id="feedbackQueueTab"') && html.includes('id="feedbackQueu
 assert(html.includes('id="feedbackStatusFilter"') && html.includes('id="feedbackViewFilter"'), "Feedback queue status or workspace filters are missing.");
 assert(html.includes('fetchJson("/api/notes/action"') && html.includes('action_taken:action'), "Feedback action detail is not written back to the notes API.");
 assert(html.includes("actioned_by") && html.includes("actioned_at") && html.includes("BigQuery sourced"), "Feedback action provenance is missing.");
+assert(html.includes('note.actioned_by!=="Codex implementation"'), "Internal implementation actor is not suppressed from the feedback queue.");
 
 console.log("Notes and decision-assistant wiring verified OK.");

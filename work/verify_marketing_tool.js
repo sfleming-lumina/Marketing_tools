@@ -139,6 +139,11 @@ setImmediate(() => {
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
   assert(dashboardHtml.includes('id="guideDrawer"') && dashboardHtml.includes("How to use this workspace"), "Usage guide overlay is missing.");
+  assert(dashboardHtml.includes('role="dialog" aria-modal="true"') && dashboardHtml.includes('aria-hidden="true" tabindex="-1"') && dashboardHtml.includes('event.key==="Escape"'), "Drawers are missing dialog semantics or keyboard dismissal.");
+  assert(dashboardHtml.includes('id="filterSummaryToggle"') && dashboardHtml.includes('id="filterSummaryText"') && dashboardHtml.includes('id="globalFilters"'), "Responsive current-slice filter disclosure is missing.");
+  assert(dashboardHtml.includes('id="errorDetails"') && dashboardHtml.includes('classList.toggle("data-unavailable"') && dashboardHtml.includes("No business values are shown"), "Fatal data errors can still be confused with valid zero performance.");
+  assert(dashboardHtml.includes('id="opportunityQuadrantData"') && dashboardHtml.includes("keyboard-accessible table follows the chart"), "Decision chart data parity is missing.");
+  assert(dashboardHtml.includes('class="guide-toc"') && dashboardHtml.includes('href="#guide-cohorts"'), "The long usage guide is missing task-based navigation.");
   assert(dashboardHtml.includes("Cohort methodology: current state vs decision evidence") && dashboardHtml.includes("Current-state reporting") && dashboardHtml.includes("Cohort reporting"), "Current-state versus cohort methodology guidance is missing.");
   assert(dashboardHtml.includes('data-feedback-trigger') && dashboardHtml.includes("feedbackIconSvg") && dashboardHtml.includes('id="feedbackType"'), "Per-tile pen/notebook feedback controls are missing.");
   app.setFeedbackTarget({view:"command",elementKey:"command-gross-revenue",elementLabel:"Gross revenue",targetType:"tile"});

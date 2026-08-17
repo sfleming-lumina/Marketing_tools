@@ -94,6 +94,7 @@ global.fetch = (url, options = {}) => {
   else if (path.includes("marketing-geo")) payload = geoRows;
   else if (path.includes("marketing-journey")) payload = journeyPayload;
   else if (path.includes("marketing-trends")) payload = trendPayload;
+  else if (path.includes("marketing-capacity")) payload = {governedOpen:420,activeCampaignOpen:310,nurturingOpen:84};
   else if (path.includes("marketing-filter-options")) payload = {campaigns:["Co-op Maryland","Efficient Search","Jonathan Bissell Test"],rollups:["Co-op","3rd Party Vendors LSR","Jonathan Bissell"],ahjs:["Fairfax County"]};
   else if (path.includes("marketing-reconciliation")) payload = reconciliation;
   else if (path.includes("freshness")) payload = {objects_found:4,objects_checked:4};
@@ -138,6 +139,11 @@ setImmediate(() => {
   assert(output.includes("Current baseline") && output.includes("Scenario"), "Scenario comparison did not render.");
   assert(!/NaN|undefined|null/.test(output), "Invalid numeric token found in rendered output.");
   assert(dashboardHtml.includes('id="guideDrawer"') && dashboardHtml.includes("How to use this workspace"), "Usage guide overlay is missing.");
+  assert(dashboardHtml.includes('role="dialog" aria-modal="true"') && dashboardHtml.includes('aria-hidden="true" tabindex="-1"') && dashboardHtml.includes('event.key==="Escape"'), "Drawers are missing dialog semantics or keyboard dismissal.");
+  assert(dashboardHtml.includes('id="filterSummaryToggle"') && dashboardHtml.includes('id="filterSummaryText"') && dashboardHtml.includes('id="globalFilters"'), "Responsive current-slice filter disclosure is missing.");
+  assert(dashboardHtml.includes('id="errorDetails"') && dashboardHtml.includes('classList.toggle("data-unavailable"') && dashboardHtml.includes("No business values are shown"), "Fatal data errors can still be confused with valid zero performance.");
+  assert(dashboardHtml.includes('id="opportunityQuadrantData"') && dashboardHtml.includes("keyboard-accessible table follows the chart"), "Decision chart data parity is missing.");
+  assert(dashboardHtml.includes('class="guide-toc"') && dashboardHtml.includes('href="#guide-cohorts"'), "The long usage guide is missing task-based navigation.");
   assert(dashboardHtml.includes("Cohort methodology: current state vs decision evidence") && dashboardHtml.includes("Current-state reporting") && dashboardHtml.includes("Cohort reporting"), "Current-state versus cohort methodology guidance is missing.");
   assert(dashboardHtml.includes('data-feedback-trigger') && dashboardHtml.includes("feedbackIconSvg") && dashboardHtml.includes('id="feedbackType"'), "Per-tile pen/notebook feedback controls are missing.");
   app.setFeedbackTarget({view:"command",elementKey:"command-gross-revenue",elementLabel:"Gross revenue",targetType:"tile"});
@@ -189,8 +195,8 @@ setImmediate(() => {
   assert(getElement("journeyTimeline").innerHTML.includes("186 days lead to win"), "Buyer journey percentile control did not change the rendered timing.");
   const yieldHtml=app.expectedYieldMetric({...aggregate,benchmarkCoverage:.8});
   assert(yieldHtml.includes("Expected total wins") && yieldHtml.includes("not the current pipeline count") && yieldHtml.includes("80.0%"), "Expected-yield meaning or benchmark coverage is not disclosed.");
-  assert(dashboardHtml.includes("selected slice’s observed rate") && dashboardHtml.includes("older mature reference"), "Focus-scan provisional-versus-mature guidance is missing.");
-  assert(dashboardHtml.includes('id="feedbackQueueTab"') && dashboardHtml.includes('id="feedbackQueuePanel"'), "Feedback queue is not reachable from the decision tracker.");
+  assert(dashboardHtml.includes("selected slice as a bar") && dashboardHtml.includes("chosen comparison as a marker"), "Funnel bullet-comparison guidance is missing.");
+  assert(dashboardHtml.includes('data-notes-panel="feedback"') && dashboardHtml.includes('id="feedbackQueuePanel"'), "Feedback queue is not reachable from Notes.");
   const maturityHealth = app.funnelHealthModel([
     {month:"2026-02-01",cohortAgeDays:190,leads:40,sets:20,runs:10,wins:2},
     {month:"2026-05-01",cohortAgeDays:101,leads:40,sets:20,runs:10,wins:2},
@@ -263,12 +269,12 @@ setImmediate(() => {
   assert(getElement("opportunityMatrix").innerHTML.includes("matrix-cell") && getElement("opportunityMatrix").innerHTML.includes("Fairfax County"), "Clickable Campaign/AHJ matrix did not render.");
   assert(dashboardHtml.includes('id="matrixMetric"') && dashboardHtml.includes('id="improvementTarget"'), "Metric switching or improvement-target modeling is missing.");
   const sparseWaterfall = app.funnelWaterfallModel({leads:3,sets:0,runs:0,wins:0,benchmark:null});
-  assert(sparseWaterfall.steps.length === 6 && sparseWaterfall.steps.every(Number.isFinite), "Sparse funnel drill-down did not preserve every finite waterfall stage.");
+  assert(sparseWaterfall.steps.length === 5 && sparseWaterfall.steps.every(Number.isFinite), "Sparse funnel drill-down did not preserve every finite waterfall stage.");
   assert(sparseWaterfall.actionTone === "neutral" && sparseWaterfall.actionCopy.includes("sample maturity"), "Sparse funnel drill-down did not explain insufficient benchmark evidence.");
   const zeroStageWaterfall = app.funnelWaterfallModel({leads:20,sets:0,runs:0,wins:0,benchmark:.1});
   assert(zeroStageWaterfall.steps[0] > 0 && zeroStageWaterfall.steps.every(Number.isFinite) && zeroStageWaterfall.actionTone === "warn", "Zero-stage drill-down collapsed despite having a usable benchmark.");
   const benchmarkWaterfall = app.funnelWaterfallModel(aggregate);
-  assert(benchmarkWaterfall.steps.length === 6 && benchmarkWaterfall.labels.includes("Lead volume"), "Benchmark waterfall does not render the fixed decomposition sequence.");
+  assert(benchmarkWaterfall.steps.length === 5 && !benchmarkWaterfall.labels.includes("Lead volume") && benchmarkWaterfall.labels.includes("Lead → set gap"), "Benchmark waterfall did not remove the zero hold-volume step.");
   const decisions = app.decisionInsights();
   assert(decisions.length === 3 && decisions.every(item => item.question && item.view && item.evidence.length), "Command-center insights are not actionable decision objects.");
   assert(getElement("insightList").innerHTML.includes("Investigate") && dashboardHtml.includes("Discover → Investigate → Test → Implement"), "Guided decision workflow is not visible.");
@@ -312,7 +318,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('data-drawer="presentation"') && dashboardHtml.includes('id="presentationDrawer"') && dashboardHtml.includes('id="presentationShell"'), "The low-clutter presentation entry point or overlay is missing.");
   assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")||url.includes("marketing-geo")).every(url=>url.includes("region=Operating+footprint")), "Default operating-footprint filter was not sent to both data endpoints.");
   assert(global.requestedUrls.some(url=>url.includes("marketing-filter-options")&&url.includes("region=Operating+footprint")), "Complete filter catalog was not requested.");
-  assert(!global.requestedUrls.some(url=>url.includes("marketing-capacity")), "Removed capacity inventory is still requested by the marketing workspace.");
+  assert(global.requestedUrls.some(url=>url.includes("marketing-capacity")&&url.includes("region=Operating+footprint")), "Governed current-state inflight context was not requested.");
   const funnelRequestsBeforeRefresh = global.requestedUrls.filter(url=>url.includes("marketing-funnel")).length;
   const refreshPromise = app.refreshData();
   assert(getElement("refreshButton").classList.contains("is-loading") && getElement("refreshButton").disabled, "Refresh control did not enter its animated loading state.");
@@ -320,11 +326,14 @@ setImmediate(() => {
     assert(global.requestedUrls.filter(url=>url.includes("marketing-funnel")).length > funnelRequestsBeforeRefresh, "Refresh did not issue a fresh funnel request.");
     assert(global.requestedUrls.filter(url=>url.includes("marketing-reconciliation")).length >= 2, "Forced refresh reused cached reconciliation data.");
     assert(!getElement("refreshButton").classList.contains("is-loading") && !getElement("refreshButton").disabled, "Refresh control did not leave its loading state.");
+    app.state.campaign = "Efficient Search";getElement("campaignFilter").value = "Efficient Search";
     getElement("stateFilter").value = "Maryland";
     getElement("stateFilter").dispatchEvent({type:"change",target:getElement("stateFilter")});
     setImmediate(() => {
     assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("region=Maryland")), "Changing operating region did not reload funnel data.");
     assert(global.requestedUrls.some(url=>url.includes("marketing-geo")&&url.includes("region=Maryland")), "Changing operating region did not reload geography data.");
+    assert(app.state.campaign==="Efficient Search"&&getElement("campaignFilter").value==="Efficient Search", "Changing operating region reset a still-compatible campaign filter.");
+    assert(app.state.workbook.geography==="MD"&&getElement("workbookGeography").value==="MD", "Operating region did not map to the supported Official Plan geography.");
     assert(getElement("campaignTable").innerHTML.includes("Efficient Search"), "Expanded campaign portfolio did not render.");
     getElement("ahjFilter").value = "Fairfax County";
     getElement("ahjFilter").dispatchEvent({type:"change",target:getElement("ahjFilter")});

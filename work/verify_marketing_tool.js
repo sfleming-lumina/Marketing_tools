@@ -202,8 +202,19 @@ setImmediate(() => {
     {month:"2026-05-01",cohortAgeDays:101,leads:40,sets:20,runs:10,wins:2},
     {month:"2026-08-01",cohortAgeDays:9,leads:50,sets:0,runs:0,wins:0}
   ]);
-  assert(maturityHealth.find(item=>item.key==="leadToWin").current===.05, "Funnel health allowed an immature zero-win cohort to overwrite the mature lead-to-win signal.");
-  assert(maturityHealth.find(item=>item.key==="leadToWin").periodLabel.includes("90+ days"), "Funnel health did not disclose its win-stage maturity gate.");
+  assert(Math.abs(maturityHealth.find(item=>item.key==="leadToWin").current-(4/130))<1e-9, "Funnel health did not keep the full selected slice in the observed bar.");
+  assert(maturityHealth.find(item=>item.key==="leadToWin").periodLabel.includes("Feb 2026–Aug 2026") && maturityHealth.find(item=>item.key==="leadToWin").periodLabel.includes("under 90 days"), "Funnel health did not disclose the selected period and its win-stage maturity gate.");
+  const sameSliceComparison=app.funnelHealthModel([
+    {month:"2026-07-01",cohortAgeDays:47,leads:20,sets:8,runs:4,wins:1},
+    {month:"2026-08-01",cohortAgeDays:16,leads:20,sets:6,runs:2,wins:0}
+  ],[
+    {month:"2026-06-01",cohortAgeDays:77,leads:100,sets:35,runs:20,wins:4},
+    {month:"2026-07-01",cohortAgeDays:47,leads:100,sets:30,runs:16,wins:3},
+    {month:"2026-08-01",cohortAgeDays:16,leads:100,sets:25,runs:10,wins:1}
+  ],"campaign");
+  assert(sameSliceComparison.find(item=>item.key==="leadToWin").referenceLabel.includes("Jul 2026–Aug 2026") && !sameSliceComparison.find(item=>item.key==="leadToWin").referenceLabel.includes("Jun 2026"), "Same-slice funnel comparator drifted outside the selected period.");
+  assert(dashboardHtml.includes('class="health-period"') && dashboardHtml.includes("with its own period labeled"), "Funnel comparison does not distinguish the selected period from its reference period.");
+  assert(dashboardHtml.includes("Aged unresolved (still open)") && dashboardHtml.includes("No set after 30+ days") && dashboardHtml.includes("Closed Lost</th>"), "Aged unresolved detail or Closed Lost count is not visible in Analysis.");
   const opportunities = app.opportunityRows();
   assert(opportunities.length === 1 && opportunities[0].campaign === "Efficient Search" && opportunities[0].ahj === "Fairfax County", "Campaign/AHJ opportunity rows were not created.");
   assert(opportunities[0].decisionType === "Scale" && opportunities[0].confidence === "High" && opportunities[0].estimatedWinImpact > 0, "Opportunity decision type, confidence, or impact is incorrect.");

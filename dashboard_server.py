@@ -856,6 +856,11 @@ def build_marketing_geo_query(
             SUM(effective_spend_amount) AS effectiveSpend,
             SUM(active_pipeline_candidate_count) AS activePipeline,
             SUM(expected_remaining_win_count) AS expectedRemainingWins,
+            SUM(SUM(lead_count)) OVER () AS portfolioLeads,
+            SAFE_DIVIDE(SUM(SUM(set_count)) OVER (), NULLIF(SUM(SUM(lead_count)) OVER (), 0)) AS portfolioSetRate,
+            SAFE_DIVIDE(SUM(SUM(run_count)) OVER (), NULLIF(SUM(SUM(set_count)) OVER (), 0)) AS portfolioRunRate,
+            SAFE_DIVIDE(SUM(SUM(win_count)) OVER (), NULLIF(SUM(SUM(run_count)) OVER (), 0)) AS portfolioWinRate,
+            SAFE_DIVIDE(SUM(SUM(effective_spend_amount)) OVER (), NULLIF(SUM(SUM(win_count)) OVER (), 0)) AS portfolioCostPerWin,
             SAFE_DIVIDE(
                 SUM(IF(has_reliable_benchmark, benchmark_lead_to_win_rate * lead_count, 0)),
                 SUM(IF(has_reliable_benchmark, lead_count, 0))
@@ -1006,6 +1011,7 @@ def build_marketing_capacity_query(source=None, region=None):
                 COUNTIF(lead_age_days BETWEEN 8 AND 30) AS age8To30,
                 COUNTIF(lead_age_days BETWEEN 31 AND 60) AS age31To60,
                 COUNTIF(lead_age_days >= 61) AS age61Plus,
+                COUNTIF(LOWER(COALESCE(lead_status, '')) = 'nurturing') AS nurturingOpen,
                 MAX(loaded_at) AS loadedAt
             FROM active_open
         ),
@@ -1052,6 +1058,7 @@ def shape_marketing_capacity_row(row):
     return {
         "governedOpen": row["governedOpen"] or 0,
         "activeCampaignOpen": row["activeCampaignOpen"] or 0,
+        "nurturingOpen": row.get("nurturingOpen", 0) or 0,
         "salesforceValidation": SALESFORCE_OPEN_LEAD_VALIDATION,
         "ageBands": {
             "0To7": row["age0To7"] or 0,
@@ -1255,11 +1262,35 @@ def shape_marketing_geo_row(row):
     lead_to_win = wins / leads if leads else 0
     benchmark = row["benchmarkLeadToWinRate"] or 0
     sample_rank = 2 if leads >= 50 and wins >= 5 else 1 if leads >= 15 else 0
-    opportunity_score = (
-        min(45, lead_to_win * 300)
-        + min(25, (revenue / spend if spend else 0) * 1.5)
-        + min(20, sample_rank * 10)
-        + min(10, (row["expectedRemainingWins"] or 0) * 1.5)
+    set_rate = sets / leads if leads else None
+    run_rate = runs / sets if sets else None
+    win_rate = wins / runs if runs else None
+    cost_per_win = spend / wins if spend and wins else None
+    portfolio_leads = row.get("portfolioLeads") or 0
+    portfolio_set_rate = row.get("portfolioSetRate")
+    portfolio_run_rate = row.get("portfolioRunRate")
+    portfolio_win_rate = row.get("portfolioWinRate")
+    portfolio_cost_per_win = row.get("portfolioCostPerWin")
+    score_cost_per_win = cost_per_win if (row.get("spendCompleteLeadShare") or 0) >= 0.85 else None
+
+    def relative_component(value, reference, weight, inverse=False):
+        if value is None or not reference:
+            return None
+        ratio = reference / value if inverse and value else value / reference
+        return round(max(0, min(1, ratio)) * weight, 2)
+
+    score_components = {
+        "leadVolumeEvidence": round(min(1, leads / max(15, min(50, portfolio_leads or 50))) * 15, 2),
+        "setRate": relative_component(set_rate, portfolio_set_rate, 20),
+        "runRate": relative_component(run_rate, portfolio_run_rate, 20),
+        "winRate": relative_component(win_rate, portfolio_win_rate, 25),
+        "cacEfficiency": relative_component(score_cost_per_win, portfolio_cost_per_win, 20, inverse=True),
+    }
+    opportunity_score = sum(value for value in score_components.values() if value is not None)
+    opportunity_score_coverage = sum(
+        weight for key, weight in {
+            "leadVolumeEvidence": 15, "setRate": 20, "runRate": 20, "winRate": 25, "cacEfficiency": 20
+        }.items() if score_components[key] is not None
     )
     return {
         "campaignId": row["campaignId"],
@@ -1291,14 +1322,17 @@ def shape_marketing_geo_row(row):
             else (row["benchmarkRows"] or 0) / max(1, row["cohortRows"] or 0)
         ),
         "spendCompleteLeadShare": row["spendCompleteLeadShare"] or 0,
-        "setRate": sets / leads if leads else None,
-        "runRateFromSets": runs / sets if sets else None,
-        "winRateFromRuns": wins / runs if runs else None,
+        "setRate": set_rate,
+        "runRateFromSets": run_rate,
+        "winRateFromRuns": win_rate,
         "leadToWinRate": lead_to_win,
-        "costPerWin": spend / wins if spend and wins else None,
+        "costPerWin": cost_per_win,
         "revenuePerSpend": revenue / spend if spend else None,
         "sampleSizeBucket": "Sufficient Sample" if sample_rank == 2 else "Low Sample" if sample_rank == 1 else "No Same-Period Sample",
         "opportunityScore": round(opportunity_score, 1),
+        "opportunityScoreCoverage": opportunity_score_coverage / 100,
+        "opportunityScoreComponents": score_components,
+        "opportunityScoreEntity": "Campaign × county / market",
         "conversionDeltaVsBenchmark": lead_to_win - benchmark if benchmark else None,
         "loadedAt": row["loadedAt"].isoformat() if row["loadedAt"] else None,
     }
@@ -2712,10 +2746,11 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
         answer = self._extract_claude_answer(result)
         if not answer:
-            reason = f"stop_reason={result.get('stop_reason')}; content_types={','.join([
+            content_types = ",".join(
                 block.get("type", type(block).__name__) if isinstance(block, dict) else type(block).__name__
                 for block in result.get("content", [])
-            ]) or 'none'}"
+            ) or "none"
+            reason = f"stop_reason={result.get('stop_reason')}; content_types={content_types}"
             insights = self._fallback_insights(question, context, reason)
             return HTTPStatus.OK, {
                 "answer": self._assistant_answer_text(insights),

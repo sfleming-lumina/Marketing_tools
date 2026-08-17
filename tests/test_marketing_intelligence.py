@@ -287,6 +287,7 @@ def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
     shaped = shape_marketing_capacity_row({
         "governedOpen": 3471,
         "activeCampaignOpen": 3104,
+        "nurturingOpen": 482,
         "age0To7": 238,
         "age8To30": 561,
         "age31To60": 392,
@@ -301,6 +302,7 @@ def test_capacity_shaper_preserves_reconciliation_and_rep_loads():
     })
     assert shaped["governedOpen"] == 3471
     assert shaped["activeCampaignOpen"] == 3104
+    assert shaped["nurturingOpen"] == 482
     assert shaped["salesforceValidation"]["openLeads"] == 6472
     assert shaped["ageBands"]["61Plus"] == 3574
     assert shaped["insideLoads"][0]["rep"] == "Needs reassignment"
@@ -358,6 +360,10 @@ def test_geo_query_returns_normalized_region_dimensions():
     assert "resolved_county" in query
     assert "AS ahj" in query
     assert "'County / operating market' AS geographyType" in query
+    assert "portfolioSetRate" in query
+    assert "portfolioRunRate" in query
+    assert "portfolioWinRate" in query
+    assert "portfolioCostPerWin" in query
 
 
 def test_geo_query_recombines_split_jurisdiction_labels_at_county_grain():
@@ -402,6 +408,11 @@ def test_geo_shaper_exposes_canonical_county_and_underlying_ahj_context():
         "benchmarkRows": 1,
         "cohortRows": 1,
         "spendCompleteLeadShare": 1,
+        "portfolioLeads": 100,
+        "portfolioSetRate": 0.4,
+        "portfolioRunRate": 0.75,
+        "portfolioWinRate": 0.5,
+        "portfolioCostPerWin": 3000,
         "loadedAt": datetime(2026, 7, 28, tzinfo=timezone.utc),
     }
     shaped = shape_marketing_geo_row(row)
@@ -413,6 +424,14 @@ def test_geo_shaper_exposes_canonical_county_and_underlying_ahj_context():
     assert shaped["decisionMarketMappingVersion"] == "seed_v1"
     assert shaped["benchmarkCoverage"] == 0.75
     assert shaped["costPerWin"] == 3000
+    assert shaped["opportunityScoreCoverage"] == 1
+    assert shaped["opportunityScoreComponents"]["winRate"] == 25
+    assert shaped["opportunityScoreEntity"] == "Campaign × county / market"
+
+    partial_spend = shape_marketing_geo_row({**row, "spendCompleteLeadShare": 0.4})
+    assert partial_spend["costPerWin"] == 3000
+    assert partial_spend["opportunityScoreComponents"]["cacEfficiency"] is None
+    assert partial_spend["opportunityScoreCoverage"] == 0.8
 
 
 def test_lakehouse_regions_follow_operational_md_pa_contract():

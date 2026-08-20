@@ -161,7 +161,7 @@ setImmediate(() => {
   assert(dashboardHtml.includes('data-view="trends"') && dashboardHtml.includes('id="trendPeriodFilter"') && dashboardHtml.includes('/api/marketing-trends'), "Independent calendar-trends navigation, period control, or API wiring is missing.");
   assert(dashboardHtml.includes('data-view="monitoring"') && dashboardHtml.includes('/api/marketing-decision-trends') && dashboardHtml.includes('id="monitorDecisionFilter"') && dashboardHtml.includes('markLine:decisionWeekLabel'), "Decision-anchored weekly monitoring is missing.");
   assert(dashboardHtml.includes('id="detailDrawer"') && dashboardHtml.includes('/api/marketing-detail') && dashboardHtml.includes('governed aggregate rows'), "Governed contributing-row access is missing.");
-  assert(dashboardHtml.includes('data-label="Cohort window"') && dashboardHtml.includes('data-label="Benchmark"') && dashboardHtml.includes('id="benchmarkFilter"'), "Discrete filter labels or benchmark-window control are missing.");
+  assert(dashboardHtml.includes('data-label="Cohort window"') && dashboardHtml.includes('data-label="Comparison timeframe"') && dashboardHtml.includes('id="benchmarkFilter"'), "Discrete filter labels or comparison-timeframe control are missing.");
   assert(dashboardHtml.includes('id="matrixCampaignLimit"') && dashboardHtml.includes('id="matrixGeographyLimit"') && dashboardHtml.includes('max-height:560px'), "Configurable, frame-scrolling opportunity matrix is missing.");
   assert(dashboardHtml.includes('<strong>Observed</strong>') && dashboardHtml.includes('<strong>Why it matters</strong>') && dashboardHtml.includes('<strong>Do next</strong>'), "Findings do not translate observations into actions.");
   assert(dashboardHtml.includes('<div class="nav-label">Reporting views</div>') && dashboardHtml.includes('aria-label="Decision workspace"') && dashboardHtml.includes('aria-label="Reporting views"'), "Calendar trends and Official workbook are not grouped separately from the decision workspace.");
@@ -172,6 +172,7 @@ setImmediate(() => {
   assert(getElement("appShell").classList.contains("sidebar-collapsed") && dashboardHtml.includes('aria-expanded="true"'), "Desktop sidebar did not collapse accessibly.");
   app.setSidebarCollapsed(false,false);
   app.state.benchmarkWindow="3";assert(app.benchmarkQueryString().includes("months=3") && !app.benchmarkQueryString().includes("window=30d"), "Benchmark window did not remain independent from the active slice.");app.state.benchmarkWindow="match";
+  app.state.benchmarkWindow="24";assert(app.filterSummaryLabel().includes("Comparison: 24 months") && !app.filterSummaryLabel().includes("Benchmark:"), "The renamed comparison-timeframe control did not update the filter summary label.");app.state.benchmarkWindow="match";
   assert(dashboardHtml.includes('view==="trends"||view==="monitoring"||view==="workbook"') && dashboardHtml.includes('$("benchmarkPeriodFilter").hidden=reportingOnly'), "Reporting views must not show cohort or benchmark-window controls.");
   app.state.trends.data=trendPayload;app.renderMarketingTrends();
   assert(getElement("trendMetrics").innerHTML.includes("Leads") && getElement("trendMetrics").innerHTML.includes("12"), "Calendar activity metrics did not render.");

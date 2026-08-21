@@ -170,6 +170,8 @@ setImmediate(() => {
   });
   const guideSectionCount = (dashboardHtml.match(/class="guide-section"/g) || []).length;
   assert(guideSectionCount === 11, `Expected 11 guide sections after the overhaul, found ${guideSectionCount}.`);
+  const guideTocLinks = (dashboardHtml.match(/href="#guide-[a-z-]+"/g) || []).length;
+  assert(guideTocLinks === 11, `Expected 11 guide TOC links, found ${guideTocLinks}.`);
   assert(dashboardHtml.includes("<h3>Comparison timeframe and benchmarks</h3>"), "Targets and benchmark periods section was not renamed.");
   assert(dashboardHtml.includes("<h3>Analysis: funnel health, fallout, and acquisition cost</h3>"), "Analysis section title was not tightened.");
   assert(dashboardHtml.includes("<h3>Known data limits</h3>"), "Seasonality and unavailable dimensions section was not renamed.");

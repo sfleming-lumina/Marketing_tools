@@ -780,7 +780,7 @@
     try{
       const needsCatalog=!state.filterCatalog.campaigns.length&&!state.filterCatalog.ahjs.length;
       const separateBenchmark=state.benchmarkWindow!=="match";
-      const needsMaturityReference=Boolean(state.window)||Number(separateBenchmark?state.benchmarkWindow:state.months)<12;
+      const needsMaturityReference=separateBenchmark?false:(Boolean(state.window)||Number(state.months)<12);
       const [funnel,geo,journey,projection,reconciliation,freshness,catalog,benchmarkFunnel,benchmarkGeo,maturityFunnel,capacity]=await Promise.all([
         fetchJson(`/api/marketing-funnel?${queryString()}`),
         fetchJson(`/api/marketing-geo?${queryString()}`),

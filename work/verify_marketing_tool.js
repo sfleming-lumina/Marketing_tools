@@ -363,7 +363,18 @@ setImmediate(() => {
           assert(app.state.months === 7 && app.state.region === "Operating footprint" && !app.state.campaign && !app.state.rollup && !app.state.ahj, "Reset did not restore the default filter state.");
           assert(getElement("monthsFilter").value === "7" && getElement("stateFilter").value === "Operating footprint", "Reset did not restore visible filter controls.");
           assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=7")&&url.includes("region=Operating+footprint")), "Reset did not reload the default portfolio.");
-          console.log("Marketing Intelligence workspace verified OK.");
+          global.requestedUrls = [];
+          app.state.benchmarkWindow = "6";
+          app.loadData({force:true}).then(() => {
+            assert(!global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=12")), "A short comparison timeframe still triggered the hardcoded 12-month maturity fallback.");
+            assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=6")), "A 6-month comparison timeframe did not fetch its own window.");
+            global.requestedUrls = [];
+            app.state.benchmarkWindow = "match";
+            app.loadData({force:true}).then(() => {
+              assert(global.requestedUrls.some(url=>url.includes("marketing-funnel")&&url.includes("months=12")), "Match slice with a short active cohort window lost its 12-month maturity fallback.");
+              console.log("Marketing Intelligence workspace verified OK.");
+            });
+          });
         });
       });
     });

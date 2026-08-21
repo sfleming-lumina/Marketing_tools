@@ -163,6 +163,20 @@ setImmediate(() => {
   assert(dashboardHtml.includes('id="detailDrawer"') && dashboardHtml.includes('/api/marketing-detail') && dashboardHtml.includes('governed aggregate rows'), "Governed contributing-row access is missing.");
   assert(dashboardHtml.includes('data-label="Cohort window"') && dashboardHtml.includes('data-label="Comparison timeframe"') && dashboardHtml.includes('id="benchmarkFilter"'), "Discrete filter labels or comparison-timeframe control are missing.");
   assert(dashboardHtml.includes("uses every eligible mature cohort-month in that window rather than only the most recent three"), "The comparison-timeframe guide copy does not explain its effect on the Funnel Health mature-benchmark reference window.");
+  const guideAnchors = ["guide-workflow","guide-filters","guide-cohorts","guide-timeframes","guide-findings","guide-analysis","guide-markets","guide-assistant","guide-decisions","guide-feedback","guide-limits"];
+  guideAnchors.forEach(id => {
+    assert(dashboardHtml.includes(`id="${id}"`), `Guide section "${id}" is missing its anchor id.`);
+    assert(dashboardHtml.includes(`href="#${id}"`), `Guide table of contents is missing a link to "${id}".`);
+  });
+  const guideSectionCount = (dashboardHtml.match(/class="guide-section"/g) || []).length;
+  assert(guideSectionCount === 11, `Expected 11 guide sections after the overhaul, found ${guideSectionCount}.`);
+  assert(dashboardHtml.includes("<h3>Comparison timeframe and benchmarks</h3>"), "Targets and benchmark periods section was not renamed.");
+  assert(dashboardHtml.includes("<h3>Analysis: funnel health, fallout, and acquisition cost</h3>"), "Analysis section title was not tightened.");
+  assert(dashboardHtml.includes("<h3>Known data limits</h3>"), "Seasonality and unavailable dimensions section was not renamed.");
+  assert(dashboardHtml.includes("<h3>Ask the assistant</h3>") && dashboardHtml.includes("Open <strong>Ask about this view</strong>"), "New assistant guide section is missing.");
+  assert(dashboardHtml.includes("<h3>Decision tools: plan, track, and monitor</h3>") && dashboardHtml.includes("<strong>Track a decision</strong>") && dashboardHtml.includes("<strong>Decision tracker</strong>") && dashboardHtml.includes("<strong>Decision monitoring</strong>"), "Decision-lifecycle sections were not merged into one.");
+  assert(dashboardHtml.includes("the queue surfaces the pooled recommendation for that market instead of staying silent"), "Findings section is missing the new pooled-recommendation example.");
+  assert(dashboardHtml.includes("Decision-grade sufficiency remains at least 50 leads and 5 wins"), "Findings section lost existing content during the example addition.");
   assert(dashboardHtml.includes('id="matrixCampaignLimit"') && dashboardHtml.includes('id="matrixGeographyLimit"') && dashboardHtml.includes('max-height:560px'), "Configurable, frame-scrolling opportunity matrix is missing.");
   assert(dashboardHtml.includes('<strong>Observed</strong>') && dashboardHtml.includes('<strong>Why it matters</strong>') && dashboardHtml.includes('<strong>Do next</strong>'), "Findings do not translate observations into actions.");
   assert(dashboardHtml.includes('<div class="nav-label">Reporting views</div>') && dashboardHtml.includes('aria-label="Decision workspace"') && dashboardHtml.includes('aria-label="Reporting views"'), "Calendar trends and Official workbook are not grouped separately from the decision workspace.");

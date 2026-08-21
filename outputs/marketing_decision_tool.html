@@ -596,7 +596,7 @@
     if(groups.length===1)return label(groups[0].month);
     return `${label(groups[0].month)}–${label(groups.at(-1).month)}`;
   }
-  function funnelHealthModel(rows,referenceRows=state.maturityFunnelRows,comparatorMode="mature"){
+  function funnelHealthModel(rows,referenceRows=state.maturityFunnelRows,comparatorMode="mature",capReference=true){
     const grouped=source=>[...new Set(source.map(row=>row.month))].sort().map(month=>{const items=source.filter(row=>row.month===month);return {month,items,totals:aggregate(items),ageDays:Math.max(...items.map(cohortAgeDays))}});
     const groups=grouped(rows),references=grouped(referenceRows?.length?referenceRows:rows),selectedPeriods=new Set(groups.map(group=>group.month));
     const defs=[
@@ -608,7 +608,7 @@
     return defs.map(def=>{
       const currentGroups=groups,provisional=!currentGroups.length||currentGroups.some(group=>group.ageDays<def.minAge);
       const matchingReferences=references.filter(group=>comparatorMode==="mature"?group.ageDays>=def.minAge&&!selectedPeriods.has(group.month):selectedPeriods.has(group.month));
-      const baselineGroups=comparatorMode==="mature"?matchingReferences.slice(-3):matchingReferences;
+      const baselineGroups=(comparatorMode==="mature"&&capReference)?matchingReferences.slice(-3):matchingReferences;
       const currentTotals=aggregate(currentGroups.flatMap(group=>group.items)),priorTotals=baselineGroups.length?aggregate(baselineGroups.flatMap(group=>group.items)):null;
       const denominator=Number(currentTotals[def.denominator])||0,sample=denominator>=def.minSample,current=currentTotals[def.key],baseline=priorTotals?.[def.key]??null;
       const detail=!sample?`Low sample · ${fmtNum(denominator)} ${def.denominatorLabel}`:provisional?baseline==null?"Observed · mature reference unavailable":`Provisional · mature ref ${fmtPct(baseline)}`:baseline==null?"No earlier mature comparison":trendDelta(current,baseline);
@@ -1374,7 +1374,7 @@
       expectedYieldMetric(t)
     ].join("");
     const comparatorRows=state.funnelComparator==="mature"?state.maturityFunnelRows:state.comparatorFunnelRows;
-    const health=funnelHealthModel(rows,comparatorRows,state.funnelComparator);
+    const health=funnelHealthModel(rows,comparatorRows,state.funnelComparator,state.benchmarkWindow==="match");
     $("funnelHealth").innerHTML=health.map(item=>{const scale=Math.max(item.current||0,item.baseline||0,.01),fill=Math.max(2,Math.min(100,(item.current||0)/scale*90)),marker=Math.max(0,Math.min(100,(item.baseline||0)/scale*90));return `<div class="health-row" title="${esc(item.periodLabel)}"><span>${esc(item.label)}<small class="health-period">${esc(item.periodLabel)}</small><small class="health-reference">${esc(item.referenceLabel)}</small></span><strong>${fmtPct(item.current)}</strong><div class="health-track"><span class="health-fill ${item.tone}" style="width:${fill}%"></span>${item.baseline==null?"":`<i class="health-marker" style="left:${marker}%" aria-hidden="true"></i>`}</div><div class="health-delta ${item.tone==="bad"?"negative":item.tone==="good"?"positive":"neutral"}">${esc(item.detail)}</div></div>`}).join("");
     const primaryFocus=health.filter(item=>item.tone==="bad").sort((a,b)=>(a.current/(a.baseline||1))-(b.current/(b.baseline||1)))[0]||health.find(item=>item.tone==="warn")||health.find(item=>item.tone==="good")||health[0];
     const focusCopy=!primaryFocus.sample?`${primaryFocus.periodLabel} has only ${fmtNum(primaryFocus.denominatorCount)} ${primaryFocus.denominatorLabel}; keep monitoring.`:primaryFocus.provisional?`The observed ${primaryFocus.label.toLowerCase()} rate remains visible, but the selected slice has not reached its ${primaryFocus.minAge}-day maturity gate. Use the labeled mature reference for context, not a final verdict.`:primaryFocus.tone==="bad"?`The mature ${primaryFocus.periodLabel} comparison identifies the clearest intervention point.`:primaryFocus.tone==="good"?`The mature ${primaryFocus.periodLabel} comparison is outperforming its earlier baseline.`:`Monitor the ${primaryFocus.periodLabel} comparison as evidence develops.`;

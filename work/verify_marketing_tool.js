@@ -214,6 +214,36 @@ setImmediate(() => {
     {month:"2026-08-01",cohortAgeDays:16,leads:100,sets:25,runs:10,wins:1}
   ],"campaign");
   assert(sameSliceComparison.find(item=>item.key==="leadToWin").referenceLabel.includes("Jul 2026–Aug 2026") && !sameSliceComparison.find(item=>item.key==="leadToWin").referenceLabel.includes("Jun 2026"), "Same-slice funnel comparator drifted outside the selected period.");
+  const cappedMatureHealth = app.funnelHealthModel([
+    {month:"2026-08-01",cohortAgeDays:9,leads:50,sets:0,runs:0,wins:0}
+  ],[
+    {month:"2026-01-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-02-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-03-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-04-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-05-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2}
+  ],"mature",true);
+  assert(cappedMatureHealth.find(item=>item.key==="leadToWin").referenceLabel.includes("Mar 2026–May 2026") && !cappedMatureHealth.find(item=>item.key==="leadToWin").referenceLabel.includes("Jan 2026"), "Match-slice comparison did not keep the last-3-month mature reference cap.");
+  const uncappedMatureHealth = app.funnelHealthModel([
+    {month:"2026-08-01",cohortAgeDays:9,leads:50,sets:0,runs:0,wins:0}
+  ],[
+    {month:"2026-01-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-02-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-03-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-04-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-05-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2}
+  ],"mature",false);
+  assert(uncappedMatureHealth.find(item=>item.key==="leadToWin").referenceLabel.includes("Jan 2026–May 2026"), "A chosen comparison timeframe did not use every eligible mature reference month.");
+  const defaultMatureHealth = app.funnelHealthModel([
+    {month:"2026-08-01",cohortAgeDays:9,leads:50,sets:0,runs:0,wins:0}
+  ],[
+    {month:"2026-01-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-02-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-03-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-04-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2},
+    {month:"2026-05-01",cohortAgeDays:200,leads:20,sets:10,runs:6,wins:2}
+  ],"mature");
+  assert(defaultMatureHealth.find(item=>item.key==="leadToWin").referenceLabel.includes("Mar 2026–May 2026"), "Omitting capReference did not default to the capped mature reference set.");
   assert(dashboardHtml.includes('class="health-period"') && dashboardHtml.includes("with its own period labeled"), "Funnel comparison does not distinguish the selected period from its reference period.");
   assert(dashboardHtml.includes("Aged unresolved (still open)") && dashboardHtml.includes("No set after 30+ days") && dashboardHtml.includes("Closed Lost</th>"), "Aged unresolved detail or Closed Lost count is not visible in Analysis.");
   const opportunities = app.opportunityRows();
